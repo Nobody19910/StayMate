@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import withPWA from "next-pwa";
 
 const config: NextConfig = {
   // @ts-ignore
@@ -18,11 +17,11 @@ const config: NextConfig = {
   },
 };
 
-const nextConfig = withPWA({
+const withPWA = require("next-pwa")({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   register: true,
   skipWaiting: true,
-})(config);
+});
 
-export default nextConfig;
+export default withPWA(config);
