@@ -1,6 +1,7 @@
 {
   "name": "StayMate",
   "short_name": "StayMate",
+  "description": "Find your dream space or book student hostels easily with StayMate.",
   "theme_color": "#10b981",
   "background_color": "#ffffff",
   "display": "standalone",

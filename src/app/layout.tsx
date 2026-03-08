@@ -11,6 +11,7 @@ const geist = Geist({
 export const metadata: Metadata = {
   title: "StayMate — Find Your Space",
   description: "P2P real estate. No agents. No commission. Find homes and student hostels directly from owners.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
