@@ -57,8 +57,9 @@ export default function DashboardPage() {
       return;
     }
     if (!authLoading && profile && profile.role === "seeker") {
-      router.push("/homes");
-      return;
+      // Seekers are now allowed to view their own posted listings
+      // router.push("/homes");
+      // return;
     }
   }, [authLoading, user, profile, router]);
 
