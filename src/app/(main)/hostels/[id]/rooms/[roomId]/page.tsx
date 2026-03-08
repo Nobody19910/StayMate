@@ -42,7 +42,12 @@ export default function RoomDetailPage({ params }: Props) {
   const { user, profile } = useAuth();
   const [hostel, setHostel] = useState<Hostel | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
-  const [booked, setBooked] = useState(false);
+  const [bookingStep, setBookingStep] = useState<"idle" | "dateTime" | "payment" | "success">("idle");
+  const [viewingDate, setViewingDate] = useState("");
+  const [viewingTime, setViewingTime] = useState("");
+  const [ticketCode, setTicketCode] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [bookingError, setBookingError] = useState("");
   const [resolvedParams, setResolvedParams] = useState<{ id: string; roomId: string } | null>(null);
 
   useEffect(() => {
@@ -71,8 +76,47 @@ export default function RoomDetailPage({ params }: Props) {
     );
   }
 
-  if (booked) {
-    return <BookingSuccessScreen room={room} hostel={hostel} onBack={() => setBooked(false)} />;
+  if (bookingStep === "success") {
+    return <BookingSuccessScreen room={room} hostel={hostel} ticketCode={ticketCode} viewingDate={viewingDate} viewingTime={viewingTime} onBack={() => { setBookingStep("idle"); setTicketCode(""); }} />;
+  }
+
+  async function handleBookConfirm() {
+    if (!hostel || !room || !user || isProcessing) return;
+    setIsProcessing(true);
+    setBookingError("");
+    
+    // 1. Simulate payment delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // 2. Generate Ticket Code
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+    // 3. Save booking
+    const { error } = await supabase.from("bookings").insert({
+      listing_id: room.id,
+      listing_type: "hostel_room",
+      listing_title: `${room.name} — ${hostel.name}`,
+      seeker_id: user.id,
+      seeker_name: profile?.fullName ?? user.email ?? "Unknown",
+      seeker_email: user.email ?? "",
+      seeker_phone: profile?.phone ?? null,
+      price_label: room.priceLabel,
+      owner_id: hostel.managerId,
+      status: "pending",
+      payment_status: "paid",
+      ticket_code: code,
+      viewing_date: viewingDate,
+      viewing_time: viewingTime,
+    });
+    
+    setIsProcessing(false);
+    if (error) {
+      console.error("Booking error:", error);
+      setBookingError(error.message);
+    } else {
+      setTicketCode(code);
+      setBookingStep("success");
+    }
   }
 
   return (
@@ -164,35 +208,66 @@ export default function RoomDetailPage({ params }: Props) {
       </div>
 
       {/* CTA */}
-      <div className="sticky bottom-0 px-4 py-3 bg-white border-t border-gray-100 space-y-2">
+      <div className="sticky bottom-0 px-4 py-3 bg-white border-t border-gray-100 space-y-2 z-40">
         {room.available ? (
           user ? (
-            <button
-              onClick={async () => {
-                await supabase.from("bookings").insert({
-                  listing_id: room.id,
-                  listing_type: "hostel_room",
-                  listing_title: `${room.name} — ${hostel.name}`,
-                  seeker_id: user.id,
-                  seeker_name: profile?.fullName ?? user.email ?? "Unknown",
-                  seeker_email: user.email ?? "",
-                  seeker_phone: profile?.phone ?? null,
-                  price_label: room.priceLabel,
-                  owner_id: hostel.managerId,
-                  status: "pending",
-                });
-                setBooked(true);
-              }}
-              className="w-full bg-blue-600 text-white font-bold text-base py-3.5 rounded-2xl active:scale-95 transition-transform"
-            >
-              Request Booking — {room.priceLabel}
-            </button>
+            bookingStep === "idle" ? (
+              <button
+                onClick={() => setBookingStep("dateTime")}
+                className="w-full bg-blue-600 text-white font-bold text-base py-3.5 rounded-2xl active:scale-95 transition-transform"
+              >
+                Book a Viewing
+              </button>
+            ) : bookingStep === "dateTime" ? (
+              <div className="bg-white rounded-2xl p-4 border border-blue-100 shadow-xl absolute bottom-full left-4 right-4 mb-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-3">Schedule Viewing</h3>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Date</label>
+                    <input type="date" value={viewingDate} onChange={e => setViewingDate(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500" required />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Time</label>
+                    <input type="time" value={viewingTime} onChange={e => setViewingTime(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500" required />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setBookingStep("idle")} className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl active:scale-95 text-sm">Cancel</button>
+                  <button 
+                    disabled={!viewingDate || !viewingTime} 
+                    onClick={() => setBookingStep("payment")} 
+                    className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl active:scale-95 disabled:opacity-50 text-sm"
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            ) : bookingStep === "payment" ? (
+              <div className="bg-white rounded-2xl p-4 border border-blue-100 shadow-xl absolute bottom-full left-4 right-4 mb-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-1">Commitment Fee</h3>
+                <p className="text-xs text-gray-500 mb-4">A refundable fee of GH₵50 is required to secure your viewing and deter spam.</p>
+                
+                <div className="bg-blue-50 rounded-xl p-3 mb-4 flex justify-between items-center border border-blue-100 border-dashed">
+                  <span className="text-sm font-bold text-blue-800">Viewing Fee</span>
+                  <span className="text-lg font-extrabold text-blue-600">GH₵ 50.00</span>
+                </div>
+                
+                <button 
+                  onClick={handleBookConfirm}
+                  disabled={isProcessing}
+                  className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 active:scale-95 disabled:opacity-75 transition-transform"
+                >
+                  {isProcessing ? "Processing..." : "Pay with Mobile Money (Mock)"}
+                </button>
+                <button onClick={() => setBookingStep("dateTime")} disabled={isProcessing} className="w-full mt-2 text-xs font-bold text-gray-400 py-2">Back</button>
+              </div>
+            ) : null
           ) : (
             <button
               onClick={() => router.push("/login")}
               className="w-full bg-blue-600 text-white font-bold text-base py-3.5 rounded-2xl active:scale-95 transition-transform"
             >
-              Sign In to Request Booking
+              Sign In to Book Viewing
             </button>
           )
         ) : (
@@ -200,162 +275,78 @@ export default function RoomDetailPage({ params }: Props) {
             Room Unavailable
           </button>
         )}
-        <p className="text-center text-xs text-gray-400">
-          Direct from manager — no agents, no extra fees
-        </p>
+        {bookingError && (
+          <p className="text-center text-xs text-red-500 font-medium">{bookingError}</p>
+        )}
+        {bookingStep === "idle" && (
+          <p className="text-center text-[10px] font-bold text-gray-400 tracking-wider uppercase mt-2">
+            StayMate Verified Listings
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-function BookingSuccessScreen({ room, hostel, onBack }: { room: Room; hostel: Hostel; onBack: () => void }) {
-  // 2-hour expiry from now
-  const expiry = new Date(Date.now() + 2 * 60 * 60 * 1000);
-  const expiryStr = expiry.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+function BookingSuccessScreen({ room, hostel, ticketCode, viewingDate, viewingTime, onBack }: { room: Room; hostel: Hostel; ticketCode: string; viewingDate: string; viewingTime: string; onBack: () => void }) {
+  const displayDate = viewingDate ? new Date(viewingDate).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) : "";
 
   return (
     <motion.div
-      className="min-h-screen bg-gray-50 flex flex-col"
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
+      className="min-h-screen bg-gray-50 flex flex-col pb-20"
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Header */}
-      <div className="bg-blue-600 px-4 pt-14 pb-8 text-white text-center">
-        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-          </svg>
+      <div className="bg-blue-600 px-4 pt-16 pb-24 text-center rounded-b-[40px] shadow-sm relative overflow-hidden">
+        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+          <span className="text-3xl">🎫</span>
         </div>
-        <h1 className="text-xl font-extrabold">Booking Requested!</h1>
-        <p className="text-blue-100 text-sm mt-1">{room.name} · {hostel.name}</p>
-        <div className="mt-3 bg-white/15 rounded-xl px-4 py-2 inline-block">
-          <p className="text-xs text-blue-100">Bed held until</p>
-          <p className="text-lg font-bold">{expiryStr} today</p>
-          <p className="text-[10px] text-blue-200">2-hour hold — complete payment to secure</p>
-        </div>
+        <h1 className="text-2xl font-extrabold text-white">Viewing Booked!</h1>
+        <p className="text-blue-50 text-sm mt-1 font-medium max-w-xs mx-auto">
+          Your viewing for {room.name} at {hostel.name} has been confirmed.
+        </p>
       </div>
 
-      {/* Next Steps */}
-      <div className="px-4 py-6 flex-1">
-        <h2 className="text-sm font-bold text-gray-900 mb-4">Next Steps</h2>
+      <div className="px-4 -mt-16 relative z-10 flex-1 flex flex-col items-center">
+        {/* The Ticket */}
+        <div className="bg-white w-full max-w-sm rounded-[32px] shadow-xl border border-gray-100 p-6 flex flex-col items-center relative overflow-hidden">
+          <div className="absolute top-1/2 -left-3 w-6 h-6 bg-gray-50 rounded-full border-r border-gray-200" />
+          <div className="absolute top-1/2 -right-3 w-6 h-6 bg-gray-50 rounded-full border-l border-gray-200" />
+          <div className="absolute top-1/2 left-4 right-4 h-px border-b-2 border-dashed border-gray-200" />
 
-        <div className="space-y-3">
-          {/* Step 1: Verification */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-4">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="text-sm font-bold text-amber-600">1</span>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Student Verification</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  We&apos;re checking your student status to confirm eligibility.
-                </p>
-                <div className="mt-3 space-y-2">
-                  <VerificationStep
-                    label="Student Email Check"
-                    sublabel="Your .edu.ng email address"
-                    status="in-progress"
-                  />
-                  <VerificationStep
-                    label="ID Document"
-                    sublabel="School ID or matric card"
-                    status="pending"
-                  />
-                </div>
-              </div>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">StayMate Direct</p>
+          <p className="text-sm font-bold text-gray-900 text-center line-clamp-2 mb-8">{hostel.address}</p>
+          
+          <div className="w-full flex justify-between items-end mb-8">
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Date</p>
+              <p className="text-sm font-bold text-gray-900">{displayDate}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Time</p>
+              <p className="text-sm font-bold text-gray-900">{viewingTime}</p>
             </div>
           </div>
-
-          {/* Step 2: Payment */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-4">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="text-sm font-bold text-blue-600">2</span>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Secure Your Bed</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Pay to hold your spot before the 2-hour window closes.
-                </p>
-                <div className="mt-3 space-y-2">
-                  <PaymentOption
-                    icon="📱"
-                    label="Mobile Money (MoMo)"
-                    detail="Send to 0801 234 5678 · Ref: STAY-{room.id.slice(-4).toUpperCase()}"
-                  />
-                  <PaymentOption
-                    icon="💳"
-                    label="Card Payment"
-                    detail="Secure online payment — coming soon"
-                    disabled
-                  />
-                </div>
-                <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 flex items-center gap-2">
-                  <span className="text-amber-500 text-sm">⏱</span>
-                  <p className="text-xs text-amber-700 font-medium">
-                    Bed expires at {expiryStr} if payment not received
-                  </p>
-                </div>
-              </div>
+          
+          <div className="mt-8 mb-2">
+            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest text-center mb-1">Your Viewing Code</p>
+            <div className="bg-gray-100 rounded-2xl px-8 py-3 tracking-[0.3em] font-mono text-3xl font-black text-gray-900">
+              {ticketCode}
             </div>
           </div>
+          <p className="text-[10px] font-medium text-gray-400 text-center mt-2 px-4">
+            Show this code to the StayMate Field Agent or Manager upon arrival.
+          </p>
         </div>
-      </div>
 
-      {/* Back button */}
-      <div className="px-4 py-4 border-t border-gray-100 bg-white">
         <button
           onClick={onBack}
-          className="w-full border-2 border-gray-200 text-gray-600 font-bold py-3 rounded-2xl active:scale-95 transition-transform text-sm"
+          className="w-full max-w-sm bg-gray-900 text-white font-bold py-4 rounded-2xl active:scale-95 transition-transform mt-8 shadow-md"
         >
-          Back to Room Details
+          Back to Listings
         </button>
       </div>
     </motion.div>
-  );
-}
-
-function VerificationStep({ label, sublabel, status }: {
-  label: string;
-  sublabel: string;
-  status: "pending" | "in-progress" | "done";
-}) {
-  const statusConfig = {
-    pending: { dot: "bg-gray-300", text: "Pending", color: "text-gray-400" },
-    "in-progress": { dot: "bg-amber-400 animate-pulse", text: "Checking…", color: "text-amber-600" },
-    done: { dot: "bg-green-500", text: "Verified", color: "text-green-600" },
-  }[status];
-
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`} />
-        <div>
-          <p className="text-xs font-semibold text-gray-800">{label}</p>
-          <p className="text-[10px] text-gray-400">{sublabel}</p>
-        </div>
-      </div>
-      <span className={`text-[10px] font-bold ${statusConfig.color}`}>{statusConfig.text}</span>
-    </div>
-  );
-}
-
-function PaymentOption({ icon, label, detail, disabled }: {
-  icon: string;
-  label: string;
-  detail: string;
-  disabled?: boolean;
-}) {
-  return (
-    <div className={`flex items-start gap-3 p-3 rounded-xl border ${disabled ? "border-gray-100 bg-gray-50 opacity-50" : "border-blue-100 bg-blue-50"}`}>
-      <span className="text-lg leading-none">{icon}</span>
-      <div>
-        <p className={`text-xs font-bold ${disabled ? "text-gray-400" : "text-blue-800"}`}>{label}</p>
-        <p className="text-[10px] text-gray-500 mt-0.5">{detail}</p>
-      </div>
-      {disabled && <span className="ml-auto text-[10px] text-gray-400 font-medium shrink-0">Soon</span>}
-    </div>
   );
 }

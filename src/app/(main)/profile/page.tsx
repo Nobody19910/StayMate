@@ -1,18 +1,43 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 
 const ROLE_LABELS: Record<string, string> = {
   seeker: "Property Seeker",
-  owner: "Property Owner",
-  manager: "Hostel Manager",
+  admin: "StayMate Admin",
 };
 
 export default function ProfilePage() {
   const { user, profile, loading, signOut } = useAuth();
   const router = useRouter();
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      setLoadingTickets(false);
+      return;
+    }
+
+    async function fetchTickets() {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("seeker_id", user!.id)
+        .order("created_at", { ascending: false });
+      
+      if (!error && data) {
+        setTickets(data);
+      }
+      setLoadingTickets(false);
+    }
+
+    fetchTickets();
+  }, [user]);
 
   async function handleSignOut() {
     await signOut();
@@ -83,56 +108,82 @@ export default function ProfilePage() {
       </div>
 
       <div className="px-4 py-6 space-y-3">
-        {(profile?.role === "owner" || profile?.role === "manager") && (
+        {profile?.role === "admin" && (
           <Link
-            href="/dashboard"
-            className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100 active:scale-95 transition-transform"
+            href="/admin"
+            className="flex items-center gap-3 bg-emerald-50 rounded-xl px-4 py-3 border border-emerald-100 active:scale-95 transition-transform"
           >
-            <span className="text-xl">📊</span>
+            <span className="text-xl">🛡️</span>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-800">My Dashboard</p>
-              <p className="text-xs text-gray-400">Manage listings &amp; bookings</p>
+              <p className="text-sm font-semibold text-emerald-800">Admin Dashboard</p>
+              <p className="text-xs text-emerald-600">Manage listings, viewings & leads</p>
             </div>
-            <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </Link>
         )}
 
-        <Link
-          href="/dashboard?tab=listings"
-          className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100 active:scale-95 transition-transform"
-        >
-          <span className="text-xl">🏠</span>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-800">My Listings</p>
-            <p className="text-xs text-gray-400">View and edit your published properties</p>
-          </div>
-          <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
-        </Link>
-
-        <Link
-          href="/post"
-          className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100 active:scale-95 transition-transform"
-        >
-          <span className="text-xl">➕</span>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-800">Post a Listing</p>
-            <p className="text-xs text-gray-400">List a home or hostel room</p>
-          </div>
-          <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
-        </Link>
-
-        <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100">
+        <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100 mb-6">
           <span className="text-xl">📞</span>
           <div className="flex-1">
             <p className="text-sm font-semibold text-gray-800">Phone</p>
             <p className="text-xs text-gray-400">{profile?.phone ?? "Not set"}</p>
           </div>
+        </div>
+
+        <div className="mb-6 pt-2">
+          <h2 className="text-lg font-bold text-gray-900 mb-3 px-1">My Viewing Tickets</h2>
+          
+          {loadingTickets ? (
+            <div className="space-y-3">
+              {[1, 2].map(i => (
+                <div key={i} className="animate-pulse bg-white border border-gray-100 rounded-2xl p-4 h-28" />
+              ))}
+            </div>
+          ) : tickets.length === 0 ? (
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center shadow-sm">
+              <span className="text-4xl mb-2 block">🎟️</span>
+              <p className="text-sm font-bold text-gray-800">No Viewings Booked</p>
+              <p className="text-xs text-gray-500 mt-1">Book a viewing on a property to get your digital ticket.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {tickets.map(ticket => (
+                <div key={ticket.id} className="bg-white rounded-2xl p-4 shadow-sm border border-emerald-100 relative overflow-hidden flex flex-col items-center">
+                  <div className="absolute top-1/2 -left-3 w-6 h-6 bg-gray-50 rounded-full border-r border-gray-200" />
+                  <div className="absolute top-1/2 -right-3 w-6 h-6 bg-gray-50 rounded-full border-l border-gray-200" />
+                  <div className="absolute top-1/2 left-4 right-4 h-px border-b-2 border-dashed border-gray-200" />
+
+                  <div className="w-full flex justify-between items-start mb-6 z-10">
+                    <div className="flex-1 pr-4">
+                      <p className="text-sm font-bold text-gray-900 line-clamp-1">{ticket.listing_title}</p>
+                      <span className="inline-block mt-1 text-[10px] font-bold uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                        {ticket.status}
+                      </span>
+                    </div>
+                    {ticket.ticket_code && (
+                      <div className="bg-gray-100 rounded-xl px-3 py-1.5 shrink-0 ml-4">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Code</p>
+                        <p className="tracking-widest font-mono text-lg font-black text-gray-900">{ticket.ticket_code}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="w-full flex justify-between items-end mt-2 z-10 px-1">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Date</p>
+                      <p className="text-sm font-bold text-gray-900">{ticket.viewing_date ? new Date(ticket.viewing_date).toLocaleDateString([], { month: 'short', day: 'numeric' }) : "--"}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Time</p>
+                      <p className="text-sm font-bold text-gray-900">{ticket.viewing_time || "--"}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100">

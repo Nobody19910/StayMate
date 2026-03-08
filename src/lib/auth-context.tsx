@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 
-export type UserRole = "seeker" | "owner" | "manager";
+export type UserRole = "seeker" | "admin";
 
 export interface Profile {
   id: string;

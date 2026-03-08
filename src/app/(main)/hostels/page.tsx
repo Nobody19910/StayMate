@@ -190,20 +190,31 @@ export default function HostelsPage() {
 
 function GridSkeleton() {
   return (
-    <div className="flex-1 bg-gray-50 px-4 py-4">
+    <motion.div 
+      className="flex-1 bg-gray-50 px-4 py-4 overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
       <div className="grid grid-cols-2 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 animate-pulse">
-            <div className="aspect-square w-full bg-gray-200" />
-            <div className="p-2.5 space-y-2">
-              <div className="h-3 bg-gray-200 rounded w-1/3" />
-              <div className="h-3 bg-gray-200 rounded w-2/3" />
-              <div className="h-2.5 bg-gray-200 rounded w-1/2" />
+          <motion.div
+            key={i}
+            className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100"
+            initial={{ opacity: 0.4 }}
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.1 }}
+          >
+            <div className="aspect-square w-full bg-blue-50/50" />
+            <div className="p-2.5 space-y-2.5 mt-1">
+              <div className="h-3 bg-blue-100 rounded-full w-1/3" />
+              <div className="h-2.5 bg-gray-100 rounded-full w-2/3 mt-1" />
+              <div className="h-2 bg-gray-100 rounded-full w-1/2" />
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }
 

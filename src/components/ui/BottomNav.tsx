@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSavedCount } from "@/lib/useSavedCount";
+import { useAuth } from "@/lib/auth-context";
 
-const tabs = [
+const baseTabs = [
   {
     href: "/homes",
     label: "Homes",
@@ -14,11 +15,6 @@ const tabs = [
     href: "/hostels",
     label: "Hostels",
     icon: HostelIcon,
-  },
-  {
-    href: "/post",
-    label: "Post",
-    icon: PostIcon,
   },
   {
     href: "/saved",
@@ -35,6 +31,20 @@ const tabs = [
 export default function BottomNav() {
   const pathname = usePathname();
   const savedCount = useSavedCount();
+  const { profile } = useAuth();
+
+  const isAdmin = profile?.role === "admin";
+
+  // Insert the middle action button
+  const tabs = [
+    baseTabs[0],
+    baseTabs[1],
+    isAdmin
+      ? { href: "/admin", label: "Manage", icon: ManageIcon }
+      : { href: "/post", label: "Post", icon: PostIcon },
+    baseTabs[2],
+    baseTabs[3],
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 safe-area-pb">
@@ -42,17 +52,17 @@ export default function BottomNav() {
         {tabs.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href);
           const isSaved = href === "/saved";
-          const isPost = href === "/post";
+          const isAction = href === "/post" || href === "/admin";
           return (
             <Link
               key={href}
               href={href}
               className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
-                isPost ? "text-emerald-600" : active ? "text-emerald-600" : "text-gray-400"
+                isAction ? "text-emerald-600" : active ? "text-emerald-600" : "text-gray-400"
               }`}
             >
               <div className="relative">
-                {isPost ? (
+                {isAction ? (
                   <div className="w-9 h-9 bg-emerald-500 rounded-full flex items-center justify-center shadow-md -mt-1">
                     <Icon active={true} />
                   </div>
@@ -65,7 +75,7 @@ export default function BottomNav() {
                   </span>
                 )}
               </div>
-              <span className={`text-[10px] font-semibold ${isPost ? "text-emerald-600" : active ? "text-emerald-600" : "text-gray-400"}`}>
+              <span className={`text-[10px] font-semibold ${isAction ? "text-emerald-600" : active ? "text-emerald-600" : "text-gray-400"}`}>
                 {label}
               </span>
             </Link>
@@ -73,6 +83,14 @@ export default function BottomNav() {
         })}
       </div>
     </nav>
+  );
+}
+
+function ManageIcon({ active }: { active: boolean }) {
+  return (
+    <svg className="w-5 h-5 text-white" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 0H4.5m-1.5 6h18m-18 6h18m-3-6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 0H4.5m10.5 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 0H4.5" />
+    </svg>
   );
 }
 

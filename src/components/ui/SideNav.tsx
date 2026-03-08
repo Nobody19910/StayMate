@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSavedCount } from "@/lib/useSavedCount";
+import { useAuth } from "@/lib/auth-context";
 
-const tabs = [
+const baseTabs = [
   { href: "/homes", label: "Homes", icon: HomeIcon },
   { href: "/hostels", label: "Hostels", icon: HostelIcon },
   { href: "/saved", label: "Saved", icon: HeartIcon },
@@ -14,6 +15,19 @@ const tabs = [
 export default function SideNav() {
   const pathname = usePathname();
   const savedCount = useSavedCount();
+  const { profile } = useAuth();
+  
+  const isAdmin = profile?.role === "admin";
+  
+  const tabs = [
+    baseTabs[0],
+    baseTabs[1],
+    isAdmin 
+      ? { href: "/admin", label: "Manage", icon: ManageIcon }
+      : { href: "/post", label: "Partner", icon: PostIcon },
+    baseTabs[2],
+    baseTabs[3],
+  ];
 
   return (
     <nav className="flex flex-col h-full bg-white border-r border-gray-100 px-4 py-8">
@@ -62,6 +76,22 @@ export default function SideNav() {
         </p>
       </div>
     </nav>
+  );
+}
+
+function ManageIcon({ active }: { active: boolean }) {
+  return (
+    <svg className="w-5 h-5" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 0H4.5m-1.5 6h18m-18 6h18m-3-6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 0H4.5m10.5 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 0H4.5" />
+    </svg>
+  );
+}
+
+function PostIcon({ active }: { active: boolean }) {
+  return (
+    <svg className="w-5 h-5" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    </svg>
   );
 }
 

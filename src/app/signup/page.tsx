@@ -7,16 +7,9 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import type { UserRole } from "@/lib/auth-context";
 
-const ROLES: { value: UserRole; label: string; sub: string; icon: string }[] = [
-  { value: "seeker", label: "Looking for a place", sub: "Browse homes & hostels", icon: "🔍" },
-  { value: "owner", label: "I own property", sub: "List homes for rent or sale", icon: "🏠" },
-  { value: "manager", label: "I manage a hostel", sub: "List rooms & manage bookings", icon: "🏫" },
-];
-
 export default function SignupPage() {
   const router = useRouter();
-  const [step, setStep] = useState<"role" | "details" | "confirm">("role");
-  const [role, setRole] = useState<UserRole | null>(null);
+  const [step, setStep] = useState<"details" | "confirm">("details");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -26,15 +19,11 @@ export default function SignupPage() {
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
-    if (!role) return;
-    setError("");
-    setLoading(true);
-
     const { data, error: signupError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName, role },
+        data: { full_name: fullName, role: "seeker" as UserRole },
         emailRedirectTo: `${window.location.origin}/homes`,
       },
     });
@@ -51,10 +40,10 @@ export default function SignupPage() {
         id: data.user.id,
         full_name: fullName,
         phone: phone || null,
-        role,
+        role: "seeker",
       });
       setLoading(false);
-      router.push(role === "seeker" ? "/homes" : "/dashboard");
+      router.push("/homes");
     } else {
       // Email confirmation is ON — show "check your email" screen
       setLoading(false);
@@ -91,57 +80,10 @@ export default function SignupPage() {
               Go to Sign In
             </Link>
           </div>
-        ) : step === "role" ? (
-          <>
-            <h2 className="text-xl font-extrabold text-gray-900 mb-1">Create an account</h2>
-            <p className="text-sm text-gray-400 mb-6">How will you use StayMate?</p>
-            <div className="space-y-3">
-              {ROLES.map((r) => (
-                <button
-                  key={r.value}
-                  onClick={() => setRole(r.value)}
-                  className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all ${
-                    role === r.value
-                      ? "border-emerald-500 bg-emerald-50"
-                      : "border-gray-200 bg-white hover:border-gray-300"
-                  }`}
-                >
-                  <span className="text-3xl">{r.icon}</span>
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">{r.label}</p>
-                    <p className="text-[11px] text-gray-400">{r.sub}</p>
-                  </div>
-                  {role === r.value && (
-                    <div className="ml-auto w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-            <button
-              disabled={!role}
-              onClick={() => setStep("details")}
-              className="mt-6 w-full bg-emerald-500 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-base"
-            >
-              Continue
-            </button>
-          </>
         ) : (
           <>
-            <button
-              onClick={() => setStep("role")}
-              className="flex items-center gap-1 text-sm text-gray-400 mb-5"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-              </svg>
-              Back
-            </button>
-            <h2 className="text-xl font-extrabold text-gray-900 mb-1">Your details</h2>
-            <p className="text-sm text-gray-400 mb-6">Almost there!</p>
+            <h2 className="text-xl font-extrabold text-gray-900 mb-1">Create an account</h2>
+            <p className="text-sm text-gray-400 mb-6">Welcome to StayMate</p>
             <form onSubmit={handleSignup} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1.5">Full Name *</label>
@@ -155,9 +97,10 @@ export default function SignupPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Phone</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Phone *</label>
                 <input
                   type="tel"
+                  required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+233 20 123 4567"
