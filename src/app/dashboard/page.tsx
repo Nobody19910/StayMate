@@ -211,6 +211,12 @@ export default function DashboardPage() {
                             View
                           </button>
                           <button
+                            onClick={() => router.push(`/edit/${home.id}?type=home`)}
+                            className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg"
+                          >
+                            Edit
+                          </button>
+                          <button
                             onClick={() => deleteListing("home", home.id)}
                             disabled={deletingId === home.id}
                             className="text-[10px] font-semibold text-red-500 bg-red-50 px-2 py-1 rounded-lg disabled:opacity-50"
@@ -249,6 +255,12 @@ export default function DashboardPage() {
                             className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg"
                           >
                             View
+                          </button>
+                          <button
+                            onClick={() => router.push(`/edit/${hostel.id}?type=hostel`)}
+                            className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg"
+                          >
+                            Edit
                           </button>
                           <button
                             onClick={() => deleteListing("hostel", hostel.id)}

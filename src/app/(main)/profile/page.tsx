@@ -100,6 +100,20 @@ export default function ProfilePage() {
         )}
 
         <Link
+          href="/dashboard?tab=listings"
+          className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100 active:scale-95 transition-transform"
+        >
+          <span className="text-xl">🏠</span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-gray-800">My Listings</p>
+            <p className="text-xs text-gray-400">View and edit your published properties</p>
+          </div>
+          <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </Link>
+
+        <Link
           href="/post"
           className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100 active:scale-95 transition-transform"
         >
