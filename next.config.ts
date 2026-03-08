@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 import withPWA from "next-pwa";
 
 const config: NextConfig = {
+  // @ts-ignore
+  turbopack: {},
   images: {
     remotePatterns: [
       {
