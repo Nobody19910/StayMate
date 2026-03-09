@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { getHostelById } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
@@ -42,12 +42,13 @@ export default function RoomDetailPage({ params }: Props) {
   const { user, profile } = useAuth();
   const [hostel, setHostel] = useState<Hostel | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
-  const [bookingStep, setBookingStep] = useState<"idle" | "dateTime" | "payment" | "success">("idle");
+  
+  const [bookingStep, setBookingStep] = useState<"idle" | "request" | "success">("idle");
   const [viewingDate, setViewingDate] = useState("");
-  const [viewingTime, setViewingTime] = useState("");
-  const [ticketCode, setTicketCode] = useState("");
+  const [bookingMessage, setBookingMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [bookingError, setBookingError] = useState("");
+  
   const [resolvedParams, setResolvedParams] = useState<{ id: string; roomId: string } | null>(null);
 
   useEffect(() => {
@@ -77,7 +78,7 @@ export default function RoomDetailPage({ params }: Props) {
   }
 
   if (bookingStep === "success") {
-    return <BookingSuccessScreen room={room} hostel={hostel} ticketCode={ticketCode} viewingDate={viewingDate} viewingTime={viewingTime} onBack={() => { setBookingStep("idle"); setTicketCode(""); }} />;
+    return <BookingSuccessScreen room={room} hostel={hostel} viewingDate={viewingDate} onBack={() => { setBookingStep("idle"); setViewingDate(""); setBookingMessage(""); }} />;
   }
 
   async function handleBookConfirm() {
@@ -85,46 +86,31 @@ export default function RoomDetailPage({ params }: Props) {
     setIsProcessing(true);
     setBookingError("");
     
-    // 1. Simulate payment delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // 2. Generate Ticket Code
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    
-    // 3. Save booking
+    // Save inquiry to 'bookings' table
     const { error } = await supabase.from("bookings").insert({
-      listing_id: room.id,
-      listing_type: "hostel_room",
-      listing_title: `${room.name} — ${hostel.name}`,
-      seeker_id: user.id,
-      seeker_name: profile?.fullName ?? user.email ?? "Unknown",
-      seeker_email: user.email ?? "",
-      seeker_phone: profile?.phone ?? null,
-      price_label: room.priceLabel,
-      owner_id: hostel.managerId,
+      user_id: user.id,
+      property_type: "hostel",
+      property_id: hostel.id,
       status: "pending",
-      payment_status: "paid",
-      ticket_code: code,
-      viewing_date: viewingDate,
-      viewing_time: viewingTime,
+      viewing_date: viewingDate ? new Date(viewingDate).toISOString() : null,
+      message: `Room: ${room.name} (${ROOM_TYPE_LABELS[room.roomType]})\n\n${bookingMessage || ""}`,
     });
     
     setIsProcessing(false);
     if (error) {
       console.error("Booking error:", error);
-      setBookingError(error.message);
+      setBookingError("Failed to send request. Please try again.");
     } else {
-      setTicketCode(code);
       setBookingStep("success");
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-32">
       {/* Photo */}
       <div className="relative h-64">
         <Image
-          src={room.images[0]}
+          src={room.images[0] || ""}
           alt={room.name}
           fill
           className="object-cover"
@@ -208,145 +194,109 @@ export default function RoomDetailPage({ params }: Props) {
       </div>
 
       {/* CTA */}
-      <div className="sticky bottom-0 px-4 py-3 bg-white border-t border-gray-100 space-y-2 z-40">
+      <div className="fixed bottom-16 left-0 right-0 px-4 py-3 bg-white border-t border-gray-100 space-y-2 max-w-lg mx-auto z-40">
         {room.available ? (
           user ? (
             bookingStep === "idle" ? (
               <button
-                onClick={() => setBookingStep("dateTime")}
+                onClick={() => setBookingStep("request")}
                 className="w-full bg-blue-600 text-white font-bold text-base py-3.5 rounded-2xl active:scale-95 transition-transform"
               >
-                Book a Viewing
+                Inquire / Book Room
               </button>
-            ) : bookingStep === "dateTime" ? (
+            ) : bookingStep === "request" ? (
               <div className="bg-white rounded-2xl p-4 border border-blue-100 shadow-xl absolute bottom-full left-4 right-4 mb-4">
-                <h3 className="text-sm font-bold text-gray-900 mb-3">Schedule Viewing</h3>
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-3">Send Inquiry</h3>
+                <div className="mb-4 space-y-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Date</label>
-                    <input type="date" value={viewingDate} onChange={e => setViewingDate(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500" required />
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Preferred Move-in / Viewing Date</label>
+                    <input type="date" value={viewingDate} onChange={e => setViewingDate(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Time</label>
-                    <input type="time" value={viewingTime} onChange={e => setViewingTime(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500" required />
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Message for Agent</label>
+                    <textarea 
+                      value={bookingMessage} 
+                      onChange={e => setBookingMessage(e.target.value)} 
+                      placeholder="Hello, I would like to reserve this room..."
+                      rows={3}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 resize-none" 
+                    />
                   </div>
                 </div>
+                
+                {bookingError && (
+                  <p className="text-xs text-red-500 font-medium mb-3 bg-red-50 p-2 rounded-lg">{bookingError}</p>
+                )}
+                
                 <div className="flex gap-2">
                   <button onClick={() => setBookingStep("idle")} className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl active:scale-95 text-sm">Cancel</button>
                   <button 
-                    disabled={!viewingDate || !viewingTime} 
-                    onClick={() => setBookingStep("payment")} 
-                    className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl active:scale-95 disabled:opacity-50 text-sm"
+                    onClick={handleBookConfirm}
+                    disabled={isProcessing}
+                    className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl active:scale-95 disabled:opacity-70 text-sm flex items-center justify-center gap-2"
                   >
-                    Continue
+                    {isProcessing ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Sending...
+                      </>
+                    ) : "Send Request"}
                   </button>
                 </div>
               </div>
-            ) : bookingStep === "payment" ? (
-              <div className="bg-white rounded-2xl p-4 border border-blue-100 shadow-xl absolute bottom-full left-4 right-4 mb-4">
-                <h3 className="text-sm font-bold text-gray-900 mb-1">Commitment Fee</h3>
-                <p className="text-xs text-gray-500 mb-4">A refundable fee of GH₵50 is required to secure your viewing and deter spam.</p>
-                
-                <div className="bg-blue-50 rounded-xl p-3 mb-4 flex justify-between items-center border border-blue-100 border-dashed">
-                  <span className="text-sm font-bold text-blue-800">Viewing Fee</span>
-                  <span className="text-lg font-extrabold text-blue-600">GH₵ 50.00</span>
-                </div>
-                
-                <button 
-                  onClick={handleBookConfirm}
-                  disabled={isProcessing}
-                  className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 active:scale-95 disabled:opacity-75 transition-transform"
-                >
-                  {isProcessing ? "Processing..." : "Pay with Mobile Money (Mock)"}
-                </button>
-                <button onClick={() => setBookingStep("dateTime")} disabled={isProcessing} className="w-full mt-2 text-xs font-bold text-gray-400 py-2">Back</button>
-              </div>
             ) : null
           ) : (
-            <button
-              onClick={() => router.push("/login")}
-              className="w-full bg-blue-600 text-white font-bold text-base py-3.5 rounded-2xl active:scale-95 transition-transform"
-            >
-              Sign In to Book Viewing
-            </button>
+            <Link href="/login">
+              <button className="w-full bg-blue-600 text-white font-bold text-base py-3.5 rounded-2xl active:scale-95 transition-transform shadow-sm flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
+                Log in to Book
+              </button>
+            </Link>
           )
         ) : (
           <button disabled className="w-full bg-gray-200 text-gray-400 font-bold text-base py-3.5 rounded-2xl cursor-not-allowed">
-            Room Unavailable
+            Fully Booked
           </button>
-        )}
-        {bookingError && (
-          <p className="text-center text-xs text-red-500 font-medium">{bookingError}</p>
-        )}
-        {bookingStep === "idle" && (
-          <p className="text-center text-[10px] font-bold text-gray-400 tracking-wider uppercase mt-2">
-            StayMate Verified Listings
-          </p>
         )}
       </div>
     </div>
   );
 }
 
-function BookingSuccessScreen({ room, hostel, ticketCode, viewingDate, viewingTime, onBack }: { room: Room; hostel: Hostel; ticketCode: string; viewingDate: string; viewingTime: string; onBack: () => void }) {
-  const displayDate = viewingDate ? new Date(viewingDate).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) : "";
-
+function BookingSuccessScreen({ room, hostel, viewingDate, onBack }: { 
+  room: Room; 
+  hostel: Hostel; 
+  viewingDate: string;
+  onBack: () => void;
+}) {
   return (
-    <motion.div
-      className="min-h-screen bg-gray-50 flex flex-col pb-20"
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="bg-blue-600 px-4 pt-16 pb-24 text-center rounded-b-[40px] shadow-sm relative overflow-hidden">
-        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-          <span className="text-3xl">🎫</span>
-        </div>
-        <h1 className="text-2xl font-extrabold text-white">Viewing Booked!</h1>
-        <p className="text-blue-50 text-sm mt-1 font-medium max-w-xs mx-auto">
-          Your viewing for {room.name} at {hostel.name} has been confirmed.
-        </p>
+    <div className="min-h-screen bg-blue-600 text-white flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-6">
+        <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
       </div>
-
-      <div className="px-4 -mt-16 relative z-10 flex-1 flex flex-col items-center">
-        {/* The Ticket */}
-        <div className="bg-white w-full max-w-sm rounded-[32px] shadow-xl border border-gray-100 p-6 flex flex-col items-center relative overflow-hidden">
-          <div className="absolute top-1/2 -left-3 w-6 h-6 bg-gray-50 rounded-full border-r border-gray-200" />
-          <div className="absolute top-1/2 -right-3 w-6 h-6 bg-gray-50 rounded-full border-l border-gray-200" />
-          <div className="absolute top-1/2 left-4 right-4 h-px border-b-2 border-dashed border-gray-200" />
-
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">StayMate Direct</p>
-          <p className="text-sm font-bold text-gray-900 text-center line-clamp-2 mb-8">{hostel.address}</p>
-          
-          <div className="w-full flex justify-between items-end mb-8">
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Date</p>
-              <p className="text-sm font-bold text-gray-900">{displayDate}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Time</p>
-              <p className="text-sm font-bold text-gray-900">{viewingTime}</p>
-            </div>
-          </div>
-          
-          <div className="mt-8 mb-2">
-            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest text-center mb-1">Your Viewing Code</p>
-            <div className="bg-gray-100 rounded-2xl px-8 py-3 tracking-[0.3em] font-mono text-3xl font-black text-gray-900">
-              {ticketCode}
-            </div>
-          </div>
-          <p className="text-[10px] font-medium text-gray-400 text-center mt-2 px-4">
-            Show this code to the StayMate Field Agent or Manager upon arrival.
-          </p>
+      <h1 className="text-3xl font-extrabold mb-2">Request Sent!</h1>
+      <p className="text-blue-100 font-medium mb-8 max-w-xs">
+        Your inquiry for {room.name} at {hostel.name} has been sent. An agent will be in touch shortly.
+      </p>
+      
+      <div className="bg-white text-blue-900 rounded-2xl p-6 w-full max-w-xs mb-8 shadow-xl text-left">
+        <div className="mb-4">
+          <p className="text-[10px] uppercase font-bold text-blue-500 tracking-wider">Status</p>
+          <p className="font-bold text-gray-900">Pending Agent Review</p>
         </div>
-
-        <button
-          onClick={onBack}
-          className="w-full max-w-sm bg-gray-900 text-white font-bold py-4 rounded-2xl active:scale-95 transition-transform mt-8 shadow-md"
-        >
-          Back to Listings
-        </button>
+        {viewingDate && (
+          <div>
+            <p className="text-[10px] uppercase font-bold text-blue-500 tracking-wider">Preferred Date</p>
+            <p className="font-bold text-gray-900">{new Date(viewingDate).toLocaleDateString()}</p>
+          </div>
+        )}
       </div>
-    </motion.div>
+      
+      <button onClick={onBack} className="bg-blue-700 font-bold py-3.5 px-8 rounded-xl active:scale-95 text-sm transition-transform shadow-sm">
+        Back to Room
+      </button>
+    </div>
   );
 }

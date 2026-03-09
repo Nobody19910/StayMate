@@ -98,27 +98,53 @@ export interface SavedItem {
   savedAt: string;
 }
 
-// ─── Booking ──────────────────────────────────────────────────────────────────
+// ─── Booking & Chat (Phase 1 & 2) ──────────────────────────────────────────────────
 
-export type VerificationStatus =
-  | "pending"
-  | "student-email-verified"
-  | "id-pending"
-  | "id-verified"
-  | "rejected";
-
-export interface BookingRequest {
+export interface Booking {
   id: string;
-  roomId: string;
-  hostelId: string;
-  roomName: string;
-  hostelName: string;
-  studentName: string;
-  studentEmail: string;
-  studentPhone: string;
-  priceLabel: string;
-  verificationStatus: VerificationStatus;
-  paymentStatus: "unpaid" | "paid" | "expired";
-  createdAt: string;      // ISO date
-  expiresAt: string;      // ISO date — 2hr booking hold
+  user_id: string;
+  property_type: "home" | "hostel";
+  property_id: string;
+  status: "pending" | "confirmed" | "cancelled" | "completed";
+  viewing_date?: string;
+  message?: string;
+  created_at: string;
+  updated_at: string;
+  
+  // Joined fields for UI convenience
+  property?: Property | Hostel;
+  user?: {
+    id: string;
+    full_name: string;
+    email: string;
+    phone?: string;
+    avatar_url?: string;
+  };
 }
+
+export interface Conversation {
+  id: string;
+  seeker_id: string;
+  created_at: string;
+  updated_at: string;
+  
+  // Joined fields
+  seeker?: {
+    id: string;
+    full_name: string;
+    email: string;
+    avatar_url?: string;
+  };
+  last_message?: string;
+  unread_count?: number;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+}
+

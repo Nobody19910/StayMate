@@ -10,6 +10,7 @@ export interface Profile {
   id: string;
   fullName: string | null;
   phone: string | null;
+  avatarUrl: string | null;
   role: UserRole;
   kycStatus: "unverified" | "pending" | "verified";
   agentModeEnabled: boolean;
@@ -49,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: data.id,
         fullName: data.full_name,
         phone: data.phone,
+        avatarUrl: data.avatar_url,
         role: data.role as UserRole,
         kycStatus: data.kyc_status,
         agentModeEnabled: data.agent_mode_enabled,
@@ -60,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: userId,
         fullName: userMeta.full_name ?? null,
         phone: null,
+        avatarUrl: null,
         role: (userMeta.role as UserRole) ?? "seeker",
         kycStatus: "unverified",
         agentModeEnabled: false,
