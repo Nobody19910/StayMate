@@ -54,15 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         agentModeEnabled: data.agent_mode_enabled,
       });
     } else if (userMeta) {
-      // No profile row yet (e.g. after email confirmation) — create one from auth metadata
-      await supabase.from("profiles").upsert({
-        id: userId,
-        full_name: userMeta.full_name ?? null,
-        phone: null,
-        role: (userMeta.role as UserRole) ?? "seeker",
-        kyc_status: "unverified",
-        agent_mode_enabled: false,
-      });
+      // Relying on Postgres trigger `on_auth_user_created` to create the profile row on the backend.
+      // Setting local state here just in case of any slight network delay fetching the new row.
       setProfile({
         id: userId,
         fullName: userMeta.full_name ?? null,
