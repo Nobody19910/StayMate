@@ -12,6 +12,23 @@ import { getHostels } from "@/lib/api";
 import { addSaved } from "@/lib/saved-store";
 import type { Hostel } from "@/lib/types";
 
+// Haversine formula for distance in km
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const d = R * c; // Distance in km
+  return d;
+}
+
+// Default to Accra center for demo purposes if no geolocation
+const DEFAULT_LAT = 5.6037;
+const DEFAULT_LNG = -0.1870;
+
 type Layout = "grid" | "swipe";
 
 export default function HostelsPage() {
@@ -19,14 +36,30 @@ export default function HostelsPage() {
   const [layout, setLayout] = useState<Layout>("grid");
   const [hostels, setHostels] = useState<Hostel[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // New Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [radius, setRadius] = useState<number>(50); // 1 to 50
+  const [priceMin, setPriceMin] = useState<number>(0);
+  const [priceMax, setPriceMax] = useState<number>(25000); // 25000 represents 25k+
+  
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  
+  const [userLoc, setUserLoc] = useState<{lat: number, lng: number}>({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
 
   useEffect(() => {
     getHostels().then((data) => {
       setHostels(data);
       setLoading(false);
     }).catch(() => setLoading(false));
+
+    // Get real location if available
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      });
+    }
   }, []);
 
   const allAmenities = useMemo(() => {
@@ -36,11 +69,51 @@ export default function HostelsPage() {
   }, [hostels]);
 
   const filteredHostels = useMemo(() => {
-    if (selectedAmenities.length === 0) return hostels;
-    return hostels.filter((h) =>
-      selectedAmenities.every((a) => h.amenities?.includes(a))
-    );
-  }, [hostels, selectedAmenities]);
+    let list = hostels;
+
+    // Search Query
+    if (searchQuery.trim() !== "") {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(h => 
+        h.name.toLowerCase().includes(q) || 
+        h.city.toLowerCase().includes(q) || 
+        h.address?.toLowerCase().includes(q) ||
+        h.nearbyUniversities.some((u) => u.toLowerCase().includes(q))
+      );
+    }
+    
+    // Radius Filter
+    if (radius < 50) {
+      list = list.filter(h => {
+        const hLat = (h as any).lat ?? DEFAULT_LAT;
+        const hLng = (h as any).lng ?? DEFAULT_LNG;
+        const dist = getDistance(userLoc.lat, userLoc.lng, hLat, hLng);
+        return dist <= radius;
+      });
+    }
+
+    // Price Filter (Hostels have min and max price ranges)
+    list = list.filter(h => {
+      // Check if the hostel's price range overlaps with the selected price range
+      const hMin = (h as any).price_range_min || 0;
+      const hMax = (h as any).price_range_max || 50000;
+      
+      // If the user's max price is less than the hostel's min price -> ignore
+      if (priceMax < 25000 && priceMax < hMin) return false;
+      
+      // If the user's min price is greater than the hostel's max price -> ignore
+      if (priceMin > hMax) return false;
+
+      return true;
+    });
+
+    if (selectedAmenities.length > 0) {
+      list = list.filter((h) =>
+        selectedAmenities.every((a) => h.amenities?.includes(a))
+      );
+    }
+    return list;
+  }, [hostels, searchQuery, radius, priceMin, priceMax, selectedAmenities, userLoc]);
 
   const items: DeckItem[] = filteredHostels.map((hostel) => ({
     id: hostel.id,
@@ -63,31 +136,105 @@ export default function HostelsPage() {
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-12 pb-3 bg-white">
-        <div>
-          <h1 className="text-xl font-extrabold text-gray-900">Hostels</h1>
-          <p className="text-xs text-gray-400">Student accommodation near your campus</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setFilterOpen(true)}
-            className={`relative flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
-              selectedAmenities.length > 0
-                ? "bg-blue-50 border-blue-300 text-blue-700"
-                : "bg-gray-100 border-gray-100 text-gray-500 hover:bg-gray-200"
-            }`}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
-            </svg>
-            Filters
-            {selectedAmenities.length > 0 && (
-              <span className="ml-0.5 bg-blue-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                {selectedAmenities.length}
-              </span>
-            )}
-          </button>
+      <div className="bg-white px-4 pt-12 pb-3 border-b border-gray-100/50">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h1 className="text-xl font-extrabold text-gray-900">Hostels</h1>
+            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-0.5">Student View</p>
+          </div>
           <LayoutToggle layout={layout} onChange={setLayout} />
+        </div>
+        
+        {/* Search Bar & Sliders */}
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
+                <circle cx="10" cy="10" r="7" />
+              </svg>
+              <input 
+                type="text"
+                placeholder="Search campus, city..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-9 pr-3 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:bg-white transition-all"
+              />
+            </div>
+            <button
+              onClick={() => setFilterOpen(true)}
+              className={`relative flex items-center justify-center p-2.5 rounded-xl border transition-colors ${
+                selectedAmenities.length > 0
+                  ? "bg-blue-50 border-blue-300 text-blue-700"
+                  : "bg-gray-50 border-gray-100 text-gray-500"
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
+              </svg>
+              {selectedAmenities.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {selectedAmenities.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3 bg-gray-50/50 p-2 rounded-xl">
+              <div className="flex-1">
+                <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                  <span>Radius</span>
+                  <span className="text-blue-700">{radius === 50 ? "50+ km" : `${radius} km`}</span>
+                </div>
+                <input 
+                  type="range" 
+                  min={1} 
+                  max={50} 
+                  value={radius} 
+                  onChange={(e) => setRadius(parseInt(e.target.value))}
+                  className="w-full accent-blue-600 h-1.5 bg-gray-200 rounded-lg appearance-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 bg-gray-50/50 p-2 rounded-xl">
+              <div className="flex-1">
+                <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                  <span>Price Range (GH₵/yr)</span>
+                  <span className="text-blue-700">
+                    {priceMin.toLocaleString()} - {priceMax === 25000 ? "25k+" : priceMax.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="range" 
+                    min={0} 
+                    max={10000} 
+                    step={100}
+                    value={priceMin} 
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value);
+                      if (v <= priceMax) setPriceMin(v);
+                    }}
+                    className="w-1/2 accent-blue-600 h-1.5 bg-gray-200 rounded-lg appearance-none"
+                  />
+                  <input 
+                    type="range" 
+                    min={0} 
+                    max={25000} 
+                    step={500}
+                    value={priceMax} 
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value);
+                      if (v >= priceMin) setPriceMax(v);
+                    }}
+                    className="w-1/2 accent-blue-600 h-1.5 bg-gray-200 rounded-lg appearance-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -98,7 +245,7 @@ export default function HostelsPage() {
           {layout === "swipe" ? (
             <motion.div
               key="swipe"
-              className="flex-1 relative px-4 pb-2 min-h-0"
+              className="flex-1 relative px-4 pb-2 pt-2 min-h-0"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -112,9 +259,8 @@ export default function HostelsPage() {
                 emptyState={
                   <div className="text-center text-gray-400 px-8">
                     <p className="text-5xl mb-4">🏫</p>
-                    <p className="text-lg font-semibold text-gray-600">All caught up!</p>
-                    <p className="text-sm mt-1">You&apos;ve seen all hostel listings.</p>
-                    <p className="text-sm text-blue-600 mt-3 font-medium">Check your saved hostels →</p>
+                    <p className="text-lg font-semibold text-gray-600">No hostels found</p>
+                    <p className="text-sm mt-1">Try expanding your radius or price range.</p>
                   </div>
                 }
               />
@@ -148,17 +294,10 @@ export default function HostelsPage() {
                 <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                   <p className="text-5xl mb-4">🏫</p>
                   <p className="text-base font-semibold text-gray-600">No hostels match</p>
-                  {selectedAmenities.length > 0 && (
-                    <button
-                      onClick={() => setSelectedAmenities([])}
-                      className="mt-3 text-sm text-blue-600 font-medium"
-                    >
-                      Clear filters
-                    </button>
-                  )}
+                  <p className="text-xs mt-1 text-center">Try adjusting your filters, radius, or price range.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 pb-20">
                   {filteredHostels.map((hostel, i) => (
                     <motion.div
                       key={hostel.id}
@@ -222,8 +361,8 @@ function HostelGridCard({ hostel }: { hostel: Hostel }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   return (
     <Link href={`/hostels/${hostel.id}`}>
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 active:scale-95 transition-transform">
-        <div className="relative aspect-square w-full bg-gray-200">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 active:scale-95 transition-transform cursor-pointer h-full flex flex-col">
+        <div className="relative aspect-square w-full bg-gray-200 shrink-0">
           {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-gray-200" />}
           <Image
             src={hostel.images[0]}
@@ -237,11 +376,15 @@ function HostelGridCard({ hostel }: { hostel: Hostel }) {
             {hostel.availableRooms > 0 ? `${hostel.availableRooms} free` : "Full"}
           </span>
         </div>
-        <div className="p-2.5">
-          <p className="text-sm font-extrabold text-blue-600 leading-tight">{hostel.priceRangeLabel}</p>
-          <p className="text-xs font-semibold text-gray-800 mt-0.5 truncate">{hostel.name}</p>
-          <p className="text-[10px] text-gray-400 truncate">{hostel.city}</p>
-          <p className="text-[10px] text-gray-500 mt-1">{hostel.totalRooms} rooms total</p>
+        <div className="p-2.5 flex-1 flex flex-col justify-between">
+          <div>
+            <p className="text-sm font-extrabold text-blue-600 leading-tight">{hostel.priceRangeLabel}</p>
+            <p className="text-xs font-semibold text-gray-800 mt-0.5 line-clamp-2 leading-snug">{hostel.name}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-gray-400 truncate mt-1">{hostel.city}</p>
+            <p className="text-[10px] text-gray-500 mt-0.5 font-medium">{hostel.totalRooms} rooms total</p>
+          </div>
         </div>
       </div>
     </Link>
@@ -253,20 +396,20 @@ function LayoutToggle({ layout, onChange }: { layout: Layout; onChange: (l: Layo
     <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-1">
       <button
         onClick={() => onChange("swipe")}
-        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${layout === "swipe" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-gray-600"}`}
+        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${layout === "swipe" ? "bg-white shadow-sm text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
         aria-label="Swipe view"
       >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
           <rect x="4" y="3" width="16" height="18" rx="3" />
           <path d="M9 8h6M9 12h6M9 16h4" />
         </svg>
       </button>
       <button
         onClick={() => onChange("grid")}
-        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${layout === "grid" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-gray-600"}`}
+        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${layout === "grid" ? "bg-white shadow-sm text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
         aria-label="Grid view"
       >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="3" width="7" height="7" rx="1" />
           <rect x="14" y="3" width="7" height="7" rx="1" />
           <rect x="3" y="14" width="7" height="7" rx="1" />

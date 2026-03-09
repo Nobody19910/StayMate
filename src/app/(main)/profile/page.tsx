@@ -17,6 +17,11 @@ export default function ProfilePage() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loadingTickets, setLoadingTickets] = useState(true);
 
+  // KYC & Agent State
+  const [kycName, setKycName] = useState("");
+  const [submittingKyc, setSubmittingKyc] = useState(false);
+  const [kycError, setKycError] = useState("");
+
   useEffect(() => {
     if (!user) {
       setLoadingTickets(false);
@@ -42,6 +47,37 @@ export default function ProfilePage() {
   async function handleSignOut() {
     await signOut();
     router.push("/login");
+  }
+
+  async function submitKyc(e: React.FormEvent) {
+    e.preventDefault();
+    if (!profile || !user) return;
+    setSubmittingKyc(true);
+    setKycError("");
+
+    if (kycName.toLowerCase() !== profile.fullName?.toLowerCase()) {
+      setKycError("ID Card name must exactly match your profile name.");
+      setSubmittingKyc(false);
+      return;
+    }
+
+    // Submit mock KYC
+    await supabase.from("kyc_submissions").insert({
+      user_id: user.id,
+      id_card_name: kycName,
+      status: "pending"
+    });
+
+    // Update local profile UI state to pending
+    await supabase.from("profiles").update({ kyc_status: "pending" }).eq("id", user.id);
+    window.location.reload(); // Quick refresh to sync Auth Context
+  }
+
+  async function toggleAgentMode() {
+    if (!profile || !user || profile.kycStatus !== 'verified') return;
+    const newStatus = !profile.agentModeEnabled;
+    await supabase.from("profiles").update({ agent_mode_enabled: newStatus }).eq("id", user.id);
+    window.location.reload();
   }
 
   if (loading) {
@@ -131,6 +167,86 @@ export default function ProfilePage() {
             <p className="text-xs text-gray-400">{profile?.phone ?? "Not set"}</p>
           </div>
         </div>
+
+        {/* IDENTITY VERIFICATION & AGENT MODE */}
+        {profile && profile.role !== "admin" && (
+          <div className="mb-6 pt-2">
+            <h2 className="text-lg font-bold text-gray-900 mb-3 px-1">Agent & Identity</h2>
+            
+            {profile.kycStatus === "unverified" && (
+              <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">🪪</span>
+                  <p className="text-sm font-bold text-amber-900">Verify Identity (KYC)</p>
+                </div>
+                <p className="text-xs text-amber-800 mb-4 font-medium">
+                  We need to verify your Ghana Card to unlock Agent Mode and allow you to submit properties.
+                </p>
+                <form onSubmit={submitKyc} className="space-y-3">
+                  <input
+                    required
+                    value={kycName}
+                    onChange={(e) => setKycName(e.target.value)}
+                    placeholder="Name exactly as on ID"
+                    className="w-full border border-amber-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                  />
+                  <div className="w-full border border-dashed border-amber-300 rounded-xl px-3 py-3 text-center bg-white/50">
+                    <p className="text-xs text-amber-700 font-bold uppercase tracking-widest">Tap to add ID Photo</p>
+                  </div>
+                  {kycError && <p className="text-[10px] text-red-600 font-bold">{kycError}</p>}
+                  <button
+                    type="submit"
+                    disabled={submittingKyc}
+                    className="w-full block bg-amber-500 text-white font-bold text-center py-2.5 rounded-xl active:scale-95 transition-transform text-sm"
+                  >
+                    {submittingKyc ? "Submitting..." : "Submit for KYC"}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {profile.kycStatus === "pending" && (
+              <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100 flex items-center gap-3">
+                <span className="text-2xl">⏳</span>
+                <div>
+                  <p className="text-sm font-bold text-blue-900">KYC Under Review</p>
+                  <p className="text-xs text-blue-700 font-medium mt-0.5">We are currently verifying your Ghana Card. Please check back later.</p>
+                </div>
+              </div>
+            )}
+
+            {profile.kycStatus === "verified" && (
+              <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-100">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">✅</span>
+                    <div>
+                      <p className="text-sm font-bold text-emerald-900">Identity Verified</p>
+                      <p className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wider mt-0.5">Agent Mode Unlocked</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={toggleAgentMode}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${profile.agentModeEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${profile.agentModeEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                  </button>
+                </div>
+                {profile.agentModeEnabled && (
+                  <div className="mt-4 pt-4 border-t border-emerald-200">
+                    <p className="text-xs text-emerald-800 font-bold mb-3">Agent Quick Links</p>
+                    <Link
+                      href="/admin/post"
+                      className="block bg-emerald-600 text-white font-bold text-center py-2.5 rounded-xl active:scale-95 transition-transform text-sm"
+                    >
+                      Post New Property
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mb-6 pt-2">
           <h2 className="text-lg font-bold text-gray-900 mb-3 px-1">My Viewing Tickets</h2>

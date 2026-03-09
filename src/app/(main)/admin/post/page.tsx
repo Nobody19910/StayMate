@@ -74,6 +74,8 @@ interface HomeInfo {
   forSale: boolean;
   amenities: string[];
   ownerPhone: string;
+  lat: string;
+  lng: string;
 }
 
 interface RoomDraft {
@@ -94,6 +96,8 @@ interface HostelInfo {
   address: string;
   nearbyUniversities: string;
   managerPhone: string;
+  lat: string;
+  lng: string;
   rooms: RoomDraft[];
 }
 
@@ -137,6 +141,8 @@ export default function PostPage() {
     forSale: false,
     amenities: [],
     ownerPhone: "",
+    lat: "",
+    lng: "",
   });
 
   const [hostelInfo, setHostelInfo] = useState<HostelInfo>({
@@ -146,6 +152,8 @@ export default function PostPage() {
     address: "",
     nearbyUniversities: "",
     managerPhone: "",
+    lat: "",
+    lng: "",
     rooms: [makeRoomDraft()],
   });
 
@@ -167,8 +175,14 @@ export default function PostPage() {
   }, [profile]);
 
   useEffect(() => {
-    if (!authLoading && !user) router.push("/login");
-  }, [authLoading, user, router]);
+    if (!authLoading) {
+      if (!user) {
+        router.push("/login");
+      } else if (profile?.role !== "admin" && !profile?.agentModeEnabled) {
+        router.push("/");
+      }
+    }
+  }, [authLoading, user, profile, router]);
 
   const steps = kind === "hostel" ? HOSTEL_STEPS : HOME_STEPS;
   const currentStep = steps[stepIndex];
@@ -178,8 +192,8 @@ export default function PostPage() {
   const canGoNext = useCallback((): boolean => {
     if (currentStep === "Type") return kind !== null;
     if (currentStep === "Details") {
-      if (kind === "home") return homeInfo.title.trim() !== "" && homeInfo.price.trim() !== "" && homeInfo.city.trim() !== "";
-      return hostelInfo.title.trim() !== "" && hostelInfo.city.trim() !== "";
+      if (kind === "home") return homeInfo.title.trim() !== "" && homeInfo.price.trim() !== "" && homeInfo.city.trim() !== "" && homeInfo.lat.trim() !== "" && homeInfo.lng.trim() !== "";
+      return hostelInfo.title.trim() !== "" && hostelInfo.city.trim() !== "" && hostelInfo.lat.trim() !== "" && hostelInfo.lng.trim() !== "";
     }
     if (currentStep === "Amenities") return true;
     if (currentStep === "Rooms") return hostelInfo.rooms.length > 0 && hostelInfo.rooms.every((r) => r.name.trim() !== "" && r.price.trim() !== "");
@@ -258,6 +272,9 @@ export default function PostPage() {
           amenities: homeInfo.amenities,
           owner_phone: homeInfo.ownerPhone || profile?.phone || null,
           owner_id: user.id,
+          lat: parseFloat(homeInfo.lat) || 0,
+          lng: parseFloat(homeInfo.lng) || 0,
+          status: profile?.role === "admin" ? "approved" : "pending_admin",
         });
         if (error) throw error;
       } else {
@@ -290,6 +307,9 @@ export default function PostPage() {
           amenities: Array.from(new Set(hostelInfo.rooms.flatMap((r) => r.amenities))),
           manager_phone: hostelInfo.managerPhone || profile?.phone || null,
           manager_id: user.id,
+          lat: parseFloat(hostelInfo.lat) || 0,
+          lng: parseFloat(hostelInfo.lng) || 0,
+          status: profile?.role === "admin" ? "approved" : "pending_admin",
         });
         if (hostelError) throw hostelError;
 
@@ -326,8 +346,8 @@ export default function PostPage() {
     setStepIndex(0);
     setKind(null);
     setPhotos([]);
-    setHomeInfo({ propertyType: "apartment", title: "", description: "", price: "", city: "", address: "", beds: "", baths: "", sqft: "", forSale: false, amenities: [], ownerPhone: profile?.phone ?? "" });
-    setHostelInfo({ title: "", description: "", city: "", address: "", nearbyUniversities: "", managerPhone: profile?.phone ?? "", rooms: [makeRoomDraft()] });
+    setHomeInfo({ propertyType: "apartment", title: "", description: "", price: "", city: "", address: "", beds: "", baths: "", sqft: "", forSale: false, amenities: [], ownerPhone: profile?.phone ?? "", lat: "", lng: "" });
+    setHostelInfo({ title: "", description: "", city: "", address: "", nearbyUniversities: "", managerPhone: profile?.phone ?? "", rooms: [makeRoomDraft()], lat: "", lng: "" });
   }
 
   if (authLoading || !user) return null;
@@ -484,6 +504,11 @@ export default function PostPage() {
 
               <FormField label="Address / Estate" placeholder="e.g. 14 Orchid Rd, East Legon" value={homeInfo.address} onChange={(v) => setHomeInfo((s) => ({ ...s, address: v }))} />
 
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Latitude *" placeholder="e.g. 5.6037" value={homeInfo.lat} onChange={(v) => setHomeInfo((s) => ({ ...s, lat: v }))} inputMode="numeric" />
+                <FormField label="Longitude *" placeholder="e.g. -0.1870" value={homeInfo.lng} onChange={(v) => setHomeInfo((s) => ({ ...s, lng: v }))} inputMode="numeric" />
+              </div>
+
               <div className="grid grid-cols-3 gap-3">
                 <FormField label="Beds" placeholder="3" value={homeInfo.beds} onChange={(v) => setHomeInfo((s) => ({ ...s, beds: v }))} inputMode="numeric" />
                 <FormField label="Baths" placeholder="2" value={homeInfo.baths} onChange={(v) => setHomeInfo((s) => ({ ...s, baths: v }))} inputMode="numeric" />
@@ -531,6 +556,12 @@ export default function PostPage() {
               </div>
 
               <FormField label="Address" placeholder="e.g. 12 University Road, Legon" value={hostelInfo.address} onChange={(v) => setHostelInfo((s) => ({ ...s, address: v }))} />
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Latitude *" placeholder="e.g. 5.6037" value={hostelInfo.lat} onChange={(v) => setHostelInfo((s) => ({ ...s, lat: v }))} inputMode="numeric" />
+                <FormField label="Longitude *" placeholder="e.g. -0.1870" value={hostelInfo.lng} onChange={(v) => setHostelInfo((s) => ({ ...s, lng: v }))} inputMode="numeric" />
+              </div>
+
               <FormField label="Nearby Universities / Schools (comma-separated)" placeholder="e.g. University of Ghana, KNUST" value={hostelInfo.nearbyUniversities} onChange={(v) => setHostelInfo((s) => ({ ...s, nearbyUniversities: v }))} />
               <FormField label="Your Phone (shown to students after booking)" placeholder="+233 20 000 0000" value={hostelInfo.managerPhone} onChange={(v) => setHostelInfo((s) => ({ ...s, managerPhone: v }))} inputMode="tel" />
 

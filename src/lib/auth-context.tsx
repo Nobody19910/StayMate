@@ -11,6 +11,8 @@ export interface Profile {
   fullName: string | null;
   phone: string | null;
   role: UserRole;
+  kycStatus: "unverified" | "pending" | "verified";
+  agentModeEnabled: boolean;
 }
 
 interface AuthContextValue {
@@ -48,6 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fullName: data.full_name,
         phone: data.phone,
         role: data.role as UserRole,
+        kycStatus: data.kyc_status,
+        agentModeEnabled: data.agent_mode_enabled,
       });
     } else if (userMeta) {
       // No profile row yet (e.g. after email confirmation) — create one from auth metadata
@@ -56,12 +60,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         full_name: userMeta.full_name ?? null,
         phone: null,
         role: (userMeta.role as UserRole) ?? "seeker",
+        kyc_status: "unverified",
+        agent_mode_enabled: false,
       });
       setProfile({
         id: userId,
         fullName: userMeta.full_name ?? null,
         phone: null,
         role: (userMeta.role as UserRole) ?? "seeker",
+        kycStatus: "unverified",
+        agentModeEnabled: false,
       });
     }
   }
