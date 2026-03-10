@@ -308,6 +308,7 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {profile?.role !== "admin" && (
         <div className="mb-6 pt-2">
           <h2 className="text-lg font-bold text-gray-900 mb-3 px-1">My Inquiries & Bookings</h2>
           
@@ -351,6 +352,7 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+        )}
 
         <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100">
           <span className="text-xl">ℹ️</span>
@@ -415,15 +417,16 @@ export default function ProfilePage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                <Link href="/chat" className="flex items-center justify-between p-4 bg-emerald-50 rounded-2xl border border-emerald-100 hover:bg-emerald-100 transition-colors active:scale-[0.98]">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-lg">💬</div>
                     <div>
                       <p className="text-sm font-bold text-gray-900">Chat with Admin</p>
-                      <p className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">Available Soon</p>
+                      <p className="text-[10px] font-medium text-emerald-600 uppercase tracking-widest">Open Thread</p>
                     </div>
                   </div>
-                </div>
+                  <div className="text-emerald-500 font-bold">→</div>
+                </Link>
               </div>
             </motion.div>
           </motion.div>

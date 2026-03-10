@@ -26,7 +26,7 @@ export default function SideNav() {
       ? { href: "/admin", label: "Manage", icon: ManageIcon }
       : { href: "/post", label: "Partner", icon: PostIcon },
     { href: "/chat", label: "Chat", icon: ChatIcon },
-    baseTabs[2],
+    ...(!isAdmin ? [baseTabs[2]] : []), // Saved — hidden for admin
     baseTabs[3],
   ];
 

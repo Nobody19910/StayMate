@@ -43,7 +43,7 @@ export default function BottomNav() {
       ? { href: "/admin", label: "Manage", icon: ManageIcon }
       : { href: "/post", label: "Post", icon: PostIcon },
     { href: "/chat", label: "Chat", icon: ChatIcon },
-    baseTabs[2], // Saved
+    ...(!isAdmin ? [baseTabs[2]] : []), // Saved — hidden for admin
     baseTabs[3], // Profile
   ];
 
