@@ -9,16 +9,23 @@ No commission. No broker. No friction.
 ## Two Core Sections
 
 ### 1. Homes (P2P Property)
-- Browse: swipe-first interface — right to save, left to skip
+- Browse: 2-column grid scroll with sticky search/filter header
+- Filters: listing type (rent/sale), amenities, price range, radius (geolocation)
 - Detail: full property page with photos, specs, owner contact CTA
-- One level of selection: swipe card → property detail
+- One level of selection: card tap → property detail
 
 ### 2. Hostels (Student Accommodation)
-- Browse: swipe-first interface — same SwipeCard/SwipeDeck components
-- After swiping right (or tapping a card): lands on the hostel's Room Picker
+- Browse: 2-column grid scroll with sticky search/filter header (same pattern as homes)
+- Filters: amenities, proximity radius, campus/city search
+- After tapping a card: lands on the hostel's Room Picker
 - Room Picker: scrollable grid of rooms, each with price + amenity badges
 - Room Detail: full amenity list, photos, capacity, availability
-- Two levels of selection: swipe hostel → pick room → room detail
+- Two levels of selection: hostel card → pick room → room detail
+
+### Swipe UI (Dormant)
+- `src/components/swipe/` contains fully implemented SwipeCard + SwipeDeck components
+- Not currently wired to any browse page — kept for potential future feature activation
+- Do NOT delete or modify these components
 
 ## Tech Stack
 
@@ -38,9 +45,9 @@ No commission. No broker. No friction.
 src/
   app/
     (main)/               # App shell with bottom nav
-      homes/              # Home swipe browse
+      homes/              # Home grid browse (filter + search)
       homes/[id]/         # Home detail + booking
-      hostels/            # Hostel swipe browse
+      hostels/            # Hostel grid browse (filter + search)
       hostels/[id]/       # Hostel room picker
       hostels/[id]/rooms/[roomId]/  # Room detail + booking
       saved/              # Saved homes + hostels tabs
@@ -68,12 +75,10 @@ src/
 
 ## Core UX Rules
 
-1. **Swipe-first**: the primary browse UI for both homes and hostels is always the swipe deck,
-   never an infinite scroll grid.
+1. **Grid-scroll browse**: primary browse UI is a 2-column card grid with sticky filter header.
 2. **Mobile-first**: all layouts designed for 375px width upward.
 3. **No agents in the UI**: no mention of agents, brokers, or commission anywhere in copy.
-4. **Shared swipe primitives**: `SwipeCard` and `SwipeDeck` are section-agnostic — they accept
-   any card data and fire callbacks. Homes and Hostels pages compose them.
+4. **Swipe components dormant**: `SwipeCard` / `SwipeDeck` exist in `src/components/swipe/` but are not active — preserve them for future use.
 
 ## Naming Conventions
 
@@ -97,9 +102,26 @@ Owners and managers appear in the Admin **Active Agents** tab once they have at 
 ## Booking / Enquiry Flow
 
 1. Seeker submits an enquiry (booking) from a property detail page — status: `pending`
-2. Admin can **Accept** or **Reject** the enquiry from the dashboard — status updates inline
-3. Seeker sees their enquiry status on the Profile page under "My Inquiries & Bookings"
-4. Owner phone only revealed after booking is accepted
+2. Booking simultaneously anchors the seeker's chat conversation to that property (sets `property_id`, `property_type`, `property_title`, `property_image` on the `conversations` row)
+3. Admin can **Accept** or **Reject** the enquiry from the dashboard — status updates inline
+4. Seeker sees their enquiry status on the Profile page under "My Inquiries & Bookings"
+5. Owner phone only revealed after booking is accepted
+
+## StayMate as Agent — 200 GHS Fee
+
+StayMate itself acts as the coordinating agent between seekers and property owners/managers.
+- A standard **GH₵ 200 viewing and coordination fee** applies per property inquiry
+- This fee banner is shown in the chat view whenever a conversation is anchored to a property
+- Admin sees the fee badge on the property card inside the chat thread header
+
+## Property-Anchored Chat
+
+Each seeker has one conversation thread. When they submit an inquiry, the thread is anchored to that property:
+- **Seeker chat header** shows a tappable property card (image + title) + GH₵ 200 fee banner
+- **Admin inbox thread list** shows property thumbnail + title pill under the seeker's name
+- **Admin chat header** shows the property card with a GH₵ 200 fee badge + tap-to-navigate link
+- Anchoring is stored in `conversations`: `property_id`, `property_type`, `property_title`, `property_image`
+- Migration: `022_property_anchored_chat.sql`
 
 ## Amenity System (Hostels)
 

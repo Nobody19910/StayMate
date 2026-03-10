@@ -86,23 +86,71 @@ export default function RoomDetailPage({ params }: Props) {
     setIsProcessing(true);
     setBookingError("");
     
-    // Save inquiry to 'bookings' table
-    const { error } = await supabase.from("bookings").insert({
+    const messageContent = `[Inquiry for: ${hostel.name} - ${room.name} (${ROOM_TYPE_LABELS[room.roomType]})]\n\n${bookingMessage || ""}`;
+
+    // 1. Save inquiry to 'bookings' table
+    const { error: bookingError } = await supabase.from("bookings").insert({
       user_id: user.id,
       property_type: "hostel",
-      property_id: hostel.id,
+      property_id: "00000000-0000-0000-0000-000000000002", // Dummy UUID since mock items use strings
       status: "pending",
       viewing_date: viewingDate ? new Date(viewingDate).toISOString() : null,
-      message: `Room: ${room.name} (${ROOM_TYPE_LABELS[room.roomType]})\n\n${bookingMessage || ""}`,
+      message: messageContent,
     });
     
-    setIsProcessing(false);
-    if (error) {
-      console.error("Booking error:", error);
-      setBookingError("Failed to send request. Please try again.");
-    } else {
-      setBookingStep("success");
+    if (bookingError) {
+      console.error("Booking error:", bookingError);
+      setIsProcessing(false);
+      setBookingError(`Error: ${bookingError.message} (Details: ${bookingError.details || ""} Hint: ${bookingError.hint || ""})`);
+      return;
     }
+
+    // 2. Also send as a chat message to the support inbox
+    try {
+      let { data: conv } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("seeker_id", user.id)
+        .maybeSingle();
+
+      if (!conv) {
+        const { data: created } = await supabase
+          .from("conversations")
+          .insert({ seeker_id: user.id })
+          .select("id")
+          .single();
+        conv = created;
+      }
+
+      if (conv) {
+        // Anchor conversation to this room/hostel
+        await supabase.from("conversations").update({
+          property_id: room.id,
+          property_type: "room",
+          property_title: `${hostel.name} — ${room.name}`,
+          property_image: (room.images?.[0] ?? hostel.images?.[0]) ?? null,
+          updated_at: new Date().toISOString(),
+        }).eq("id", conv.id);
+
+        await supabase.from("messages").insert({
+          conversation_id: conv.id,
+          sender_id: user.id,
+          content: messageContent,
+          is_read: false,
+        });
+
+        await supabase
+          .from("conversations")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("id", conv.id);
+      }
+    } catch (chatErr) {
+      console.error("Failed to send concurrent chat message:", chatErr);
+      // We don't fail the whole booking if just the chat message fails
+    }
+
+    setIsProcessing(false);
+    setBookingStep("success");
   }
 
   return (

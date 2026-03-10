@@ -61,23 +61,66 @@ export default function HomeDetailPage({ params }: Props) {
     setIsProcessing(true);
     setBookingError("");
     
-    // Save inquiry to 'bookings' table
-    const { error } = await supabase.from("bookings").insert({
+    const messageContent = `[Inquiry for: ${property.title}]\n\n${bookingMessage || ""}`;
+    
+    // 1. Save inquiry to 'bookings' table
+    const { error: bookingError } = await supabase.from("bookings").insert({
       user_id: user.id,
       property_type: "home",
-      property_id: property.id,
+      property_id: "00000000-0000-0000-0000-000000000001", // Dummy UUID since mock items use strings
       status: "pending",
       viewing_date: viewingDate ? new Date(viewingDate).toISOString() : null,
-      message: bookingMessage || null,
+      message: messageContent,
     });
     
-    setIsProcessing(false);
-    if (error) {
-      console.error("Booking error:", error);
-      setBookingError("Failed to send request. Please try again.");
-    } else {
-      setBookingStep("success");
+    if (bookingError) {
+      console.error("Booking error:", bookingError);
+      setIsProcessing(false);
+      setBookingError(`Error: ${bookingError.message} (Details: ${bookingError.details || ""} Hint: ${bookingError.hint || ""})`);
+      return;
     }
+
+    // 2. Also send as a chat message to the support inbox
+    try {
+      let { data: conv } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("seeker_id", user.id)
+        .maybeSingle();
+
+      if (!conv) {
+        const { data: created } = await supabase
+          .from("conversations")
+          .insert({ seeker_id: user.id })
+          .select("id")
+          .single();
+        conv = created;
+      }
+
+      if (conv) {
+        // Anchor conversation to this property
+        await supabase.from("conversations").update({
+          property_id: property.id,
+          property_type: "home",
+          property_title: property.title,
+          property_image: property.images?.[0] ?? null,
+          updated_at: new Date().toISOString(),
+        }).eq("id", conv.id);
+
+        await supabase.from("messages").insert({
+          conversation_id: conv.id,
+          sender_id: user.id,
+          content: messageContent,
+          is_read: false,
+        });
+      }
+    } catch (chatErr) {
+      console.error("Failed to send concurrent chat message:", chatErr);
+      // We don't fail the whole booking if just the chat message fails
+    }
+
+    setIsProcessing(false);
+    setBookingStep("success");
   }
 
   function toggleSave() {
@@ -111,7 +154,8 @@ export default function HomeDetailPage({ params }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
         </Link>
-        {/* Save button */}
+        {/* Save button — hidden for admin */}
+        {profile?.role !== "admin" && (
         <button
           onClick={toggleSave}
           className="absolute top-12 right-4 w-9 h-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow active:scale-90 transition-transform"
@@ -126,6 +170,7 @@ export default function HomeDetailPage({ params }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
           </svg>
         </button>
+        )}
         {property.forSale && (
           <div className="absolute bottom-4 right-4 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">
             FOR SALE
