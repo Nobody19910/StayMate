@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import AdminInbox from "@/components/admin/AdminInbox";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -19,10 +17,9 @@ export default function AdminDashboardPage() {
   const [kyc, setKyc] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [tab, setTab] = useState<"dashboard" | "inbox" | "properties" | "queue" | "audit" | "leads" | "agents">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "properties" | "queue" | "audit" | "leads" | "agents">("dashboard");
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
-  const [searchCity, setSearchCity] = useState("");
 
 
 
@@ -40,17 +37,33 @@ export default function AdminDashboardPage() {
       const [homesRes, hostelsRes, bookingsRes, leadsRes, kycRes, agentsRes] = await Promise.all([
         supabase.from("homes").select("*").order("created_at", { ascending: false }),
         supabase.from("hostels").select("*").order("created_at", { ascending: false }),
-        supabase.from("bookings").select("*, user:profiles(id, full_name, email, phone)").order("created_at", { ascending: false }),
+        supabase.from("bookings").select("*").order("created_at", { ascending: false }),
         supabase.from("landlord_leads").select("*").order("created_at", { ascending: false }),
-        supabase.from("kyc_submissions").select("*, user:profiles(id, full_name, email)").order("created_at", { ascending: false }),
+        supabase.from("kyc_submissions").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("*").neq("role", "admin"),
       ]);
+
+      const allProfiles = agentsRes.data || [];
+
+      // Manually join profiles to bookings and kyc
+      const mappedBookings = (bookingsRes.data || []).map((b) => ({
+        ...b,
+        user: allProfiles.find(p => p.id === b.user_id) || null
+      }));
+
+      const mappedKyc = (kycRes.data || []).map((k) => ({
+        ...k,
+        user: allProfiles.find(p => p.id === k.user_id) || null
+      }));
+
+      if (bookingsRes.error) console.error("Bookings fetch error:", bookingsRes.error);
+
       setHomes(homesRes.data || []);
       setHostels(hostelsRes.data || []);
-      setBookings(bookingsRes.data || []);
+      setBookings(mappedBookings);
       setLeads(leadsRes.data || []);
-      setKyc(kycRes.data || []);
-      setAgents(agentsRes.data || []);
+      setKyc(mappedKyc);
+      setAgents(allProfiles);
       setLoading(false);
     }
     fetchData();
@@ -116,6 +129,24 @@ export default function AdminDashboardPage() {
     setKyc(prev => prev.map(k => k.id === id ? { ...k, status } : k));
   }
 
+  async function resolveBooking(id: string, status: "accepted" | "rejected") {
+    const { error } = await supabase.from("bookings").update({ status }).eq("id", id);
+    if (!error) {
+      setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
+    }
+  }
+
+  async function deleteBooking(id: string) {
+    if (!confirm("Are you sure you want to delete this inquiry?")) return;
+    const { error } = await supabase.from("bookings").delete().eq("id", id);
+    if (!error) {
+      setBookings(prev => prev.filter(b => b.id !== id));
+    } else {
+      console.error("Failed to delete inquiry:", error);
+      alert("Error deleting inquiry. You may need to run the SQL migration to grant delete access.");
+    }
+  }
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -140,7 +171,6 @@ export default function AdminDashboardPage() {
           <TabButton active={tab === "agents"} onClick={() => { setTab("agents"); setSelectedAgentId(null); }} icon="👔" label="Active Agents" count={activeAgents} />
           <TabButton active={tab === "queue"} onClick={() => setTab("queue")} icon="⏳" label="Agent Queue" count={pendingHomes.length + pendingHostels.length} />
           <TabButton active={tab === "audit"} onClick={() => setTab("audit")} icon="🪪" label="KYC Audit" count={pendingKyc.length} />
-          <TabButton active={tab === "inbox"} onClick={() => setTab("inbox")} icon="💬" label="Support Inbox" />
           <TabButton active={tab === "leads"} onClick={() => setTab("leads")} icon="🎯" label="Seeker Leads" count={leads.filter(l => l.status === "pending").length} />
           
           <div className="hidden md:block mt-auto pt-6 border-t border-gray-800">
@@ -155,11 +185,11 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-        <div className="max-w-6xl mx-auto space-y-8">
+      <div className="flex-1 p-4 md:p-8 overflow-y-auto flex flex-col">
+        <div className="max-w-6xl mx-auto space-y-8 flex-1 flex flex-col w-full pb-20 md:pb-0">
           
           {tab === "dashboard" && (
-            <>
+            <div className="flex flex-col flex-1 gap-8">
               {/* Metrics Header */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <MetricCard title="Total Inquiries" value={totalInquiries.toString()} icon="💬" color="text-amber-500" />
@@ -169,9 +199,11 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Inquiries */}
-              <div className="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
-                <h3 className="text-sm font-extrabold text-gray-900 mb-4 bg-gray-50 inline-block px-3 py-1 rounded-lg">Recent Inquiries</h3>
-                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+              <div className="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm flex flex-col flex-1 min-h-[400px]">
+                <div className="shrink-0 mb-4">
+                  <h3 className="text-sm font-extrabold text-gray-900 bg-gray-50 inline-block px-3 py-1 rounded-lg">Recent Inquiries</h3>
+                </div>
+                <div className="space-y-3 overflow-y-auto pr-2 flex-1 relative min-h-0 pb-10">
                   {bookings.length === 0 ? (
                     <p className="text-sm text-gray-400 italic py-8 text-center">No inquiries received yet.</p>
                   ) : (
@@ -200,19 +232,37 @@ export default function AdminDashboardPage() {
                           <p className="text-sm font-bold text-gray-900">
                             {b.viewing_date ? new Date(b.viewing_date).toLocaleDateString() : "Anytime"}
                           </p>
-                          <a href={`mailto:${b.user?.email}`} className="mt-4 inline-block text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg">
-                            Reply to Seeker
-                          </a>
+                          <div className="mt-4 flex flex-col md:flex-row gap-2 justify-end">
+                            {b.user?.phone && (
+                              <a href={`tel:${b.user.phone}`} className="inline-flex items-center justify-center gap-1 text-xs font-bold text-gray-700 bg-white border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                                📞 Call
+                              </a>
+                            )}
+                            <Link href={`/chat?seeker_id=${b.user_id}`} className="inline-flex items-center justify-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-colors">
+                              💬 Chat
+                            </Link>
+                            {b.status === "pending" && (
+                              <>
+                                <button onClick={() => resolveBooking(b.id, "accepted")} className="inline-flex items-center justify-center text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors">
+                                  ✓ Accept
+                                </button>
+                                <button onClick={() => resolveBooking(b.id, "rejected")} className="inline-flex items-center justify-center text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors">
+                                  ✕ Reject
+                                </button>
+                              </>
+                            )}
+                            <button onClick={() => deleteBooking(b.id)} className="inline-flex items-center justify-center text-xs font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors">
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))
                   )}
                 </div>
               </div>
-            </>
+            </div>
           )}
-
-          {tab === "inbox" && <AdminInbox />}
 
           {tab === "queue" && (
             <div className="space-y-6">

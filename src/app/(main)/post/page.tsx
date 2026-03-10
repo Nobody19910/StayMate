@@ -280,6 +280,10 @@ export default function PostPage() {
           status: profile?.role === "admin" ? "approved" : "pending_admin",
         });
         if (error) throw error;
+        // Promote seeker → owner so they appear in Active Agents
+        if (profile?.role === "seeker") {
+          await supabase.from("profiles").update({ role: "owner" }).eq("id", user.id);
+        }
       } else {
         const hostelId = `hostel-${Date.now()}`;
         const priceNums = hostelInfo.rooms.map((r) => parseFloat(r.price.replace(/[^\d.]/g, "")) || 0);
@@ -315,6 +319,10 @@ export default function PostPage() {
           status: profile?.role === "admin" ? "approved" : "pending_admin",
         });
         if (hostelError) throw hostelError;
+        // Promote seeker → manager so they appear in Active Agents
+        if (profile?.role === "seeker") {
+          await supabase.from("profiles").update({ role: "manager" }).eq("id", user.id);
+        }
 
         for (const room of hostelInfo.rooms) {
           const priceNum = parseFloat(room.price.replace(/[^\d.]/g, "")) || 0;
