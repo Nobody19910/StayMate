@@ -27,6 +27,8 @@ export default function AdminInbox() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bookings, setBookings] = useState<Record<string, any>>({});
+  const [resolvingBooking, setResolvingBooking] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const selectedConvRef = useRef<any>(null);
@@ -59,6 +61,20 @@ export default function AdminInbox() {
         .from("profiles")
         .select("id, full_name, phone, avatar_url")
         .in("id", seekerIds);
+
+      // Fetch the latest booking for each seeker so we can show status in chat
+      const { data: allBookings } = await supabase
+        .from("bookings")
+        .select("*")
+        .in("user_id", seekerIds)
+        .order("created_at", { ascending: false });
+
+      // Map: seeker_id -> latest booking
+      const bookingMap: Record<string, any> = {};
+      allBookings?.forEach(b => {
+        if (!bookingMap[b.user_id]) bookingMap[b.user_id] = b;
+      });
+      setBookings(bookingMap);
 
       const mapped = convs.map((c) => {
         const p = profiles?.find((prof) => prof.id === c.seeker_id);
@@ -162,6 +178,40 @@ export default function AdminInbox() {
     } else {
       alert("Error deleting chat: " + error.message);
     }
+  }
+
+  // --- Accept or Reject the booking linked to this chat ---
+  async function resolveBooking(status: "accepted" | "rejected") {
+    if (!selectedConv) return;
+    const booking = bookings[selectedConv.seeker_id];
+    if (!booking) return;
+    setResolvingBooking(true);
+
+    const { error } = await supabase
+      .from("bookings")
+      .update({ status })
+      .eq("id", booking.id);
+
+    if (!error) {
+      // Update local bookings map
+      setBookings(prev => ({ ...prev, [selectedConv.seeker_id]: { ...booking, status } }));
+
+      // Send a system message to the seeker
+      const { data: adminData } = await supabase.auth.getUser();
+      const systemMsg = status === "accepted"
+        ? `✅ Your inquiry has been ACCEPTED! Please go to your Profile → My Inquiries and tap "Pay Commitment Fee" (GH₵ 10) to secure your spot.`
+        : `❌ Unfortunately, your inquiry has been declined. Feel free to browse other listings or send a new inquiry.`;
+
+      await supabase.from("messages").insert({
+        conversation_id: selectedConv.id,
+        sender_id: adminData.user?.id,
+        content: systemMsg,
+        is_read: true,
+      });
+      await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", selectedConv.id);
+      await fetchMessages();
+    }
+    setResolvingBooking(false);
   }
 
   // Navigate to the property page from within admin chat
@@ -277,7 +327,7 @@ export default function AdminInbox() {
                 </button>
               </div>
 
-              {/* Property Card — clickable, jumps to property page */}
+              {/* Property Card + Booking Actions */}
               {selectedConv.property_title && (
                 <button
                   onClick={() => navigateToProperty(selectedConv)}
@@ -297,14 +347,12 @@ export default function AdminInbox() {
                     </p>
                     <p className="text-xs font-bold text-gray-800 truncate">{selectedConv.property_title}</p>
                   </div>
-                  <div className="shrink-0 text-[10px] font-extrabold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-1 rounded-lg whitespace-nowrap">
-                    GH₵ 200 fee
-                  </div>
                   <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
               )}
+
             </div>
 
             {/* Messages */}
@@ -338,6 +386,60 @@ export default function AdminInbox() {
                 })
               )}
             </div>
+
+            {/* Accept / Reject — above input, only while pending */}
+            {(() => {
+              const booking = bookings[selectedConv.seeker_id];
+              if (!booking || booking.status !== "pending") return null;
+              return (
+                <div className="px-3 pt-3 pb-1 bg-white border-t border-amber-100">
+                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[9px] font-extrabold text-amber-700 uppercase tracking-widest">Inquiry Pending</p>
+                      <p className="text-[10px] text-amber-600 font-medium truncate">{selectedConv.seeker?.full_name} is waiting for a decision</p>
+                    </div>
+                    <button
+                      onClick={() => resolveBooking("rejected")}
+                      disabled={resolvingBooking}
+                      className="shrink-0 px-3 py-1.5 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-xl active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      Decline
+                    </button>
+                    <button
+                      onClick={() => resolveBooking("accepted")}
+                      disabled={resolvingBooking}
+                      className="shrink-0 px-3 py-1.5 text-xs font-bold text-white bg-emerald-500 rounded-xl active:scale-95 transition-all disabled:opacity-50 flex items-center gap-1"
+                    >
+                      {resolvingBooking ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : null}
+                      Accept
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Accepted / Paid status strip — above input */}
+            {(() => {
+              const booking = bookings[selectedConv.seeker_id];
+              if (!booking) return null;
+              if (booking.status === "accepted") return (
+                <div className="px-3 pt-2 pb-1 bg-white border-t border-emerald-100">
+                  <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+                    <span className="text-xs">✅</span>
+                    <p className="text-[10px] font-bold text-emerald-700">Accepted — Awaiting seeker payment</p>
+                  </div>
+                </div>
+              );
+              if (booking.status === "paid") return (
+                <div className="px-3 pt-2 pb-1 bg-white border-t border-blue-100">
+                  <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
+                    <span className="text-xs">💳</span>
+                    <p className="text-[10px] font-bold text-blue-700">Fee paid — Ref: {booking.payment_reference?.slice(0, 12)}...</p>
+                  </div>
+                </div>
+              );
+              return null;
+            })()}
 
             {/* Input */}
             <div className="p-3 bg-white border-t border-gray-100 sticky bottom-0 z-10 pb-5 md:pb-3">

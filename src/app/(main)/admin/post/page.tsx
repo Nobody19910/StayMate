@@ -504,9 +504,24 @@ export default function PostPage() {
 
               <FormField label="Address / Estate" placeholder="e.g. 14 Orchid Rd, East Legon" value={homeInfo.address} onChange={(v) => setHomeInfo((s) => ({ ...s, address: v }))} />
 
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="Latitude *" placeholder="e.g. 5.6037" value={homeInfo.lat} onChange={(v) => setHomeInfo((s) => ({ ...s, lat: v }))} inputMode="numeric" />
-                <FormField label="Longitude *" placeholder="e.g. -0.1870" value={homeInfo.lng} onChange={(v) => setHomeInfo((s) => ({ ...s, lng: v }))} inputMode="numeric" />
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-gray-700">Coordinates *</label>
+                  <a
+                    href="https://maps.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-bold text-blue-600 flex items-center gap-1 hover:underline"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                    Open Google Maps
+                  </a>
+                </div>
+                <p className="text-[10px] text-gray-400 mb-2">On Google Maps: right-click any location → copy the coordinates shown.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField label="Latitude" placeholder="e.g. 5.6037" value={homeInfo.lat} onChange={(v) => setHomeInfo((s) => ({ ...s, lat: v }))} inputMode="numeric" />
+                  <FormField label="Longitude" placeholder="e.g. -0.1870" value={homeInfo.lng} onChange={(v) => setHomeInfo((s) => ({ ...s, lng: v }))} inputMode="numeric" />
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
@@ -557,9 +572,24 @@ export default function PostPage() {
 
               <FormField label="Address" placeholder="e.g. 12 University Road, Legon" value={hostelInfo.address} onChange={(v) => setHostelInfo((s) => ({ ...s, address: v }))} />
 
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="Latitude *" placeholder="e.g. 5.6037" value={hostelInfo.lat} onChange={(v) => setHostelInfo((s) => ({ ...s, lat: v }))} inputMode="numeric" />
-                <FormField label="Longitude *" placeholder="e.g. -0.1870" value={hostelInfo.lng} onChange={(v) => setHostelInfo((s) => ({ ...s, lng: v }))} inputMode="numeric" />
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-gray-700">Coordinates *</label>
+                  <a
+                    href="https://maps.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-bold text-blue-600 flex items-center gap-1 hover:underline"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                    Open Google Maps
+                  </a>
+                </div>
+                <p className="text-[10px] text-gray-400 mb-2">On Google Maps: right-click any location → copy the coordinates shown.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField label="Latitude" placeholder="e.g. 5.6037" value={hostelInfo.lat} onChange={(v) => setHostelInfo((s) => ({ ...s, lat: v }))} inputMode="numeric" />
+                  <FormField label="Longitude" placeholder="e.g. -0.1870" value={hostelInfo.lng} onChange={(v) => setHostelInfo((s) => ({ ...s, lng: v }))} inputMode="numeric" />
+                </div>
               </div>
 
               <FormField label="Nearby Universities / Schools (comma-separated)" placeholder="e.g. University of Ghana, KNUST" value={hostelInfo.nearbyUniversities} onChange={(v) => setHostelInfo((s) => ({ ...s, nearbyUniversities: v }))} />

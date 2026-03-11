@@ -1,6 +1,7 @@
 import BottomNav from "@/components/ui/BottomNav";
 import SideNav from "@/components/ui/SideNav";
 import PageTransition from "@/components/ui/PageTransition";
+import ProfileCornerButton from "@/components/ui/ProfileCornerButton";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   /*
@@ -32,6 +33,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <div className="lg:hidden">
             <BottomNav />
           </div>
+
+          {/* Profile avatar — fixed top-right, mobile only */}
+          <ProfileCornerButton />
         </div>
       </div>
     </div>

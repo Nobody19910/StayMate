@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getHostelById } from "@/lib/api";
 import type { Room, RoomAmenity } from "@/lib/types";
+import DistanceBadge from "@/components/ui/DistanceBadge";
 
 const AMENITY_LABELS: Record<RoomAmenity, { label: string; emoji: string }> = {
   wifi: { label: "WiFi", emoji: "📶" },
@@ -68,10 +69,11 @@ export default async function HostelRoomPickerPage({ params }: Props) {
 
       {/* Hostel meta */}
       <div className="bg-white px-4 py-3 border-b border-gray-100">
-        <div className="flex items-center gap-4 text-sm text-gray-600">
+        <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
           <span>{hostel.availableRooms} of {hostel.totalRooms} rooms available</span>
           <span>•</span>
           <span>{hostel.priceRangeLabel}</span>
+          <DistanceBadge lat={hostel.lat} lng={hostel.lng} />
         </div>
         <p className="text-xs text-gray-400 mt-1">Near: {hostel.nearbyUniversities.join(", ")}</p>
       </div>

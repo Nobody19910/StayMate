@@ -26,6 +26,8 @@ export interface Property {
   ownerPhone?: string;    // tel: link target
   ownerId: string;
   savedAt?: string;       // ISO date, set when saved
+  lat?: number;
+  lng?: number;
 }
 
 // ─── Hostels ──────────────────────────────────────────────────────────────────
@@ -79,6 +81,8 @@ export interface Hostel {
   managerId: string;
   rooms: Room[];
   savedAt?: string;
+  lat?: number;
+  lng?: number;
 }
 
 // ─── Swipe ────────────────────────────────────────────────────────────────────

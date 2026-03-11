@@ -21,11 +21,6 @@ const baseTabs = [
     label: "Saved",
     icon: HeartIcon,
   },
-  {
-    href: "/profile",
-    label: "Profile",
-    icon: ProfileIcon,
-  },
 ];
 
 export default function BottomNav() {
@@ -44,11 +39,10 @@ export default function BottomNav() {
       : { href: "/post", label: "Post", icon: PostIcon },
     { href: "/chat", label: "Chat", icon: ChatIcon },
     ...(!isAdmin ? [baseTabs[2]] : []), // Saved — hidden for admin
-    baseTabs[3], // Profile
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 safe-area-pb">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-100 safe-area-pb">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href);
@@ -135,10 +129,3 @@ function HeartIcon({ active }: { active: boolean }) {
   );
 }
 
-function ProfileIcon({ active }: { active: boolean }) {
-  return (
-    <svg className="w-6 h-6" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-    </svg>
-  );
-}

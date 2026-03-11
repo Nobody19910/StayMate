@@ -1,22 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { notFound, useRouter } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { getHomeById } from "@/lib/api";
 import { addSaved, removeSaved, isSaved } from "@/lib/saved-store";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import type { Property } from "@/lib/types";
+import DistanceBadge from "@/components/ui/DistanceBadge";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 export default function HomeDetailPage({ params }: Props) {
-  const router = useRouter();
   const { user, profile } = useAuth();
   const [property, setProperty] = useState<Property | null>(null);
   const [notFoundFlag, setNotFoundFlag] = useState(false);
@@ -27,7 +26,6 @@ export default function HomeDetailPage({ params }: Props) {
   const [bookingMessage, setBookingMessage] = useState("");
   const [bookingError, setBookingError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-
   useEffect(() => {
     params.then(({ id }) => {
       getHomeById(id).then((p) => {
@@ -187,7 +185,10 @@ export default function HomeDetailPage({ params }: Props) {
             </p>
             <h1 className="text-xl font-extrabold text-gray-900 mt-1 leading-tight">{property.title}</h1>
             <p className="text-sm text-gray-500 mt-0.5">{property.address}</p>
-            <p className="text-sm text-gray-400">{property.city}, {property.state}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm text-gray-400">{property.city}, {property.state}</p>
+              <DistanceBadge lat={property.lat} lng={property.lng} />
+            </div>
           </div>
           <div className="text-right shrink-0">
             <p className="text-2xl font-extrabold text-emerald-600">{property.priceLabel}</p>
