@@ -237,15 +237,26 @@ export default function PostPage() {
       for (const photo of photos) {
         const ext = photo.name.split(".").pop() ?? "jpg";
         const path = `listings/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: uploadError, data: uploadData } = await supabase.storage
-          .from("listing-images")
-          .upload(path, photo, { upsert: false });
-        if (uploadError) {
-          console.error("Storage upload error:", { uploadError, path, photoName: photo.name, photoSize: photo.size });
-          throw new Error(`Failed to upload image: ${uploadError.message}`);
+
+        // Upload via server API to bypass client-side RLS issues
+        const formData = new FormData();
+        formData.append("file", photo);
+        formData.append("userId", user.id);
+        formData.append("path", path);
+
+        const uploadRes = await fetch("/api/upload-image", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json();
+          console.error("Upload API error:", { status: uploadRes.status, error: errorData });
+          throw new Error(`Failed to upload image: ${errorData.error || "Unknown error"}`);
         }
-        const { data: urlData } = supabase.storage.from("listing-images").getPublicUrl(path);
-        imageUrls.push(urlData.publicUrl);
+
+        const { url } = await uploadRes.json();
+        imageUrls.push(url);
       }
 
       if (kind === "home") {
