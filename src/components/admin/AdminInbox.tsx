@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import AdminLocationButton from "@/components/ui/AdminLocationButton";
 
 const NOIR = "#000000";
 const UBER_GREEN = "#06C167";
@@ -32,6 +33,7 @@ export default function AdminInbox() {
   const [bookings, setBookings] = useState<Record<string, any>>({});
   const [resolvingBooking, setResolvingBooking] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [propertyData, setPropertyData] = useState<any | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const selectedConvRef = useRef<any>(null);
@@ -146,6 +148,23 @@ export default function AdminInbox() {
     selectedConvRef.current = conv;
     setMessages([]);
     setUnreadCounts(prev => ({ ...prev, [conv.id]: 0 }));
+
+    // Fetch property data if available
+    setPropertyData(null);
+    if (conv.property_id && conv.property_type) {
+      const table = conv.property_type === "home" ? "homes" : "hostels";
+      supabase
+        .from(table)
+        .select("*")
+        .eq("id", conv.property_id)
+        .single()
+        .then(({ data }) => {
+          if (data) setPropertyData(data);
+        })
+        .catch(() => {
+          // Property not found or error
+        });
+    }
   }, []);
 
   // ─── Auto-select from query params ───────────────────────────────────────
@@ -350,22 +369,33 @@ export default function AdminInbox() {
                 </button>
               </div>
               {selectedConv.property_title && (
-                <button onClick={() => navigateToProperty(selectedConv)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-[#F9F9F9] transition-colors"
-                  style={{ borderTop: "0.5px solid rgba(0,0,0,0.06)" }}>
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-lg bg-black/5">
-                    {selectedConv.property_type === "room" ? "🏫" : "🏠"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                      {selectedConv.property_type === "room" ? "Hostel Room" : "Property"} Inquiry
-                    </p>
-                    <p className="text-xs font-bold text-black truncate">{selectedConv.property_title}</p>
-                  </div>
-                  <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+                <div style={{ borderTop: "0.5px solid rgba(0,0,0,0.06)" }}>
+                  <button onClick={() => navigateToProperty(selectedConv)}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-[#F9F9F9] transition-colors">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-lg bg-black/5">
+                      {selectedConv.property_type === "room" ? "🏫" : "🏠"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                        {selectedConv.property_type === "room" ? "Hostel Room" : "Property"} Inquiry
+                      </p>
+                      <p className="text-xs font-bold text-black truncate">{selectedConv.property_title}</p>
+                    </div>
+                    <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                  {propertyData && (
+                    <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderTop: "0.5px solid rgba(0,0,0,0.06)" }}>
+                      <AdminLocationButton
+                        lat={propertyData.lat}
+                        lng={propertyData.lng}
+                        city={propertyData.city}
+                        title={propertyData.title || propertyData.name}
+                      />
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 

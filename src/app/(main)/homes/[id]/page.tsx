@@ -215,8 +215,7 @@ export default function HomeDetailPage({ params }: Props) {
 
       {/* Map */}
       <div className="px-4 py-4">
-        <h2 className="text-sm font-bold text-gray-900 mb-3">Location</h2>
-        <PropertyMap lat={property.lat || 5.6037} lng={property.lng || -0.1870} title={property.title} height="320px" />
+        <PropertyMap city={property.city} title={property.address} />
       </div>
       {property.amenities && property.amenities.length > 0 && (
         <div className="px-4 py-4">
