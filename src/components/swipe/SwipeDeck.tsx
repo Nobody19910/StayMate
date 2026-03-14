@@ -77,10 +77,7 @@ export default function SwipeDeck({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [remaining.length, triggerSwipe, triggerExpand, expandedItem]);
 
-  const saveButtonClass =
-    saveColor === "blue"
-      ? "bg-blue-600 hover:bg-blue-700 shadow-blue-200"
-      : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200";
+  const saveButtonClass = "bg-black hover:bg-gray-900 shadow-black/20";
 
   if (remaining.length === 0) {
     return (
@@ -144,7 +141,7 @@ export default function SwipeDeck({
               exit={{ opacity: 0, y: 12 }}
               transition={{ duration: 0.2 }}
             >
-              <span className="text-emerald-400">♥</span> Saved!
+              <span className="text-white">♥</span> Saved!
             </motion.div>
           )}
         </AnimatePresence>

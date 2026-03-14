@@ -57,10 +57,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#F6F6F6] flex flex-col">
       {/* Header */}
-      <div className="bg-white px-4 pt-14 pb-6 text-center border-b border-gray-100">
-        <h1 className="text-2xl font-extrabold text-gray-900">StayMate</h1>
+      <div className="bg-white px-4 pt-14 pb-6 text-center" style={{ borderBottom: "0.5px solid rgba(0,0,0,0.09)" }}>
+        <h1 className="text-2xl font-extrabold text-black">StayMate</h1>
         <p className="text-xs text-gray-400 mt-0.5">Secure Managed Platform</p>
       </div>
 
@@ -72,7 +72,7 @@ export default function LoginPage() {
       >
         {step === "otp" ? (
           <div className="flex flex-col text-center pt-8">
-            <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mb-4 text-3xl mx-auto">
+            <div className="w-16 h-16 rounded-full bg-[#F6F6F6] flex items-center justify-center mb-4 text-3xl mx-auto">
               🔐
             </div>
             <h2 className="text-xl font-extrabold text-gray-900 mb-2">Verification Required</h2>
@@ -89,7 +89,7 @@ export default function LoginPage() {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                   placeholder="Enter 6-digit code"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-4 text-center font-mono text-xl font-black text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 tracking-widest"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-4 text-center font-mono text-xl font-black text-black placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-black/20 tracking-widest"
                 />
               </div>
 
@@ -102,7 +102,8 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading || otp.length < 6}
-                className="w-full block bg-emerald-500 text-white font-bold text-center py-3.5 rounded-2xl active:scale-95 transition-transform disabled:opacity-50"
+                className="w-full block text-white font-bold text-center py-3.5 rounded-2xl active:scale-95 transition-transform disabled:opacity-50"
+                style={{ background: "#000000" }}
               >
                 {loading ? "Verifying..." : "Verify & Sign In"}
               </button>
@@ -123,7 +124,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black/20"
                 />
               </div>
               <div>
@@ -136,7 +137,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black/20"
                   />
                   <button
                     type="button"
@@ -161,7 +162,8 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed text-base"
+                className="w-full text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed text-base"
+                style={{ background: "#000000" }}
               >
                 {loading ? "Signing in…" : "Sign In"}
               </button>
@@ -203,7 +205,7 @@ export default function LoginPage() {
 
             <p className="text-center text-sm text-gray-400 mt-6">
               Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-emerald-600 font-semibold">
+              <Link href="/signup" className="text-black font-semibold">
                 Sign up
               </Link>
             </p>

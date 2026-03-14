@@ -38,7 +38,7 @@ export default function HomeCardContent({ property }: Props) {
               {property.address}, {property.city}
             </p>
           </div>
-          <span className="text-base font-extrabold text-emerald-600 whitespace-nowrap">
+          <span className="text-base font-extrabold text-black whitespace-nowrap">
             {property.priceLabel}
           </span>
         </div>

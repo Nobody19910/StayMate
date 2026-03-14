@@ -32,7 +32,7 @@ export default function ProfileCornerButton() {
           className="w-9 h-9 rounded-full object-cover border-2 border-white shadow-md"
         />
       ) : (
-        <div className="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[11px] font-extrabold border-2 border-white shadow-md">
+        <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center text-[11px] font-extrabold border-2 border-white shadow-md">
           {initials}
         </div>
       )}

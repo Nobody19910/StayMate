@@ -2,13 +2,58 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useSavedCount } from "@/lib/useSavedCount";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
+
+const UBER_BLACK = "#000000";
+const UBER_GREEN = "#06C167";
+
+function useSeekerUnread() {
+  const { user } = useAuth();
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!user) return;
+    let convId: string | null = null;
+    async function refresh() {
+      if (!convId) {
+        const { data: conv } = await supabase.from("conversations").select("id").eq("seeker_id", user!.id).maybeSingle();
+        if (!conv) return;
+        convId = conv.id;
+      }
+      const { count: c } = await supabase.from("messages").select("id", { count: "exact", head: true })
+        .eq("conversation_id", convId).eq("is_read", false).neq("sender_id", user!.id);
+      setCount(c ?? 0);
+    }
+    refresh();
+    const ch = setInterval(refresh, 5000);
+    return () => clearInterval(ch);
+  }, [user]);
+  return count;
+}
+
+function useAdminUnread() {
+  const { user, profile } = useAuth();
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!user || profile?.role !== "admin") return;
+    async function refresh() {
+      const { count: c } = await supabase.from("messages").select("id", { count: "exact", head: true })
+        .eq("is_read", false).neq("sender_id", user!.id);
+      setCount(c ?? 0);
+    }
+    refresh();
+    const ch = setInterval(refresh, 5000);
+    return () => clearInterval(ch);
+  }, [user, profile?.role]);
+  return count;
+}
 
 const baseTabs = [
-  { href: "/homes", label: "Homes", icon: HomeIcon },
+  { href: "/homes",   label: "Homes",   icon: HomeIcon },
   { href: "/hostels", label: "Hostels", icon: HostelIcon },
-  { href: "/saved", label: "Saved", icon: HeartIcon },
+  { href: "/saved",   label: "Saved",   icon: HeartIcon },
   { href: "/profile", label: "Profile", icon: ProfileIcon },
 ];
 
@@ -16,25 +61,27 @@ export default function SideNav() {
   const pathname = usePathname();
   const savedCount = useSavedCount();
   const { profile } = useAuth();
-  
   const isAdmin = profile?.role === "admin";
-  
+  const seekerUnread = useSeekerUnread();
+  const adminUnread  = useAdminUnread();
+  const chatUnread   = isAdmin ? adminUnread : seekerUnread;
+
   const tabs = [
     baseTabs[0],
     baseTabs[1],
-    isAdmin 
+    isAdmin
       ? { href: "/admin", label: "Manage", icon: ManageIcon }
-      : { href: "/post", label: "Partner", icon: PostIcon },
+      : { href: "/post",  label: "Partner", icon: PostIcon },
     { href: "/chat", label: "Chat", icon: ChatIcon },
-    ...(!isAdmin ? [baseTabs[2]] : []), // Saved — hidden for admin
+    ...(!isAdmin ? [baseTabs[2]] : []),
     baseTabs[3],
   ];
 
   return (
-    <nav className="flex flex-col h-full bg-white border-r border-gray-100 px-4 py-8">
+    <nav className="flex flex-col h-full bg-white px-4 py-8" style={{ borderRight: "0.5px solid rgba(0,0,0,0.09)" }}>
       {/* Logo */}
       <div className="mb-10 px-2">
-        <span className="text-xl font-extrabold text-gray-900">StayMate</span>
+        <span className="text-xl font-extrabold text-black tracking-tight">StayMate</span>
         <p className="text-[10px] text-gray-400 mt-0.5">No agents. No commission.</p>
       </div>
 
@@ -43,21 +90,30 @@ export default function SideNav() {
         {tabs.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href);
           const isSaved = href === "/saved";
+          const isChat  = href === "/chat";
           return (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                 active
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
+                  ? "bg-black text-white"
+                  : "text-gray-500 hover:bg-[#F6F6F6] hover:text-black"
               }`}
             >
               <div className="relative">
                 <Icon active={active} />
                 {isSaved && savedCount > 0 && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 bg-emerald-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5">
+                  <span
+                    className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-[9px] font-bold rounded-full flex items-center justify-center px-0.5"
+                    style={{ background: UBER_GREEN, color: "#fff" }}
+                  >
                     {savedCount > 99 ? "99+" : savedCount}
+                  </span>
+                )}
+                {isChat && chatUnread > 0 && (
+                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 bg-red-500 text-white">
+                    {chatUnread > 99 ? "99+" : chatUnread}
                   </span>
                 )}
               </div>
@@ -67,13 +123,10 @@ export default function SideNav() {
         })}
       </div>
 
-      {/* Keyboard hint */}
-      <div className="mt-auto px-2 pt-6 border-t border-gray-100">
+      {/* Footer */}
+      <div className="mt-auto px-2 pt-6" style={{ borderTop: "0.5px solid rgba(0,0,0,0.08)" }}>
         <p className="text-[10px] text-gray-300 leading-relaxed">
-          Keyboard shortcuts<br />
-          <span className="font-mono">←</span> skip &nbsp;·&nbsp;
-          <span className="font-mono">→</span> save &nbsp;·&nbsp;
-          <span className="font-mono">↑</span> open
+          © StayMate {new Date().getFullYear()}
         </p>
       </div>
     </nav>
@@ -83,7 +136,7 @@ export default function SideNav() {
 function ManageIcon({ active }: { active: boolean }) {
   return (
     <svg className="w-5 h-5" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 0H4.5m-1.5 6h18m-18 6h18m-3-6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 0H4.5m10.5 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 0H4.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 0H4.5m-1.5 6h18m-18 6h18m-3-6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 0H4.5m10.5 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 0H4.5" />
     </svg>
   );
 }
@@ -91,7 +144,7 @@ function ManageIcon({ active }: { active: boolean }) {
 function PostIcon({ active }: { active: boolean }) {
   return (
     <svg className="w-5 h-5" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
     </svg>
   );
 }
@@ -103,6 +156,7 @@ function HomeIcon({ active }: { active: boolean }) {
     </svg>
   );
 }
+
 function HostelIcon({ active }: { active: boolean }) {
   return (
     <svg className="w-5 h-5" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -110,6 +164,7 @@ function HostelIcon({ active }: { active: boolean }) {
     </svg>
   );
 }
+
 function ChatIcon({ active }: { active: boolean }) {
   return (
     <svg className="w-5 h-5" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -125,6 +180,7 @@ function HeartIcon({ active }: { active: boolean }) {
     </svg>
   );
 }
+
 function ProfileIcon({ active }: { active: boolean }) {
   return (
     <svg className="w-5 h-5" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">

@@ -27,9 +27,9 @@ export default function FilterModal({
     }
   }
 
-  const activeRing = accentColor === "blue" ? "ring-blue-500 bg-blue-50 text-blue-700" : "ring-emerald-500 bg-emerald-50 text-emerald-700";
-  const activeDot = accentColor === "blue" ? "bg-blue-600" : "bg-emerald-500";
-  const applyBtn = accentColor === "blue" ? "bg-blue-600" : "bg-emerald-500";
+  const activeRing = "ring-black bg-black/5 text-black";
+  const activeDot  = "bg-black";
+  const applyBtn   = "bg-black";
 
   return (
     <AnimatePresence>

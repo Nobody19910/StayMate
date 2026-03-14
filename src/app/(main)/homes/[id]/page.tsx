@@ -9,6 +9,7 @@ import { addSaved, removeSaved, isSaved } from "@/lib/saved-store";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import type { Property } from "@/lib/types";
+import PropertyMap from "@/components/ui/PropertyMap";
 import DistanceBadge from "@/components/ui/DistanceBadge";
 
 interface Props {
@@ -133,7 +134,7 @@ export default function HomeDetailPage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32">
+    <div className="min-h-screen bg-[#F6F6F6] pb-32">
       {/* Photo */}
       <div className="relative h-72">
         <Image
@@ -180,7 +181,7 @@ export default function HomeDetailPage({ params }: Props) {
       <div className="bg-white px-4 pt-4 pb-3 shadow-sm">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-bold uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded w-fit capitalize">
+            <p className="text-[11px] font-bold uppercase text-[#06C167] bg-[#06C167]/10 px-2 py-0.5 rounded w-fit capitalize">
               {property.propertyType}
             </p>
             <h1 className="text-xl font-extrabold text-gray-900 mt-1 leading-tight">{property.title}</h1>
@@ -191,7 +192,7 @@ export default function HomeDetailPage({ params }: Props) {
             </div>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-2xl font-extrabold text-emerald-600">{property.priceLabel}</p>
+            <p className="text-2xl font-extrabold text-black">{property.priceLabel}</p>
             <p className="text-xs text-gray-400">{property.forSale ? "asking price" : "per month"}</p>
           </div>
         </div>
@@ -211,6 +212,12 @@ export default function HomeDetailPage({ params }: Props) {
       </div>
 
       {/* Amenities */}
+
+      {/* Map */}
+      <div className="px-4 py-4">
+        <h2 className="text-sm font-bold text-gray-900 mb-3">Location</h2>
+        <PropertyMap lat={property.lat || 5.6037} lng={property.lng || -0.1870} title={property.title} height="320px" />
+      </div>
       {property.amenities && property.amenities.length > 0 && (
         <div className="px-4 py-4">
           <h2 className="text-sm font-bold text-gray-900 mb-2">Amenities</h2>
@@ -218,7 +225,7 @@ export default function HomeDetailPage({ params }: Props) {
             {property.amenities.map((amenity) => (
               <span
                 key={amenity}
-                className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-full font-medium"
+                className="text-xs bg-black/5 text-black border border-black/10 px-3 py-1 rounded-full font-medium"
               >
                 {amenity}
               </span>
@@ -234,22 +241,22 @@ export default function HomeDetailPage({ params }: Props) {
       </div>
 
       {/* CTA — sticky bottom */}
-      <div className="fixed bottom-16 left-0 right-0 px-4 py-3 bg-white border-t border-gray-100 space-y-2 max-w-lg mx-auto z-40">
+      <div className="fixed bottom-16 left-0 right-0 px-4 py-3 bg-white space-y-2 max-w-lg mx-auto z-40" style={{ borderTop: "0.5px solid rgba(0,0,0,0.09)" }}>
         {user ? (
           bookingStep === "idle" ? (
             <button
               onClick={() => setBookingStep("request")}
-              className="w-full bg-emerald-500 text-white font-bold text-base py-3.5 rounded-2xl active:scale-95 transition-transform"
+              className="w-full bg-black text-white font-bold text-base py-3.5 rounded-2xl active:scale-95 transition-transform"
             >
               Request to Book / Inquire
             </button>
           ) : bookingStep === "request" ? (
-            <div className="bg-white rounded-2xl p-4 border border-emerald-100 shadow-xl absolute bottom-full left-4 right-4 mb-4">
+            <div className="bg-white rounded-2xl p-4 shadow-xl border-[0.5px] border-black/10 absolute bottom-full left-4 right-4 mb-4">
               <h3 className="text-sm font-bold text-gray-900 mb-3">Send Inquiry</h3>
               <div className="mb-4 space-y-3">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Preferred Viewing Date (Optional)</label>
-                  <input type="date" value={viewingDate} onChange={e => setViewingDate(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500" />
+                  <input type="date" value={viewingDate} onChange={e => setViewingDate(e.target.value)} className="w-full bg-[#F6F6F6] border border-black/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-black" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Message for Agent</label>
@@ -258,7 +265,7 @@ export default function HomeDetailPage({ params }: Props) {
                     onChange={e => setBookingMessage(e.target.value)} 
                     placeholder="Hello, I am interested in this property..."
                     rows={3}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500 resize-none" 
+                    className="w-full bg-[#F6F6F6] border border-black/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-black resize-none" 
                   />
                 </div>
               </div>
@@ -272,7 +279,7 @@ export default function HomeDetailPage({ params }: Props) {
                 <button 
                   onClick={handleBookConfirm}
                   disabled={isProcessing}
-                  className="flex-1 bg-emerald-500 text-white font-bold py-3 rounded-xl active:scale-95 disabled:opacity-70 text-sm flex items-center justify-center gap-2"
+                  className="flex-1 bg-black text-white font-bold py-3 rounded-xl active:scale-95 disabled:opacity-70 text-sm flex items-center justify-center gap-2"
                 >
                   {isProcessing ? (
                     <>
@@ -286,7 +293,7 @@ export default function HomeDetailPage({ params }: Props) {
           ) : null
         ) : (
           <Link href="/login">
-            <button className="w-full bg-emerald-500 text-white font-bold text-base py-3.5 rounded-2xl active:scale-95 transition-transform shadow-sm flex items-center justify-center gap-2">
+            <button className="w-full bg-black text-white font-bold text-base py-3.5 rounded-2xl active:scale-95 transition-transform shadow-sm flex items-center justify-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
               Log in to Inquire
             </button>
@@ -303,31 +310,29 @@ function BookingSuccessScreen({ property, viewingDate, onBack }: {
   onBack: () => void;
 }) {
   return (
-    <div className="min-h-screen bg-emerald-500 text-white flex flex-col items-center justify-center p-6 text-center">
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center">
       <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-6">
         <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
         </svg>
       </div>
       <h1 className="text-3xl font-extrabold mb-2">Request Sent!</h1>
-      <p className="text-emerald-100 font-medium mb-8 max-w-xs">
-        Your inquiry for {property.title} has been sent successfully. An agent will be in touch shortly.
+      <p className="text-white/70 font-medium mb-8 max-w-xs">
+        Your inquiry for {property.title} has been sent successfully. We will be in touch shortly.
       </p>
-      
-      <div className="bg-white text-emerald-900 rounded-2xl p-6 w-full max-w-xs mb-8 shadow-xl text-left">
+      <div className="bg-white text-black rounded-2xl p-6 w-full max-w-xs mb-8 shadow-xl text-left">
         <div className="mb-4">
-          <p className="text-[10px] uppercase font-bold text-emerald-500 tracking-wider">Status</p>
-          <p className="font-bold text-gray-900">Pending Agent Review</p>
+          <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Status</p>
+          <p className="font-bold text-black">Pending Review</p>
         </div>
         {viewingDate && (
           <div>
-            <p className="text-[10px] uppercase font-bold text-emerald-500 tracking-wider">Preferred Date</p>
-            <p className="font-bold text-gray-900">{new Date(viewingDate).toLocaleDateString()}</p>
+            <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Preferred Date</p>
+            <p className="font-bold text-black">{new Date(viewingDate).toLocaleDateString()}</p>
           </div>
         )}
       </div>
-      
-      <button onClick={onBack} className="bg-emerald-600 font-bold py-3.5 px-8 rounded-xl active:scale-95 text-sm transition-transform shadow-sm">
+      <button onClick={onBack} className="bg-white text-black font-bold py-3.5 px-8 rounded-xl active:scale-95 text-sm transition-transform shadow-sm">
         Back to Listing
       </button>
     </div>

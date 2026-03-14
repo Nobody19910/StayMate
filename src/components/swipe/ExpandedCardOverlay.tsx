@@ -109,14 +109,14 @@ function HomeInfo({ home, detailHref }: { home: Property; detailHref: string }) 
       {/* Title + price */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-bold uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded w-fit capitalize">
+          <p className="text-[11px] font-bold uppercase text-black bg-black/5 px-2 py-0.5 rounded w-fit capitalize">
             {home.propertyType}
           </p>
           <h2 className="text-lg font-extrabold text-gray-900 mt-1 leading-tight">{home.title}</h2>
           <p className="text-xs text-gray-400 mt-0.5">{home.address}, {home.city}</p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-xl font-extrabold text-emerald-600">{home.priceLabel}</p>
+          <p className="text-xl font-extrabold text-black">{home.priceLabel}</p>
           <p className="text-xs text-gray-400">{home.forSale ? "asking price" : "per month"}</p>
         </div>
       </div>
@@ -133,7 +133,7 @@ function HomeInfo({ home, detailHref }: { home: Property; detailHref: string }) 
 
       {/* CTAs */}
       <div className="flex gap-3 mt-5">
-        <button className="flex-1 bg-emerald-500 text-white font-bold text-sm py-3 rounded-2xl active:scale-95 transition-transform">
+        <button className="flex-1 bg-black text-white font-bold text-sm py-3 rounded-2xl active:scale-95 transition-transform">
           Contact Owner
         </button>
         <Link
@@ -156,21 +156,21 @@ function HostelInfo({ hostel, detailHref }: { hostel: Hostel; detailHref: string
       {/* Title + price */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-bold uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded w-fit">
+          <p className="text-[11px] font-bold uppercase text-black bg-black/5 px-2 py-0.5 rounded w-fit">
             Student Hostel
           </p>
           <h2 className="text-lg font-extrabold text-gray-900 mt-1 leading-tight">{hostel.name}</h2>
           <p className="text-xs text-gray-400 mt-0.5">{hostel.address}, {hostel.city}</p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-base font-extrabold text-blue-600">{hostel.priceRangeLabel}</p>
+          <p className="text-base font-extrabold text-black">{hostel.priceRangeLabel}</p>
           <p className="text-xs text-gray-400">per year</p>
         </div>
       </div>
 
       {/* Availability */}
       <div className="flex items-center gap-3 mt-3 text-sm text-gray-600 border-t border-gray-100 pt-3">
-        <span className={`font-semibold ${hostel.availableRooms > 0 ? "text-green-600" : "text-red-500"}`}>
+        <span className={`font-semibold ${hostel.availableRooms > 0 ? "text-[#06C167]" : "text-red-500"}`}>
           {hostel.availableRooms > 0 ? `${hostel.availableRooms} rooms available` : "Fully booked"}
         </span>
         <span className="text-gray-300">·</span>
@@ -180,7 +180,7 @@ function HostelInfo({ hostel, detailHref }: { hostel: Hostel; detailHref: string
       {/* Nearby universities */}
       <div className="flex flex-wrap gap-1.5 mt-3">
         {hostel.nearbyUniversities.map((uni) => (
-          <span key={uni} className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">
+          <span key={uni} className="text-xs bg-black/5 text-black border border-black/10 px-2 py-0.5 rounded-full">
             {uni}
           </span>
         ))}
@@ -199,7 +199,7 @@ function HostelInfo({ hostel, detailHref }: { hostel: Hostel; detailHref: string
               <span className="text-xs text-gray-400 ml-2">up to {room.capacity} {room.capacity === 1 ? "person" : "people"}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-blue-600">{room.priceLabel}</span>
+              <span className="text-xs font-bold text-black">{room.priceLabel}</span>
               {!room.available && (
                 <span className="text-[10px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded-full font-medium">Full</span>
               )}
@@ -212,7 +212,7 @@ function HostelInfo({ hostel, detailHref }: { hostel: Hostel; detailHref: string
       <div className="flex gap-3 mt-5">
         <Link
           href={detailHref}
-          className="flex-1 bg-blue-600 text-white font-bold text-sm py-3 rounded-2xl text-center active:scale-95 transition-transform"
+          className="flex-1 bg-black text-white font-bold text-sm py-3 rounded-2xl text-center active:scale-95 transition-transform"
         >
           Browse Rooms
         </Link>

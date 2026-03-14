@@ -96,7 +96,7 @@ export default function HostelsPage() {
   }, [hostels, searchQuery, radius, priceMin, priceMax, selectedAmenities, userLoc]);
 
   return (
-    <div className="h-screen bg-gray-50 overflow-y-auto" onScroll={handleScroll}>
+    <div className="min-h-screen bg-[#F6F6F6] overflow-y-auto" onScroll={handleScroll}>
 
       {/* Sticky header — slides fully off-screen on scroll down */}
       <div
@@ -121,18 +121,20 @@ export default function HostelsPage() {
               placeholder="Search campus, city..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-9 pr-3 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:bg-white transition-all"
+              className="w-full bg-white rounded-xl pl-9 pr-3 py-2.5 text-sm font-medium text-black focus:outline-none focus:ring-1 focus:ring-black/20 transition-all"
+              style={{ border: "0.5px solid rgba(0,0,0,0.12)" }}
             />
           </div>
           <button
             onClick={() => setFilterOpen(true)}
-            className={`relative flex items-center justify-center p-2.5 rounded-xl border transition-colors shrink-0 ${selectedAmenities.length > 0 ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-gray-50 border-gray-100 text-gray-500"}`}
+            className={`relative flex items-center justify-center p-2.5 rounded-xl border transition-colors shrink-0 ${selectedAmenities.length > 0 ? "bg-black text-white" : "bg-[#F6F6F6] text-gray-500"}`}
+            style={{ border: "0.5px solid rgba(0,0,0,0.12)" }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
             </svg>
             {selectedAmenities.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1.5 -right-1.5 bg-black text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                 {selectedAmenities.length}
               </span>
             )}
@@ -144,7 +146,7 @@ export default function HostelsPage() {
           <span className="px-3 py-1.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-500 shrink-0 flex items-center gap-1">
             📍 {radius === 50 ? "50+ km" : `${radius} km`}
             <input type="range" min={1} max={50} value={radius} onChange={(e) => setRadius(parseInt(e.target.value))}
-              className="w-16 accent-blue-600 h-1 ml-1" />
+              className="w-16 accent-black h-1 ml-1" />
           </span>
         </div>
       </div>
@@ -160,7 +162,7 @@ export default function HostelsPage() {
             <p className="text-xs mt-1 text-center">Try adjusting your filters or radius.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filteredHostels.map((hostel) => (
               <div key={hostel.id}>
                 <HostelGridCard hostel={hostel} />
@@ -186,12 +188,12 @@ export default function HostelsPage() {
 
 function GridSkeleton() {
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 animate-pulse">
-          <div className="aspect-square w-full bg-blue-50/50" />
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse" style={{ border: "0.5px solid rgba(0,0,0,0.08)" }}>
+          <div className="aspect-square w-full bg-gray-100" />
           <div className="p-2.5 space-y-2.5 mt-1">
-            <div className="h-3 bg-blue-100 rounded-full w-1/3" />
+            <div className="h-3 bg-gray-200 rounded-full w-1/3" />
             <div className="h-2.5 bg-gray-100 rounded-full w-2/3 mt-1" />
             <div className="h-2 bg-gray-100 rounded-full w-1/2" />
           </div>
@@ -233,7 +235,8 @@ function HostelGridCard({ hostel }: { hostel: Hostel }) {
             onLoad={() => setImgLoaded(true)}
             unoptimized
           />
-          <span className={`absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm ${hostel.availableRooms > 0 ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
+          <span className={`absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm text-white`}
+            style={{ background: hostel.availableRooms > 0 ? "#06C167" : "#000000" }}>
             {hostel.availableRooms > 0 ? `${hostel.availableRooms} free` : "Full"}
           </span>
           <button
@@ -249,7 +252,7 @@ function HostelGridCard({ hostel }: { hostel: Hostel }) {
         </div>
         <div className="p-2.5 flex-1 flex flex-col justify-between">
           <div>
-            <p className="text-sm font-extrabold text-blue-600 leading-tight">{hostel.priceRangeLabel}</p>
+            <p className="text-sm font-bold text-black leading-tight">{hostel.priceRangeLabel}</p>
             <p className="text-xs font-semibold text-gray-800 mt-0.5 line-clamp-2 leading-snug">{hostel.name}</p>
           </div>
           <div>

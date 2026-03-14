@@ -125,7 +125,7 @@ export default function DashboardPage() {
           </div>
           <button
             onClick={() => router.push("/post")}
-            className="bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl active:scale-95 transition-transform"
+            className="bg-black text-white font-bold text-xs px-4 py-2 rounded-xl active:scale-95 transition-transform"
           >
             + New Listing
           </button>
@@ -133,9 +133,9 @@ export default function DashboardPage() {
 
         {/* Stats */}
         <div className="flex gap-3 mt-4">
-          <div className="flex-1 bg-emerald-50 rounded-xl p-3 text-center">
-            <p className="text-2xl font-extrabold text-emerald-600">{totalListings}</p>
-            <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">Active Listings</p>
+          <div className="flex-1 bg-black/5 rounded-xl p-3 text-center">
+            <p className="text-2xl font-extrabold text-black">{totalListings}</p>
+            <p className="text-[10px] text-black font-semibold mt-0.5">Active Listings</p>
           </div>
           <div className="flex-1 bg-amber-50 rounded-xl p-3 text-center">
             <p className="text-2xl font-extrabold text-amber-600">{pendingBookings}</p>
@@ -174,7 +174,7 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-400 mt-1">Post your first property to get started</p>
                 <button
                   onClick={() => router.push("/post")}
-                  className="mt-4 bg-emerald-500 text-white font-bold px-6 py-3 rounded-2xl text-sm active:scale-95 transition-transform"
+                  className="mt-4 bg-black text-white font-bold px-6 py-3 rounded-2xl text-sm active:scale-95 transition-transform"
                 >
                   Post a Listing
                 </button>
@@ -198,16 +198,16 @@ export default function DashboardPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-sm font-bold text-gray-900 leading-tight truncate">{home.title}</p>
-                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded shrink-0">
+                          <span className="text-[10px] font-bold text-black bg-black/5 px-1.5 py-0.5 rounded shrink-0">
                             {home.for_sale ? "Sale" : "Rent"}
                           </span>
                         </div>
-                        <p className="text-xs text-emerald-600 font-semibold mt-0.5">{home.price_label}</p>
+                        <p className="text-xs text-black font-semibold mt-0.5">{home.price_label}</p>
                         <p className="text-[10px] text-gray-400 mt-0.5">{home.city}</p>
                         <div className="flex gap-2 mt-2">
                           <button
                             onClick={() => router.push(`/homes/${home.id}`)}
-                            className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg"
+                            className="text-[10px] font-semibold text-black bg-black/5 px-2 py-1 rounded-lg"
                           >
                             View
                           </button>
@@ -298,7 +298,7 @@ export default function DashboardPage() {
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
                       <p className="text-sm font-bold text-gray-900">{booking.listing_title}</p>
-                      <p className="text-xs text-emerald-600 font-semibold">{booking.price_label}</p>
+                      <p className="text-xs text-black font-semibold">{booking.price_label}</p>
                     </div>
                     <BookingStatusBadge status={booking.status} />
                   </div>
@@ -308,7 +308,7 @@ export default function DashboardPage() {
                     {booking.seeker_phone && (
                       <a
                         href={`tel:${booking.seeker_phone}`}
-                        className="text-[11px] text-emerald-600 font-semibold"
+                        className="text-[11px] text-black font-semibold"
                       >
                         📞 {booking.seeker_phone}
                       </a>
@@ -318,7 +318,7 @@ export default function DashboardPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => updateBookingStatus(booking.id, "confirmed")}
-                        className="flex-1 bg-emerald-500 text-white font-bold text-xs py-2.5 rounded-xl active:scale-95 transition-transform"
+                        className="flex-1 bg-black text-white font-bold text-xs py-2.5 rounded-xl active:scale-95 transition-transform"
                       >
                         Confirm
                       </button>
@@ -351,7 +351,7 @@ export default function DashboardPage() {
 function BookingStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     pending: "bg-amber-100 text-amber-700",
-    confirmed: "bg-emerald-100 text-emerald-700",
+    confirmed: "bg-black/10 text-black",
     cancelled: "bg-red-100 text-red-600",
     completed: "bg-blue-100 text-blue-700",
   };

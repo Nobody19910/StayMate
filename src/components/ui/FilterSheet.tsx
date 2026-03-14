@@ -19,9 +19,7 @@ export function FilterSheet({ open, onClose, onReset, children, accentColor = "e
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
-  const applyClass = accentColor === "blue"
-    ? "text-blue-600 active:text-blue-700"
-    : "text-emerald-600 active:text-emerald-700";
+  const applyClass = "text-black font-bold active:opacity-70";
 
   return (
     <AnimatePresence>
@@ -102,8 +100,8 @@ export function FilterPill({
   accentColor?: "emerald" | "blue";
 }) {
   const activeClass = accentColor === "blue"
-    ? "bg-blue-600 text-white border-blue-600"
-    : "bg-emerald-500 text-white border-emerald-500";
+    ? "bg-black text-white border-black"
+    : "bg-black text-white border-black";
 
   return (
     <button
@@ -128,7 +126,7 @@ export function FilterButton({
   activeCount: number;
   accentColor?: "emerald" | "blue";
 }) {
-  const dotColor = accentColor === "blue" ? "bg-blue-600" : "bg-emerald-500";
+  const dotColor = "bg-black";
 
   return (
     <button

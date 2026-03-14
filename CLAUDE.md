@@ -10,18 +10,19 @@ StayMate as the coordinating concierge. No third-party broker. No commission.
 1. **GH₵ 200 Coordination & Viewing Fee** — charged to seekers per accepted inquiry (Paystack)
 2. **Sponsored Listings Revenue** — property owners pay to pin their listings at the top of browse (weekly / bi-weekly)
 
-## Design System: Noir
+## Design System: Uber
 
 | Token              | Value                  | Usage                              |
-|--------------------|------------------------|------------------------------------|
-| `--noir-black`     | `#1A1A1A`              | Primary text, buttons, accents     |
-| `--noir-white`     | `#F9F9F9`              | Background, cards                  |
-| `--noir-gold`      | `#D4AF37`              | Sponsored badges, fee banners, CTA |
-| `--noir-border`    | `rgba(0,0,0,0.09)`     | Ultra-thin 0.5px hairline borders  |
+|--------------------|------------------------|------------------------------------||
+| `--uber-black`     | `#000000`              | Primary text, buttons, accents     |
+| `--uber-white`     | `#FFFFFF`              | Cards, panels                      |
+| `--uber-green`     | `#06C167`              | CTAs, badges, active nav, status   |
+| `--uber-surface`   | `#F6F6F6`              | Page background, surfaces          |
+| `--gold`           | `#D4AF37`              | Fee banners, sponsored badges only |
 | Serif font         | Playfair Display       | Property titles, H1 headings       |
 | Sans font          | Inter                  | UI text, labels, inputs            |
 
-All borders must be `0.5px` hairlines using `--noir-border`. No thick borders.
+All borders must be `0.5px` hairlines using `rgba(0,0,0,0.09)`. No thick borders.
 Shadows: `box-shadow: 0 2px 16px rgba(0,0,0,0.07)`.
 
 ## Two Core Sections
@@ -113,8 +114,9 @@ src/
 2. **Mobile-first**: all layouts designed for 375px width upward.
 3. **No agents in the UI**: "concierge" is the approved term. No "agent", "broker", "commission".
 4. **Swipe components dormant**: preserve `src/components/swipe/` without modification.
-5. **Noir palette only**: emerald-500 is deprecated. Use `#1A1A1A` and `#D4AF37` (gold).
+5. **Uber palette only**: `#000000` black, `#06C167` green, `#F6F6F6` surface. Gold only for fee banners/sponsored badges.
 6. **Hairline borders**: always `0.5px solid rgba(0,0,0,0.09)` — never `border-gray-*` classes.
+7. **Responsive desktop**: no phone shell on desktop. Content expands to full width. Grid goes 2→3→4 columns at md/xl.
 
 ## Naming Conventions
 
@@ -213,4 +215,5 @@ NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
 - [x] Phase 3 — Auth, Roles & Two-Sided User System
 - [x] Phase 4 — Direct Messaging, Booking Flow & Admin Command Centre
 - [x] Phase 5 — Noir Rebrand, Sponsored Listings, Realtime Chat, Push Notifications
-- [ ] Phase 6 — KYC Verification, Video Tours, Capacitor Native Build
+- [x] Phase 6 — Uber Theme, Desktop Responsive Layout, Realtime Chat Push (seeker→admin), KYC Removed
+- [ ] Phase 7 — Video Tours, Capacitor Native Build
