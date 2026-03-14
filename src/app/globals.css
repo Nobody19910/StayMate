@@ -1,23 +1,62 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700;800&display=swap");
 
+/* ── Noir Estate Design Tokens ─────────────────────────────────────────────── */
 :root {
-  --background: #f9fafb;
-  --foreground: #111827;
+  --noir-black: #1A1A1A;
+  --noir-white: #F9F9F9;
+  --noir-gold: #D4AF37;
+  --noir-gold-light: #f0d97a;
+  --noir-border: rgba(0, 0, 0, 0.09);
+  --background: #F9F9F9;
+  --foreground: #1A1A1A;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-noir-black: var(--noir-black);
+  --color-noir-white: var(--noir-white);
+  --color-noir-gold: var(--noir-gold);
+  --color-noir-gold-light: var(--noir-gold-light);
+  --font-sans: "Inter", Arial, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Serif headings */
+.font-serif { font-family: var(--font-serif); }
+
+/* Hairline border utility */
+.border-noir { border: 0.5px solid var(--noir-border); }
+
+/* Gold accent */
+.text-gold { color: var(--noir-gold); }
+.bg-gold { background: var(--noir-gold); }
+.border-gold { border-color: var(--noir-gold); }
 
 /* Safe area padding for notched devices */
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Sponsored badge shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer-gold {
+  background: linear-gradient(90deg, #D4AF37 0%, #f0d97a 50%, #D4AF37 100%);
+  background-size: 200% auto;
+  animation: shimmer 2.5s linear infinite;
 }

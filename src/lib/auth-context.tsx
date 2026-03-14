@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 
-export type UserRole = "seeker" | "admin";
+export type UserRole = "seeker" | "admin" | "owner" | "manager";
 
 export interface Profile {
   id: string;
@@ -12,7 +12,7 @@ export interface Profile {
   phone: string | null;
   avatarUrl: string | null;
   role: UserRole;
-  kycStatus: "unverified" | "pending" | "verified";
+  kycStatus: "unverified" | "pending" | "verified" | "rejected";
   agentModeEnabled: boolean;
 }
 

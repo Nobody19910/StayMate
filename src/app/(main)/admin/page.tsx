@@ -214,7 +214,9 @@ export default function AdminDashboardPage() {
                             <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${b.property_type === 'home' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
                               {b.property_type}
                             </span>
-                            <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded uppercase font-bold">{b.status}</span>
+                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${b.status === 'accepted' ? 'bg-emerald-50 text-emerald-600' : b.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
+                              {b.status}
+                            </span>
                           </div>
                           <p className="text-xs text-gray-500 mb-2">
                             <span className="font-semibold text-gray-800">{b.user?.full_name || 'Unknown User'}</span> 

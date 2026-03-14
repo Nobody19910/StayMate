@@ -1,21 +1,41 @@
 # StayMate — CLAUDE.md
 
-## Mission: No-Broker
+## Mission: The Noir Estate
 
-StayMate eliminates real estate agents and hostel middlemen entirely. Owners list their own
-homes. Hostel managers list their own buildings and rooms. Seekers contact them directly.
-No commission. No broker. No friction.
+StayMate is a **luxury P2P real estate platform** and dual-income marketplace. Owners list their
+own homes, hostel managers list their own buildings — seekers contact them directly through
+StayMate as the coordinating concierge. No third-party broker. No commission.
+
+**Two revenue streams:**
+1. **GH₵ 200 Coordination & Viewing Fee** — charged to seekers per accepted inquiry (Paystack)
+2. **Sponsored Listings Revenue** — property owners pay to pin their listings at the top of browse (weekly / bi-weekly)
+
+## Design System: Noir
+
+| Token              | Value                  | Usage                              |
+|--------------------|------------------------|------------------------------------|
+| `--noir-black`     | `#1A1A1A`              | Primary text, buttons, accents     |
+| `--noir-white`     | `#F9F9F9`              | Background, cards                  |
+| `--noir-gold`      | `#D4AF37`              | Sponsored badges, fee banners, CTA |
+| `--noir-border`    | `rgba(0,0,0,0.09)`     | Ultra-thin 0.5px hairline borders  |
+| Serif font         | Playfair Display       | Property titles, H1 headings       |
+| Sans font          | Inter                  | UI text, labels, inputs            |
+
+All borders must be `0.5px` hairlines using `--noir-border`. No thick borders.
+Shadows: `box-shadow: 0 2px 16px rgba(0,0,0,0.07)`.
 
 ## Two Core Sections
 
 ### 1. Homes (P2P Property)
 - Browse: 2-column grid scroll with sticky search/filter header
+- Sponsored listings appear first (gold shimmer badge "✦ Sponsored")
 - Filters: listing type (rent/sale), amenities, price range, radius (geolocation)
-- Detail: full property page with photos, specs, owner contact CTA
+- Detail: full property page with photos, specs, inquiry CTA
 - One level of selection: card tap → property detail
 
 ### 2. Hostels (Student Accommodation)
 - Browse: 2-column grid scroll with sticky search/filter header (same pattern as homes)
+- Sponsored listings appear first
 - Filters: amenities, proximity radius, campus/city search
 - After tapping a card: lands on the hostel's Room Picker
 - Room Picker: scrollable grid of rooms, each with price + amenity badges
@@ -34,10 +54,20 @@ No commission. No broker. No friction.
 | Framework    | Next.js (App Router) | 16.x     |
 | Language     | TypeScript           | 5.x      |
 | Styling      | Tailwind CSS         | 4.x      |
+| Fonts        | Inter + Playfair Display (Google Fonts) | — |
 | Animation    | Framer Motion        | 12.x     |
 | Runtime      | Node.js              | 20+      |
 | Database     | Supabase (Postgres)  | latest   |
 | Auth         | Supabase Auth        | latest   |
+| Realtime     | Supabase Realtime    | latest   |
+| Payments     | Paystack             | —        |
+| Push         | Web Push API (VAPID) | —        |
+
+## Realtime vs Polling
+
+**Chat messages**: Use Supabase Realtime (`postgres_changes` on `messages` table). No polling.
+**Booking status**: Use Supabase Realtime (`postgres_changes` on `bookings` table). No polling.
+**Unread badge** in BottomNav: still uses 10s interval (lightweight count query).
 
 ## Project Structure
 
@@ -53,32 +83,38 @@ src/
       saved/              # Saved homes + hostels tabs
       profile/            # User profile + inquiries
       post/               # Multi-step listing submission
-      chat/               # Seeker ↔ Admin chat
+      chat/               # Seeker ↔ Admin (Concierge) chat
       admin/              # Admin command centre (admin-only)
       admin/post/         # Admin direct listing upload
+    api/
+      push-subscribe/     # Store push subscription in DB
+      push-notify/        # Send web push via web-push lib
     login/                # Email + password login
     signup/               # Role-based signup (seeker / owner / manager)
     layout.tsx            # Root layout (wraps AuthProvider)
     page.tsx              # Redirect → /homes
   components/
-    swipe/                # SwipeCard, SwipeDeck (shared)
-    ui/                   # BottomNav, SideNav, Badge, Button, etc.
+    swipe/                # SwipeCard, SwipeDeck (shared, dormant)
+    ui/                   # BottomNav, DistanceBadge, FilterModal, PwaInit, etc.
     admin/                # AdminInbox and other admin components
   lib/
     types.ts              # All TypeScript interfaces
     mock-data.ts          # Dev mock data
     auth-context.tsx      # AuthProvider + useAuth hook
-    api.ts                # Supabase query helpers
+    api.ts                # Supabase query helpers (sponsored-first ordering)
     supabase.ts           # Supabase client
     saved-store.ts        # localStorage saved store
+    paystack.ts           # Paystack script loader + openPaystackPopup helper
 ```
 
 ## Core UX Rules
 
 1. **Grid-scroll browse**: primary browse UI is a 2-column card grid with sticky filter header.
 2. **Mobile-first**: all layouts designed for 375px width upward.
-3. **No agents in the UI**: no mention of agents, brokers, or commission anywhere in copy.
-4. **Swipe components dormant**: `SwipeCard` / `SwipeDeck` exist in `src/components/swipe/` but are not active — preserve them for future use.
+3. **No agents in the UI**: "concierge" is the approved term. No "agent", "broker", "commission".
+4. **Swipe components dormant**: preserve `src/components/swipe/` without modification.
+5. **Noir palette only**: emerald-500 is deprecated. Use `#1A1A1A` and `#D4AF37` (gold).
+6. **Hairline borders**: always `0.5px solid rgba(0,0,0,0.09)` — never `border-gray-*` classes.
 
 ## Naming Conventions
 
@@ -97,50 +133,78 @@ src/
 | `manager` | Auto-promoted when seeker submits a hostel listing|
 | `admin`   | Manually set in DB                                |
 
-Owners and managers appear in the Admin **Active Agents** tab once they have at least one listing.
+## Booking / Enquiry State Machine
 
-## Booking / Enquiry Flow
+```
+pending → accepted → fee_paid → viewing_scheduled → completed
+                 ↘ rejected
+```
 
-1. Seeker submits an enquiry (booking) from a property detail page — status: `pending`
-2. Booking simultaneously anchors the seeker's chat conversation to that property (sets `property_id`, `property_type`, `property_title`, `property_image` on the `conversations` row)
-3. Admin can **Accept** or **Reject** the enquiry from the dashboard — status updates inline
-4. Seeker sees their enquiry status on the Profile page under "My Inquiries & Bookings"
-5. Owner phone only revealed after booking is accepted
+1. Seeker submits an enquiry — status: `pending`
+2. Conversation anchored to property at submission time
+3. Admin accepts or rejects from AdminInbox
+4. On `accepted`: Paystack modal opens in seeker chat automatically
+5. On payment success: status → `fee_paid`
+6. Admin can schedule viewing: status → `viewing_scheduled`
+7. After viewing confirmed: status → `completed`
 
-## StayMate as Agent — 200 GHS Fee
+## StayMate as Concierge — 200 GHS Fee
 
-StayMate itself acts as the coordinating agent between seekers and property owners/managers.
-- A standard **GH₵ 200 viewing and coordination fee** applies per property inquiry
-- This fee banner is shown in the chat view whenever a conversation is anchored to a property
-- Admin sees the fee badge on the property card inside the chat thread header
+- **GH₵ 200 coordination & viewing fee** per accepted inquiry
+- Gold fee banner shown in chat whenever conversation is property-anchored
+- Pay button appears in chat when booking.status === "accepted"
+- Paystack processes in GHS (pesewas: 20000 = GH₵ 200)
+- After payment: booking.status → "fee_paid", payment_reference stored
+
+## Sponsored Listings — Revenue Stream 2
+
+- `homes` and `hostels` tables have: `is_sponsored` (bool), `sponsored_until` (timestamptz), `priority_score` (int)
+- `getHomes()` and `getHostels()` in `api.ts` order by `is_sponsored DESC, priority_score DESC, created_at DESC`
+- SQL RPCs `search_homes()` and `search_hostels()` mirror this with full-text + geospatial filtering
+- Sponsored cards show a gold shimmer badge: `✦ Sponsored`
+- Admin can toggle sponsored via `toggleSponsored()` in `api.ts` (7 or 14 day durations)
 
 ## Property-Anchored Chat
 
-Each seeker has one conversation thread. When they submit an inquiry, the thread is anchored to that property:
-- **Seeker chat header** shows a tappable property card (image + title) + GH₵ 200 fee banner
-- **Admin inbox thread list** shows property thumbnail + title pill under the seeker's name
-- **Admin chat header** shows the property card with a GH₵ 200 fee badge + tap-to-navigate link
-- Anchoring is stored in `conversations`: `property_id`, `property_type`, `property_title`, `property_image`
-- Migration: `022_property_anchored_chat.sql`
-
-## Amenity System (Hostels)
-
-Each `Room` has an `amenities` array typed as `RoomAmenity[]`. Defined amenities:
-`wifi` | `ac` | `attached-bath` | `hot-water` | `laundry` | `study-desk` |
-`wardrobe` | `balcony` | `meal-included` | `security` | `cctv` | `generator`
-
-Room types: `single` | `double` | `triple` | `quad` | `dormitory`
+Each seeker has one conversation thread anchored to a property when they submit an inquiry:
+- **Seeker chat header**: tappable property card (image + Playfair title) + gold fee banner
+- **Admin inbox**: property thumbnail + title pill under seeker's name
+- Anchoring stored in `conversations`: `property_id`, `property_type`, `property_title`, `property_image`
+- Migration: `022_add_chat_property_context.sql`
 
 ## DB Tables (key ones)
 
 - `profiles` — id, full_name, phone, role, kyc_status, agent_mode_enabled, avatar_url
-- `homes` — listing data, owner_id, status (pending_admin | approved | rejected)
-- `hostels` — listing data, manager_id, status
+- `homes` — listing data, owner_id, status, is_sponsored, sponsored_until, priority_score, video_url, lifestyle_tags
+- `hostels` — listing data, manager_id, status, is_sponsored, sponsored_until, priority_score, video_url, lifestyle_tags
 - `rooms` — hostel room types, linked to hostel_id
-- `bookings` — enquiries; user_id, property_id, property_type, status (pending | accepted | rejected)
+- `bookings` — enquiries; user_id, property_id, property_type, status, payment_reference
+- `conversations` — one per seeker, property-anchored
 - `messages` — chat messages between seeker and admin
-- `landlord_leads` — seeker-submitted property leads for admin to action
+- `push_subscriptions` — web push endpoint + VAPID keys per user device
+- `landlord_leads` — seeker-submitted property leads
 - `kyc_submissions` — identity verification requests
+
+## DB Migrations (in order)
+
+- `001` → `021`: initial schema, auth, bookings, chat, amenities, KYC, etc.
+- `022_add_chat_property_context.sql` — property-anchored conversations
+- `023_saved_properties_and_kyc.sql`
+- `024_booking_payment.sql`
+- `025_push_subscriptions.sql` — web push subscriptions table + RLS
+- `026_noir_estate.sql` — sponsored columns, rich media, extended booking status, search RPCs
+
+## Env Vars Required
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+NEXT_PUBLIC_VAPID_PUBLIC_KEY
+VAPID_PRIVATE_KEY
+VAPID_EMAIL
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
+```
 
 ## Phase Tracker
 
@@ -148,4 +212,5 @@ Room types: `single` | `double` | `triple` | `quad` | `dormitory`
 - [x] Phase 2 — Listings, Filters & Property Detail
 - [x] Phase 3 — Auth, Roles & Two-Sided User System
 - [x] Phase 4 — Direct Messaging, Booking Flow & Admin Command Centre
-- [ ] Phase 5 — Trust, Verification & Monetisation
+- [x] Phase 5 — Noir Rebrand, Sponsored Listings, Realtime Chat, Push Notifications
+- [ ] Phase 6 — KYC Verification, Video Tours, Capacitor Native Build

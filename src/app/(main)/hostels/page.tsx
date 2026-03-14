@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import FilterModal from "@/components/ui/FilterModal";
 import { getHostels } from "@/lib/api";
+import { addSaved, removeSaved, isSaved } from "@/lib/saved-store";
 import type { Hostel } from "@/lib/types";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -202,6 +203,23 @@ function GridSkeleton() {
 
 function HostelGridCard({ hostel }: { hostel: Hostel }) {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setSaved(isSaved(hostel.id));
+  }, [hostel.id]);
+
+  function toggleSave(e: React.MouseEvent) {
+    e.preventDefault();
+    if (saved) {
+      removeSaved(hostel.id);
+      setSaved(false);
+    } else {
+      addSaved(hostel.id, "hostel");
+      setSaved(true);
+    }
+  }
+
   return (
     <Link href={`/hostels/${hostel.id}`}>
       <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 active:scale-95 transition-transform cursor-pointer h-full flex flex-col">
@@ -218,6 +236,16 @@ function HostelGridCard({ hostel }: { hostel: Hostel }) {
           <span className={`absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm ${hostel.availableRooms > 0 ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
             {hostel.availableRooms > 0 ? `${hostel.availableRooms} free` : "Full"}
           </span>
+          <button
+            onClick={toggleSave}
+            className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-sm transition-all active:scale-90 ${
+              saved ? "bg-red-500 text-white" : "bg-white/90 text-gray-400 hover:text-red-400"
+            }`}
+          >
+            <svg className="w-4 h-4" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </button>
         </div>
         <div className="p-2.5 flex-1 flex flex-col justify-between">
           <div>

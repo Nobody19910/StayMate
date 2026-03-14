@@ -1,4 +1,5 @@
-import type { Property, Hostel, BookingRequest } from "./types";
+import type { Property, Hostel } from "./types";
+type BookingRequest = any;
 
 // Using Unsplash source URLs for realistic placeholder images
 const homeImages = [

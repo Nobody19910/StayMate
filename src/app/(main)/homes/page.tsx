@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import FilterModal from "@/components/ui/FilterModal";
 import { getHomes } from "@/lib/api";
+import { addSaved, removeSaved, isSaved } from "@/lib/saved-store";
 import type { Property } from "@/lib/types";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -95,13 +96,13 @@ export default function HomesPage() {
       {/* Sticky header — slides fully off-screen on scroll down */}
       <div
         ref={headerRef}
-        className="sticky top-0 z-20 bg-white border-b border-gray-100/50 shadow-sm"
-        style={{ transition: "transform 0.25s ease", willChange: "transform" }}
+        className="sticky top-0 z-20 bg-[#F9F9F9] border-b shadow-sm"
+        style={{ transition: "transform 0.25s ease", willChange: "transform", borderColor: "rgba(0,0,0,0.09)" }}
       >
         {/* Title row */}
         <div className="px-4 pt-12 pb-2">
-          <h1 className="text-xl font-extrabold text-gray-900">StayMate</h1>
-          <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-0.5">Dual-Mode Client View</p>
+          <h1 className="text-2xl font-bold text-[#1A1A1A]" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>StayMate</h1>
+          <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-0.5">Residential & Rental Estate</p>
         </div>
 
         {/* Search + filter button */}
@@ -115,18 +116,20 @@ export default function HomesPage() {
               placeholder="Search city, neighborhood..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-9 pr-3 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:bg-white transition-all"
+              className="w-full bg-white rounded-xl pl-9 pr-3 py-2.5 text-sm font-medium text-[#1A1A1A] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/60 transition-all"
+              style={{ border: "0.5px solid rgba(0,0,0,0.12)" }}
             />
           </div>
           <button
             onClick={() => setFilterOpen(true)}
-            className={`relative flex items-center justify-center p-2.5 rounded-xl border transition-colors shrink-0 ${selectedAmenities.length > 0 ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "bg-gray-50 border-gray-100 text-gray-500"}`}
+            className={`relative flex items-center justify-center p-2.5 rounded-xl transition-colors shrink-0 ${selectedAmenities.length > 0 ? "bg-[#D4AF37]/10 text-[#D4AF37]" : "bg-white text-gray-500"}`}
+            style={{ border: "0.5px solid rgba(0,0,0,0.12)" }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
             </svg>
             {selectedAmenities.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-emerald-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1.5 -right-1.5 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "#D4AF37" }}>
                 {selectedAmenities.length}
               </span>
             )}
@@ -139,7 +142,8 @@ export default function HomesPage() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all shrink-0 ${filter === f ? "bg-gray-900 text-white shadow-sm" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+              className={`px-4 py-1.5 rounded-full text-[11px] font-semibold transition-all shrink-0 ${filter === f ? "text-white shadow-sm" : "bg-white text-gray-500"}`}
+              style={filter === f ? { background: "#1A1A1A", border: "none" } : { border: "0.5px solid rgba(0,0,0,0.12)" }}
             >
               {f === "all" ? "All Listings" : f === "rent" ? "For Rent" : "For Sale"}
             </button>
@@ -207,11 +211,31 @@ function GridSkeleton() {
 
 function HomeGridCard({ property }: { property: Property }) {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setSaved(isSaved(property.id));
+  }, [property.id]);
+
+  function toggleSave(e: React.MouseEvent) {
+    e.preventDefault();
+    if (saved) {
+      removeSaved(property.id);
+      setSaved(false);
+    } else {
+      addSaved(property.id, "home");
+      setSaved(true);
+    }
+  }
+
   return (
     <Link href={`/homes/${property.id}`}>
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 active:scale-95 transition-transform cursor-pointer h-full flex flex-col">
-        <div className="relative aspect-square w-full bg-gray-200 shrink-0">
-          {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-gray-200" />}
+      <div
+        className="bg-white rounded-2xl overflow-hidden active:scale-95 transition-transform cursor-pointer h-full flex flex-col"
+        style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", border: "0.5px solid rgba(0,0,0,0.08)" }}
+      >
+        <div className="relative aspect-square w-full bg-gray-100 shrink-0">
+          {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-gray-100" />}
           <Image
             src={property.images[0] || ""}
             alt={property.title || ""}
@@ -220,18 +244,35 @@ function HomeGridCard({ property }: { property: Property }) {
             onLoad={() => setImgLoaded(true)}
             unoptimized
           />
-          <span className="absolute top-2 left-2 text-[10px] font-bold uppercase bg-white/90 text-emerald-600 px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm">
+          {/* Listing type badge */}
+          <span className="absolute top-2 left-2 text-[9px] font-bold uppercase bg-[#1A1A1A]/80 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">
             {property.forSale ? "For Sale" : "Rent"}
           </span>
+          {/* Sponsored badge */}
+          {property.isSponsored && (
+            <span className="absolute top-2 left-2 mt-5 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shimmer-gold text-[#1A1A1A]">
+              ✦ Sponsored
+            </span>
+          )}
+          <button
+            onClick={toggleSave}
+            className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-sm transition-all active:scale-90 ${
+              saved ? "bg-red-500 text-white" : "bg-white/90 text-gray-400"
+            }`}
+          >
+            <svg className="w-4 h-4" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </button>
         </div>
         <div className="p-2.5 flex-1 flex flex-col justify-between">
           <div>
-            <p className="text-sm font-extrabold text-emerald-600 leading-tight">{property.priceLabel}</p>
-            <p className="text-xs font-semibold text-gray-800 mt-0.5 line-clamp-2 leading-snug">{property.title}</p>
+            <p className="text-sm font-bold text-[#1A1A1A] leading-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>{property.priceLabel}</p>
+            <p className="text-xs text-gray-600 mt-0.5 line-clamp-2 leading-snug">{property.title}</p>
           </div>
           <div>
             <p className="text-[10px] text-gray-400 truncate mt-1">{property.city}</p>
-            <p className="text-[10px] text-gray-500 mt-0.5 font-medium">{property.beds}bd · {property.baths}ba</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">{property.beds}bd · {property.baths}ba</p>
           </div>
         </div>
       </div>

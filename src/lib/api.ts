@@ -21,6 +21,14 @@ interface HomeRow {
   amenities?: string[];
   owner_phone?: string;
   owner_id: string;
+  lat?: number;
+  lng?: number;
+  // Noir fields
+  is_sponsored?: boolean;
+  sponsored_until?: string;
+  priority_score?: number;
+  video_url?: string;
+  lifestyle_tags?: string[];
 }
 
 interface HostelRow {
@@ -41,6 +49,14 @@ interface HostelRow {
   manager_phone?: string;
   manager_id: string;
   rooms?: RoomRow[];
+  lat?: number;
+  lng?: number;
+  // Noir fields
+  is_sponsored?: boolean;
+  sponsored_until?: string;
+  priority_score?: number;
+  video_url?: string;
+  lifestyle_tags?: string[];
 }
 
 interface RoomRow {
@@ -79,6 +95,13 @@ function rowToProperty(row: HomeRow): Property {
     amenities: row.amenities ?? [],
     ownerPhone: row.owner_phone,
     ownerId: row.owner_id,
+    lat: row.lat,
+    lng: row.lng,
+    isSponsored: row.is_sponsored,
+    sponsoredUntil: row.sponsored_until,
+    priorityScore: row.priority_score,
+    videoUrl: row.video_url,
+    lifestyleTags: row.lifestyle_tags,
   };
 }
 
@@ -117,16 +140,26 @@ function rowToHostel(row: HostelRow): Hostel {
     managerPhone: row.manager_phone,
     managerId: row.manager_id,
     rooms: (row.rooms ?? []).map(rowToRoom),
+    lat: row.lat,
+    lng: row.lng,
+    isSponsored: row.is_sponsored,
+    sponsoredUntil: row.sponsored_until,
+    priorityScore: row.priority_score,
+    videoUrl: row.video_url,
+    lifestyleTags: row.lifestyle_tags,
   };
 }
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
+// ─── Queries (Sponsored-first ordering) ──────────────────────────────────────
 
 export async function getHomes(): Promise<Property[]> {
   const { data, error } = await supabase
     .from("homes")
     .select("*")
-    .order("created_at", { ascending: true });
+    // Sponsored-first, then priority score, then recency
+    .order("is_sponsored", { ascending: false })
+    .order("priority_score", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (error) throw error;
   return (data as HomeRow[]).map(rowToProperty);
@@ -147,7 +180,9 @@ export async function getHostels(): Promise<Hostel[]> {
   const { data, error } = await supabase
     .from("hostels")
     .select("*, rooms(*)")
-    .order("created_at", { ascending: true });
+    .order("is_sponsored", { ascending: false })
+    .order("priority_score", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (error) throw error;
   return (data as HostelRow[]).map(rowToHostel);
@@ -174,4 +209,23 @@ export async function getRoomById(hostelId: string, roomId: string): Promise<Roo
 
   if (error) return null;
   return rowToRoom(data as RoomRow);
+}
+
+// ─── Admin: toggle sponsored status ──────────────────────────────────────────
+
+export async function toggleSponsored(
+  table: "homes" | "hostels",
+  id: string,
+  sponsored: boolean,
+  durationDays: number
+): Promise<void> {
+  const sponsored_until = sponsored
+    ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
+    : null;
+  const priority_score = sponsored ? 100 : 0;
+
+  await supabase
+    .from(table)
+    .update({ is_sponsored: sponsored, sponsored_until, priority_score })
+    .eq("id", id);
 }

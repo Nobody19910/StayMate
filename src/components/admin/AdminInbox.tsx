@@ -138,6 +138,17 @@ export default function AdminInbox() {
     }
   }, [conversations, selectedConv]);
 
+  // --- Push notification helper ---
+  async function notifyUser(userId: string, title: string, body: string, url = "/chat") {
+    try {
+      await fetch("/api/push-notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, title, body, url }),
+      });
+    } catch (_) {}
+  }
+
   // --- Send message as admin ---
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault();
@@ -163,6 +174,8 @@ export default function AdminInbox() {
       .eq("id", selectedConv.id);
 
     await fetchMessages();
+    // Push notification to seeker
+    notifyUser(selectedConv.seeker_id, "StayMate Support", content, "/chat");
     setSending(false);
   }
 
@@ -210,6 +223,13 @@ export default function AdminInbox() {
       });
       await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", selectedConv.id);
       await fetchMessages();
+
+      // Push notification to seeker about decision
+      const pushTitle = status === "accepted" ? "Inquiry Accepted 🎉" : "Inquiry Update";
+      const pushBody = status === "accepted"
+        ? "Your inquiry was accepted! Open the app to pay the GH₵ 200 fee and confirm your spot."
+        : "Your inquiry was declined. Browse other listings or send a new inquiry.";
+      notifyUser(selectedConv.seeker_id, pushTitle, pushBody, "/chat");
     }
     setResolvingBooking(false);
   }

@@ -28,6 +28,13 @@ export interface Property {
   savedAt?: string;       // ISO date, set when saved
   lat?: number;
   lng?: number;
+  // Sponsored / marketplace fields
+  isSponsored?: boolean;
+  sponsoredUntil?: string;
+  priorityScore?: number;
+  // Rich media
+  videoUrl?: string;
+  lifestyleTags?: string[];
 }
 
 // ─── Hostels ──────────────────────────────────────────────────────────────────
@@ -83,6 +90,13 @@ export interface Hostel {
   savedAt?: string;
   lat?: number;
   lng?: number;
+  // Sponsored / marketplace fields
+  isSponsored?: boolean;
+  sponsoredUntil?: string;
+  priorityScore?: number;
+  // Rich media
+  videoUrl?: string;
+  lifestyleTags?: string[];
 }
 
 // ─── Swipe ────────────────────────────────────────────────────────────────────
@@ -102,19 +116,28 @@ export interface SavedItem {
   savedAt: string;
 }
 
-// ─── Booking & Chat (Phase 1 & 2) ──────────────────────────────────────────────────
+// ─── Booking & Chat ───────────────────────────────────────────────────────────
+
+export type BookingStatus =
+  | "pending"
+  | "accepted"
+  | "fee_paid"
+  | "viewing_scheduled"
+  | "completed"
+  | "rejected";
 
 export interface Booking {
   id: string;
   user_id: string;
   property_type: "home" | "hostel";
   property_id: string;
-  status: "pending" | "confirmed" | "cancelled" | "completed";
+  status: BookingStatus;
   viewing_date?: string;
   message?: string;
+  payment_reference?: string;
   created_at: string;
   updated_at: string;
-  
+
   // Joined fields for UI convenience
   property?: Property | Hostel;
   user?: {
@@ -129,9 +152,14 @@ export interface Booking {
 export interface Conversation {
   id: string;
   seeker_id: string;
+  // Property anchor (set when seeker submits an inquiry)
+  property_id?: string | null;
+  property_type?: string | null;
+  property_title?: string | null;
+  property_image?: string | null;
   created_at: string;
   updated_at: string;
-  
+
   // Joined fields
   seeker?: {
     id: string;
@@ -151,4 +179,3 @@ export interface Message {
   is_read: boolean;
   created_at: string;
 }
-

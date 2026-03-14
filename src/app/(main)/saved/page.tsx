@@ -152,7 +152,7 @@ function EmptyState({ type }: { type: Tab }) {
       <p className="text-5xl mb-4">{type === "homes" ? "🏠" : "🏫"}</p>
       <p className="text-base font-semibold text-gray-600">No saved {type} yet</p>
       <p className="text-sm text-gray-400 mt-1 max-w-xs">
-        Swipe right on any {type === "homes" ? "home" : "hostel"} to save it here.
+      Tap the ♡ heart icon on any {type === "homes" ? "home" : "hostel"} listing to save it here.
       </p>
       <Link
         href={`/${type}`}

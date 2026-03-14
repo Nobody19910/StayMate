@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
+import { usePaystackScript, openPaystackPopup } from "@/lib/paystack";
 
 const ROLE_LABELS: Record<string, string> = {
   seeker: "Property Seeker",
@@ -17,11 +18,19 @@ export default function ProfilePage() {
   const router = useRouter();
   const [tickets, setTickets] = useState<any[]>([]);
   const [loadingTickets, setLoadingTickets] = useState(true);
+  const [payingId, setPayingId] = useState<string | null>(null);
 
+  // Load Paystack inline script
+  usePaystackScript();
   // KYC & Agent State
   const [kycName, setKycName] = useState("");
+  const [idCardFile, setIdCardFile] = useState<File | null>(null);
   const [submittingKyc, setSubmittingKyc] = useState(false);
   const [kycError, setKycError] = useState("");
+
+  // Agent Properties
+  const [myProperties, setMyProperties] = useState<any[]>([]);
+  const [loadingProperties, setLoadingProperties] = useState(true);
 
   // Edit Profile State
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -56,8 +65,27 @@ export default function ProfilePage() {
       setLoadingTickets(false);
     }
 
+    async function fetchAgentProperties() {
+      const [homesRes, hostelsRes] = await Promise.all([
+        supabase.from("homes").select("*").eq("owner_id", user!.id),
+        supabase.from("hostels").select("*").eq("manager_id", user!.id)
+      ]);
+      const combined = [
+        ...(homesRes.data || []),
+        ...(hostelsRes.data || [])
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      setMyProperties(combined);
+      setLoadingProperties(false);
+    }
+
     fetchTickets();
-  }, [user]);
+    if (profile?.role === 'owner' || profile?.role === 'manager') {
+      fetchAgentProperties();
+    } else {
+      setLoadingProperties(false);
+    }
+  }, [user, profile?.role]);
 
   useEffect(() => {
     if (profile) {
@@ -83,16 +111,46 @@ export default function ProfilePage() {
       return;
     }
 
-    // Submit mock KYC
-    await supabase.from("kyc_submissions").insert({
+    if (!idCardFile) {
+      setKycError("Please upload an image of your Government ID.");
+      setSubmittingKyc(false);
+      return;
+    }
+
+    // Upload ID Card
+    const ext = idCardFile.name.split('.').pop() ?? "jpg";
+    const filePath = `kyc/${user.id}/${Date.now()}.${ext}`;
+
+    // Note: Reusing 'avatars' bucket for simplicity. Ideally place it in a secure non-public bucket. 
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, idCardFile, { upsert: false });
+
+    if (uploadError) {
+      setKycError("Error uploading ID card. Please try again.");
+      setSubmittingKyc(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+    // Submit KYC
+    const { error: insertError } = await supabase.from("kyc_submissions").insert({
       user_id: user.id,
       id_card_name: kycName,
+      id_card_image_url: urlData.publicUrl,
       status: "pending"
     });
 
+    if (insertError) {
+      setKycError("Error submitting application.");
+      setSubmittingKyc(false);
+      return;
+    }
+
     // Update local profile UI state to pending
     await supabase.from("profiles").update({ kyc_status: "pending" }).eq("id", user.id);
-    window.location.reload(); // Quick refresh to sync Auth Context
+    window.location.reload();
   }
 
   async function toggleAgentMode() {
@@ -136,6 +194,47 @@ export default function ProfilePage() {
 
     setUploadingAvatar(false);
     window.location.reload();
+  }
+
+  async function handlePayCommitment(ticket: any) {
+    if (!user) return;
+    setPayingId(ticket.id);
+
+    openPaystackPopup({
+      email: user.email ?? "guest@staymate.app",
+      amount: 1000, // GH₵ 10.00 in pesewas (10 × 100)
+      currency: "GHS",
+      metadata: { booking_id: ticket.id, user_id: user.id },
+      onSuccess: async (reference) => {
+        await supabase
+          .from("bookings")
+          .update({ status: "paid", payment_reference: reference })
+          .eq("id", ticket.id);
+        setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, status: "paid", payment_reference: reference } : t));
+        if (selectedTicket?.id === ticket.id) {
+          setSelectedTicket((prev: any) => prev ? { ...prev, status: "paid" } : prev);
+        }
+        setPayingId(null);
+      },
+      onClose: () => {
+        setPayingId(null);
+      },
+    });
+  }
+
+  async function deleteProperty(id: string, isHostel: boolean) {
+
+    if (!confirm("Are you sure you want to permanently delete this listing?")) return;
+    const table = isHostel ? "hostels" : "homes";
+    setMyProperties(prev => prev.filter(p => p.id !== id));
+    await supabase.from(table).delete().eq("id", id);
+  }
+
+  async function togglePropertyStatus(id: string, isHostel: boolean, currentStatus: string) {
+    const newStatus = currentStatus === "rented" ? "approved" : "rented";
+    const table = isHostel ? "hostels" : "homes";
+    setMyProperties(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p));
+    await supabase.from(table).update({ status: newStatus }).eq("id", id);
   }
 
   if (loading) {
@@ -247,22 +346,6 @@ export default function ProfilePage() {
       </div>
 
       <div className="px-4 py-6 space-y-3">
-        {profile?.role === "admin" && (
-          <Link
-            href="/admin"
-            className="flex items-center gap-3 bg-emerald-50 rounded-xl px-4 py-3 border border-emerald-100 active:scale-95 transition-transform"
-          >
-            <span className="text-xl">🛡️</span>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-emerald-800">Admin Dashboard</p>
-              <p className="text-xs text-emerald-600">Manage listings, viewings & leads</p>
-            </div>
-            <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-          </Link>
-        )}
-
         {/* Phone display moved to Edit Mode */}
         {!isEditingProfile && (
           <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100 mb-6">
@@ -274,37 +357,181 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* IDENTITY VERIFICATION & AGENT MODE (Hiding KYC UI for now based on user request) */}
-        {profile && profile.role !== "admin" && profile.kycStatus === 'verified' && (
+        {/* IDENTITY VERIFICATION & AGENT MODE */}
+        {profile && profile.role !== "admin" && (
           <div className="mb-6 pt-2">
-            <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-100">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">✅</span>
-                  <div>
-                    <p className="text-sm font-bold text-emerald-900">Identity Verified</p>
-                    <p className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wider mt-0.5">Agent Mode Unlocked</p>
+            {profile.kycStatus === 'verified' && (
+              <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-100 mb-6">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">✅</span>
+                    <div>
+                      <p className="text-sm font-bold text-emerald-900">Identity Verified</p>
+                      <p className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wider mt-0.5">Agent Mode Unlocked</p>
+                    </div>
                   </div>
+                  <button 
+                    onClick={toggleAgentMode}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${profile.agentModeEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${profile.agentModeEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                  </button>
                 </div>
+                {profile.agentModeEnabled && (
+                  <div className="mt-4 pt-4 border-t border-emerald-200">
+                    <p className="text-xs text-emerald-800 font-bold mb-3">Agent Quick Links</p>
+                    <Link
+                      href="/post"
+                      className="block bg-emerald-600 text-white font-bold text-center py-2.5 rounded-xl active:scale-95 transition-transform text-sm"
+                    >
+                      Post New Property
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {profile.kycStatus === 'unverified' && (
+              <div className="bg-orange-50 rounded-2xl p-5 border border-orange-100 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-full blur-2xl -mr-16 -mt-16 opacity-50" />
+                <h2 className="text-lg font-extrabold text-orange-900 mb-1 relative">Become an Agent 🚀</h2>
+                <p className="text-xs text-orange-700 font-medium mb-4 relative max-w-[90%]">Verify your identity to unlock agent features, post properties, and connect directly with seekers.</p>
+                <form onSubmit={submitKyc} className="space-y-3 relative bg-white/50 p-4 rounded-xl border border-orange-200/50">
+                  {kycError && <p className="text-[10px] font-bold text-red-500 uppercase">{kycError}</p>}
+                  <div>
+                    <label className="block text-[10px] font-extrabold text-orange-900 mb-1 uppercase tracking-widest">Full Name on ID</label>
+                    <input 
+                      type="text" 
+                      value={kycName}
+                      onChange={e => setKycName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      className="w-full text-sm font-bold text-gray-900 bg-white border border-orange-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-extrabold text-orange-900 mb-1 uppercase tracking-widest">Gov ID Image (Passport, Driver's License)</label>
+                    <input 
+                      type="file"
+                      accept="image/*"
+                      onChange={e => setIdCardFile(e.target.files?.[0] || null)}
+                      className="w-full text-sm font-medium text-gray-700 bg-white border border-orange-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/50 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                      required 
+                    />
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={submittingKyc}
+                    className="w-full mt-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-extrabold text-sm py-3 rounded-xl active:scale-95 transition-all shadow-sm shadow-orange-500/20 disabled:opacity-70 flex justify-center items-center"
+                  >
+                    {submittingKyc ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : "Submit for Verification →"}
+                  </button>
+                  <p className="text-[9px] text-center text-orange-600/70 font-medium mt-2">By submitting, you agree to our Terms of Service.</p>
+                </form>
+              </div>
+            )}
+
+            {profile.kycStatus === 'pending' && (
+              <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100 text-center">
+                <span className="text-3xl mb-2 block">⏳</span>
+                <p className="text-sm font-extrabold text-blue-900 mb-1">Verification in Progress</p>
+                <p className="text-xs text-blue-700 font-medium">Your identity documents are currently being reviewed by our team. You will be notified once approved.</p>
+              </div>
+            )}
+            
+            {profile.kycStatus === 'rejected' && (
+              <div className="bg-red-50 rounded-2xl p-5 border border-red-100 text-center">
+                <span className="text-3xl mb-2 block">❌</span>
+                <p className="text-sm font-extrabold text-red-900 mb-1">Verification Rejected</p>
+                <p className="text-xs text-red-700 font-medium whitespace-pre-line mb-3">Your identity documents were rejected. Please ensure the name matches and the ID is clear.</p>
                 <button 
-                  onClick={toggleAgentMode}
-                  className={`w-12 h-6 rounded-full transition-colors relative ${profile.agentModeEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                  onClick={() => {
+                    setKycName("");
+                    // Reset to unverified to let them try again
+                    supabase.from("profiles").update({ kyc_status: "unverified" }).eq("id", user.id)
+                      .then(() => window.location.reload());
+                  }}
+                  className="w-full mt-2 border border-red-200 text-red-600 font-bold py-2 rounded-xl active:scale-95 transition-transform text-sm bg-white"
                 >
-                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${profile.agentModeEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                  Try Again
                 </button>
               </div>
-              {profile.agentModeEnabled && (
-                <div className="mt-4 pt-4 border-t border-emerald-200">
-                  <p className="text-xs text-emerald-800 font-bold mb-3">Agent Quick Links</p>
-                  <Link
-                    href="/admin/post"
-                    className="block bg-emerald-600 text-white font-bold text-center py-2.5 rounded-xl active:scale-95 transition-transform text-sm"
-                  >
-                    Post New Property
-                  </Link>
-                </div>
-              )}
-            </div>
+            )}
+          </div>
+        )}
+
+        {profile?.role !== "admin" && profile?.agentModeEnabled && (
+          <div className="mb-6 pt-2">
+            <h2 className="text-lg font-bold text-gray-900 mb-3 px-1">My Hosted Properties</h2>
+            
+            {loadingProperties ? (
+              <div className="space-y-3">
+                {[1, 2].map(i => (
+                  <div key={i} className="animate-pulse bg-white border border-gray-100 rounded-2xl p-4 h-28" />
+                ))}
+              </div>
+            ) : myProperties.length === 0 ? (
+              <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center shadow-sm">
+                <span className="text-4xl mb-2 block">🏢</span>
+                <p className="text-sm font-bold text-gray-800">No Properties Listed</p>
+                <p className="text-xs text-gray-500 mt-1">Post your first property to start receiving inquiries.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {myProperties.map(property => {
+                  const isHostel = 'manager_id' in property;
+                  return (
+                    <div 
+                      key={property.id} 
+                      className="bg-white rounded-2xl p-4 shadow-sm border border-emerald-100 flex flex-col gap-3"
+                    >
+                      <div className="flex justify-between items-start gap-3">
+                        {property.images?.[0] ? (
+                          <img src={property.images[0]} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0 bg-gray-100" />
+                        ) : (
+                          <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center shrink-0 text-xl">🏠</div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-900 line-clamp-1">{property.name || property.title}</p>
+                          <div className="flex gap-2 mt-1">
+                            <span className="text-[9px] font-bold uppercase text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                              {isHostel ? 'Hostel' : 'Home'}
+                            </span>
+                            <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
+                              property.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
+                              property.status === 'rented' ? 'bg-blue-50 text-blue-600' :
+                              'bg-orange-50 text-orange-600'
+                            }`}>
+                              {property.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 pt-2 border-t border-gray-50">
+                        <Link 
+                          href={isHostel ? `/hostels/${property.id}` : `/homes/${property.id}`}
+                          className="flex-1 py-1.5 text-center text-xs font-bold text-gray-600 bg-gray-50 rounded-lg border border-gray-100 active:scale-95"
+                        >
+                          View
+                        </Link>
+                        <button 
+                          onClick={() => togglePropertyStatus(property.id, isHostel, property.status)}
+                          className="flex-1 py-1.5 text-[10px] uppercase tracking-wider font-extrabold text-blue-600 bg-blue-50 rounded-lg active:scale-95"
+                        >
+                          {property.status === 'rented' ? 'Mark Available' : 'Mark Rented'}
+                        </button>
+                        <button 
+                          onClick={() => deleteProperty(property.id, isHostel)}
+                          className="flex-1 py-1.5 text-[10px] uppercase tracking-wider font-extrabold text-red-500 bg-red-50 rounded-lg active:scale-95"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -346,6 +573,19 @@ export default function ProfilePage() {
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Preferred Date</p>
                       <p className="text-sm font-bold text-gray-900">{ticket.viewing_date ? new Date(ticket.viewing_date).toLocaleDateString([], { month: 'short', day: 'numeric' }) : "Not Specified"}</p>
                     </div>
+                    {ticket.status === 'accepted' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handlePayCommitment(ticket); }}
+                        disabled={payingId === ticket.id}
+                        className="flex items-center gap-1 text-xs font-bold text-white bg-orange-500 px-3 py-1.5 rounded-lg active:scale-95 transition-all disabled:opacity-60"
+                      >
+                        {payingId === ticket.id ? (
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>💳 Pay Fee</>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -413,6 +653,44 @@ export default function ProfilePage() {
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Your Message</p>
                     <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-sm text-gray-700 whitespace-pre-wrap">
                       {selectedTicket.message}
+                    </div>
+                  </div>
+                )}
+
+                {selectedTicket.status === 'accepted' && (
+                  <div className="bg-orange-50 border border-orange-100 rounded-2xl p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-2xl">💳</span>
+                      <div>
+                        <p className="text-sm font-extrabold text-orange-900">Commitment Fee Required</p>
+                        <p className="text-xs text-orange-700 font-medium">Your inquiry has been accepted! Pay the commitment fee to secure your spot.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between bg-white rounded-xl p-3 mb-3 border border-orange-100">
+                      <span className="text-sm font-bold text-gray-700">Amount Due</span>
+                      <span className="text-lg font-extrabold text-orange-600">GH₵ 10.00</span>
+                    </div>
+                    <button
+                      onClick={() => handlePayCommitment(selectedTicket)}
+                      disabled={payingId === selectedTicket.id}
+                      className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-extrabold rounded-xl active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-sm shadow-orange-400/30"
+                    >
+                      {payingId === selectedTicket.id ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>💳 Pay GH₵ 10 Commitment Fee</>
+                      )}
+                    </button>
+                    <p className="text-[9px] text-center text-orange-600/60 mt-2">Secured by Paystack. Non-refundable once paid.</p>
+                  </div>
+                )}
+
+                {selectedTicket.status === 'paid' && (
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-center gap-3">
+                    <span className="text-2xl">✅</span>
+                    <div>
+                      <p className="text-sm font-bold text-emerald-900">Commitment Fee Paid</p>
+                      <p className="text-xs text-emerald-700">Your spot is secured. The admin will be in touch shortly.</p>
                     </div>
                   </div>
                 )}
