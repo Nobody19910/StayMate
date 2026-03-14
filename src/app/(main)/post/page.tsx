@@ -9,7 +9,7 @@ import type { PropertyType, RoomAmenity, RoomType } from "@/lib/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MIN_PHOTOS = 3;
+const MIN_PHOTOS = 5;
 
 const PROPERTY_TYPES: { value: PropertyType; label: string; icon: string }[] = [
   { value: "apartment", label: "Apartment / Flat", icon: "🏢" },
@@ -198,8 +198,7 @@ export default function PostPage() {
     if (currentStep === "Amenities") return true;
     if (currentStep === "Rooms") return hostelInfo.rooms.length > 0 && hostelInfo.rooms.every((r) => r.name.trim() !== "" && r.price.trim() !== "");
     if (currentStep === "Photos") {
-      const videoCount = photos.filter(f => f.type.startsWith("video/")).length;
-      return photos.length >= MIN_PHOTOS && videoCount >= 2;
+      return photos.length >= MIN_PHOTOS;
     }
     return true;
   }, [currentStep, kind, homeInfo, hostelInfo, photos]);
@@ -208,18 +207,9 @@ export default function PostPage() {
 
   function handlePhotoAdd(files: FileList | null) {
     if (!files) return;
-    const added = Array.from(files).filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/"));
-    
-    // Check 50MB limit for videos
-    const validFiles = added.filter(f => {
-      if (f.type.startsWith("video/") && f.size > 50 * 1024 * 1024) {
-        alert(`Video ${f.name} exceeds the 50MB limit.`);
-        return false;
-      }
-      return true;
-    });
+    const added = Array.from(files).filter((f) => f.type.startsWith("image/"));
 
-    setPhotos((prev) => [...prev, ...validFiles].slice(0, 10));
+    setPhotos((prev) => [...prev, ...added].slice(0, 10));
   }
 
   function removePhoto(i: number) {
@@ -518,10 +508,11 @@ export default function PostPage() {
 
               <FormField label="Address / Estate" placeholder="e.g. 14 Orchid Rd, East Legon" value={homeInfo.address} onChange={(v) => setHomeInfo((s) => ({ ...s, address: v }))} />
 
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="Latitude *" placeholder="e.g. 5.6037" value={homeInfo.lat} onChange={(v) => setHomeInfo((s) => ({ ...s, lat: v }))} inputMode="numeric" />
-                <FormField label="Longitude *" placeholder="e.g. -0.1870" value={homeInfo.lng} onChange={(v) => setHomeInfo((s) => ({ ...s, lng: v }))} inputMode="numeric" />
-              </div>
+              <LocationPicker
+                lat={homeInfo.lat}
+                lng={homeInfo.lng}
+                onLocationSet={(lat, lng) => setHomeInfo((s) => ({ ...s, lat, lng }))}
+              />
 
               <div className="grid grid-cols-3 gap-3">
                 <FormField label="Beds" placeholder="3" value={homeInfo.beds} onChange={(v) => setHomeInfo((s) => ({ ...s, beds: v }))} inputMode="numeric" />
@@ -571,10 +562,11 @@ export default function PostPage() {
 
               <FormField label="Address" placeholder="e.g. 12 University Road, Legon" value={hostelInfo.address} onChange={(v) => setHostelInfo((s) => ({ ...s, address: v }))} />
 
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="Latitude *" placeholder="e.g. 5.6037" value={hostelInfo.lat} onChange={(v) => setHostelInfo((s) => ({ ...s, lat: v }))} inputMode="numeric" />
-                <FormField label="Longitude *" placeholder="e.g. -0.1870" value={hostelInfo.lng} onChange={(v) => setHostelInfo((s) => ({ ...s, lng: v }))} inputMode="numeric" />
-              </div>
+              <LocationPicker
+                lat={hostelInfo.lat}
+                lng={hostelInfo.lng}
+                onLocationSet={(lat, lng) => setHostelInfo((s) => ({ ...s, lat, lng }))}
+              />
 
               <FormField label="Nearby Universities / Schools (comma-separated)" placeholder="e.g. University of Ghana, KNUST" value={hostelInfo.nearbyUniversities} onChange={(v) => setHostelInfo((s) => ({ ...s, nearbyUniversities: v }))} />
               <FormField label="Your Phone (shown to students after booking)" placeholder="+233 20 000 0000" value={hostelInfo.managerPhone} onChange={(v) => setHostelInfo((s) => ({ ...s, managerPhone: v }))} inputMode="tel" />
@@ -684,21 +676,13 @@ export default function PostPage() {
           {currentStep === "Photos" && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-base font-bold text-gray-900">Photos &amp; Videos</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Minimum {MIN_PHOTOS} items total. At least 2 videos are mandatory.</p>
-                <div className="bg-amber-50 border border-amber-200 text-amber-700 px-3 py-2 rounded-xl mt-2 text-xs font-bold flex items-center gap-2">
-                  <span>⚠️</span> Videos must be strictly under 50MB.
-                </div>
+                <h2 className="text-base font-bold text-gray-900">Photos</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Minimum {MIN_PHOTOS} photos required for your listing.</p>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {photos.map((f, i) => (
                   <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-gray-200">
-                    {f.type.startsWith("video/") ? (
-                      <video src={URL.createObjectURL(f)} className="w-full h-full object-cover" />
-                    ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
-                    )}
+                    <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
                     {i === 0 && (
                       <div className="absolute top-1 left-1 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">Cover</div>
                     )}
@@ -723,14 +707,12 @@ export default function PostPage() {
                   </button>
                 )}
               </div>
-              <input ref={photoInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => { handlePhotoAdd(e.target.files); e.target.value = ""; }} />
-              <div className={`rounded-xl px-3 py-2 border ${(photos.length >= MIN_PHOTOS && photos.filter(f => f.type.startsWith("video/")).length >= 2) ? "bg-emerald-50 border-emerald-100" : "bg-amber-50 border-amber-100"}`}>
-                <p className={`text-xs font-medium ${(photos.length >= MIN_PHOTOS && photos.filter(f => f.type.startsWith("video/")).length >= 2) ? "text-emerald-700" : "text-amber-700"}`}>
-                  {photos.filter(f => f.type.startsWith("video/")).length < 2
-                    ? `Add at least ${2 - photos.filter(f => f.type.startsWith("video/")).length} more video${2 - photos.filter(f => f.type.startsWith("video/")).length > 1 ? "s" : ""} to continue.`
-                    : photos.length < MIN_PHOTOS
-                      ? `Add ${MIN_PHOTOS - photos.length} more photo/video${MIN_PHOTOS - photos.length > 1 ? "s" : ""} to continue.`
-                      : `${photos.length} items ready`}
+              <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { handlePhotoAdd(e.target.files); e.target.value = ""; }} />
+              <div className={`rounded-xl px-3 py-2 border ${photos.length >= MIN_PHOTOS ? "bg-emerald-50 border-emerald-100" : "bg-amber-50 border-amber-100"}`}>
+                <p className={`text-xs font-medium ${photos.length >= MIN_PHOTOS ? "text-emerald-700" : "text-amber-700"}`}>
+                  {photos.length < MIN_PHOTOS
+                    ? `Add ${MIN_PHOTOS - photos.length} more photo${MIN_PHOTOS - photos.length > 1 ? "s" : ""} to continue.`
+                    : `${photos.length} photos ready`}
                 </p>
               </div>
             </div>
@@ -742,22 +724,14 @@ export default function PostPage() {
               <h2 className="text-base font-bold text-gray-900">Review &amp; Publish</h2>
               <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
                 {photos[0] && (
-                  photos[0].type.startsWith("video/") ? (
-                    <video src={URL.createObjectURL(photos[0])} className="w-full h-44 object-cover rounded-xl" controls />
-                  ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={URL.createObjectURL(photos[0])} alt="" className="w-full h-44 object-cover rounded-xl" />
-                  )
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={URL.createObjectURL(photos[0])} alt="" className="w-full h-44 object-cover rounded-xl" />
                 )}
                 {photos.length > 1 && (
                   <div className="flex gap-1.5 overflow-x-auto pb-1">
                     {photos.slice(1).map((f, i) => (
-                      f.type.startsWith("video/") ? (
-                        <video key={i} src={URL.createObjectURL(f)} className="w-14 h-14 object-cover rounded-lg shrink-0" />
-                      ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img key={i} src={URL.createObjectURL(f)} alt="" className="w-14 h-14 object-cover rounded-lg shrink-0" />
-                      )
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={i} src={URL.createObjectURL(f)} alt="" className="w-14 h-14 object-cover rounded-lg shrink-0" />
                     ))}
                   </div>
                 )}
@@ -1005,6 +979,147 @@ function FormField({
         onChange={(e) => onChange(e.target.value)}
         className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
       />
+    </div>
+  );
+}
+
+// ─── Location Picker ──────────────────────────────────────────────────────────
+
+function LocationPicker({
+  lat,
+  lng,
+  onLocationSet,
+}: {
+  lat: string;
+  lng: string;
+  onLocationSet: (lat: string, lng: string) => void;
+}) {
+  const [isLocating, setIsLocating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showManual, setShowManual] = useState(false);
+
+  function fetchLocation() {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported on this device");
+      return;
+    }
+
+    setIsLocating(true);
+    setError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        onLocationSet(latitude.toFixed(4), longitude.toFixed(4));
+        setIsLocating(false);
+      },
+      (err) => {
+        setIsLocating(false);
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            setError("Location permission denied. Enter coordinates manually.");
+            break;
+          case err.POSITION_UNAVAILABLE:
+            setError("Location not available. Enter coordinates manually.");
+            break;
+          case err.TIMEOUT:
+            setError("Location request timed out. Enter coordinates manually.");
+            break;
+          default:
+            setError("Failed to fetch location. Enter coordinates manually.");
+        }
+        setShowManual(true);
+      },
+      { timeout: 10000 }
+    );
+  }
+
+  const hasCoordinates = lat.trim() !== "" && lng.trim() !== "";
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-xs font-semibold text-gray-700">Location *</label>
+
+      {hasCoordinates && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2">
+          <span>✓</span>
+          <span>Coordinates set: {lat}°, {lng}°</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-700 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2">
+          <span>⚠️</span>
+          <span>{error}</span>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={fetchLocation}
+        disabled={isLocating}
+        className="w-full flex items-center justify-center gap-2 bg-emerald-500 text-white font-bold py-3 rounded-xl active:scale-95 transition-transform disabled:opacity-60"
+      >
+        {isLocating ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            Fetching location...
+          </>
+        ) : (
+          <>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.823 11.821l-7.07-7.071a2.25 2.25 0 00-3.186 0l-7.07 7.07A2.25 2.25 0 009 19.5v.008a2.25 2.25 0 002.25 2.25h.008a2.25 2.25 0 002.25-2.25v-.008a2.25 2.25 0 012.25-2.25h.008a2.25 2.25 0 012.25 2.25v.008a2.25 2.25 0 002.25 2.25h.008a2.25 2.25 0 002.25-2.25V9.75c0-.98-.382-1.92-1.061-2.614z" />
+            </svg>
+            Use My Location
+          </>
+        )}
+      </button>
+
+      {showManual && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Latitude</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="e.g. 5.6037"
+                value={lat}
+                onChange={(e) => onLocationSet(e.target.value, lng)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Longitude</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="e.g. -0.1870"
+                value={lng}
+                onChange={(e) => onLocationSet(lat, e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowManual(false)}
+            className="w-full text-xs font-semibold text-gray-500 hover:text-gray-700 py-2"
+          >
+            Done editing coordinates
+          </button>
+        </div>
+      )}
+
+      {!showManual && !hasCoordinates && (
+        <button
+          type="button"
+          onClick={() => setShowManual(true)}
+          className="w-full text-xs font-semibold text-gray-500 hover:text-gray-700 py-2 underline"
+        >
+          Enter coordinates manually
+        </button>
+      )}
     </div>
   );
 }

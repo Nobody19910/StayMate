@@ -27,6 +27,12 @@ export default function HomeDetailPage({ params }: Props) {
   const [bookingMessage, setBookingMessage] = useState("");
   const [bookingError, setBookingError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Admin edit mode
+  const [adminEditMode, setAdminEditMode] = useState(false);
+  const [editedProperty, setEditedProperty] = useState<Partial<Property> | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState("");
   useEffect(() => {
     params.then(({ id }) => {
       getHomeById(id).then((p) => {
@@ -130,6 +136,27 @@ export default function HomeDetailPage({ params }: Props) {
     } else {
       addSaved(property.id, "home");
       setSaved(true);
+    }
+  }
+
+  async function handleAdminSaveEdit() {
+    if (!property || !editedProperty || isSavingEdit) return;
+    setIsSavingEdit(true);
+    setEditError("");
+
+    try {
+      const { error } = await supabase.from("homes").update(editedProperty).eq("id", property.id);
+      if (error) throw error;
+
+      // Update local state
+      setProperty({ ...property, ...editedProperty });
+      setAdminEditMode(false);
+      setEditedProperty(null);
+    } catch (err: any) {
+      console.error("Edit error:", err);
+      setEditError(err.message || "Failed to save changes");
+    } finally {
+      setIsSavingEdit(false);
     }
   }
 
@@ -241,7 +268,27 @@ export default function HomeDetailPage({ params }: Props) {
 
       {/* CTA — sticky bottom */}
       <div className="fixed bottom-16 left-0 right-0 px-4 py-3 bg-white space-y-2 max-w-lg mx-auto z-40" style={{ borderTop: "0.5px solid rgba(0,0,0,0.09)" }}>
-        {user ? (
+        {profile?.role === "admin" ? (
+          // Admin view: edit panel
+          adminEditMode ? (
+            <AdminEditPanel
+              property={property}
+              editedProperty={editedProperty || property}
+              onPropertyChange={(key, value) => setEditedProperty({ ...(editedProperty || property), [key]: value })}
+              onSave={handleAdminSaveEdit}
+              onCancel={() => { setAdminEditMode(false); setEditedProperty(null); setEditError(""); }}
+              isSaving={isSavingEdit}
+              error={editError}
+            />
+          ) : (
+            <button
+              onClick={() => { setAdminEditMode(true); setEditedProperty(null); }}
+              className="w-full bg-blue-600 text-white font-bold text-base py-3.5 rounded-2xl active:scale-95 transition-transform"
+            >
+              Edit Property Details
+            </button>
+          )
+        ) : user ? (
           bookingStep === "idle" ? (
             <button
               onClick={() => setBookingStep("request")}
@@ -334,6 +381,151 @@ function BookingSuccessScreen({ property, viewingDate, onBack }: {
       <button onClick={onBack} className="bg-white text-black font-bold py-3.5 px-8 rounded-xl active:scale-95 text-sm transition-transform shadow-sm">
         Back to Listing
       </button>
+    </div>
+  );
+}
+
+function AdminEditPanel({
+  property,
+  editedProperty,
+  onPropertyChange,
+  onSave,
+  onCancel,
+  isSaving,
+  error,
+}: {
+  property: Property;
+  editedProperty: Partial<Property>;
+  onPropertyChange: (key: string, value: any) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  isSaving: boolean;
+  error: string;
+}) {
+  const amenities = editedProperty.amenities || [];
+
+  return (
+    <div className="space-y-3 max-h-96 overflow-y-auto">
+      <h3 className="text-sm font-bold text-gray-900">Edit Property</h3>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-medium">
+          {error}
+        </div>
+      )}
+
+      <div>
+        <label className="block text-xs font-semibold text-gray-700 mb-1">Title</label>
+        <input
+          type="text"
+          value={editedProperty.title || ""}
+          onChange={(e) => onPropertyChange("title", e.target.value)}
+          className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-semibold text-gray-700 mb-1">Price (GH₵)</label>
+        <input
+          type="number"
+          value={editedProperty.price || 0}
+          onChange={(e) => {
+            const price = parseInt(e.target.value) || 0;
+            onPropertyChange("price", price);
+            onPropertyChange("price_label", `GH₵${price.toLocaleString()}${editedProperty.for_sale ? "" : "/mo"}`);
+          }}
+          className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">Beds</label>
+          <input
+            type="number"
+            value={editedProperty.beds || 0}
+            onChange={(e) => onPropertyChange("beds", parseInt(e.target.value) || 0)}
+            className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">Baths</label>
+          <input
+            type="number"
+            value={editedProperty.baths || 0}
+            onChange={(e) => onPropertyChange("baths", parseInt(e.target.value) || 0)}
+            className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">Sqft</label>
+          <input
+            type="number"
+            value={editedProperty.sqft || 0}
+            onChange={(e) => onPropertyChange("sqft", parseInt(e.target.value) || 0)}
+            className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-semibold text-gray-700 mb-1">Description</label>
+        <textarea
+          rows={3}
+          value={editedProperty.description || ""}
+          onChange={(e) => onPropertyChange("description", e.target.value)}
+          className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+        />
+      </div>
+
+      <div>
+        <label className="text-xs font-semibold text-gray-700 mb-1 block">Amenities</label>
+        <div className="flex flex-wrap gap-1">
+          {["AC", "Generator", "Pool", "Security", "Parking", "Furnished", "WiFi", "CCTV", "Borehole"].map((a) => (
+            <button
+              key={a}
+              onClick={() => {
+                if (amenities.includes(a)) {
+                  onPropertyChange("amenities", amenities.filter((x) => x !== a));
+                } else {
+                  onPropertyChange("amenities", [...amenities, a]);
+                }
+              }}
+              className={`text-[10px] font-medium px-2 py-1 rounded-full transition-colors ${
+                amenities.includes(a)
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600 border border-gray-200"
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={onCancel}
+          disabled={isSaving}
+          className="flex-1 bg-gray-100 text-gray-600 font-bold py-2 rounded-lg text-xs active:scale-95 disabled:opacity-60"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onSave}
+          disabled={isSaving}
+          className="flex-1 bg-blue-600 text-white font-bold py-2 rounded-lg text-xs active:scale-95 disabled:opacity-60 flex items-center justify-center gap-1"
+        >
+          {isSaving ? (
+            <>
+              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Changes"
+          )}
+        </button>
+      </div>
     </div>
   );
 }
