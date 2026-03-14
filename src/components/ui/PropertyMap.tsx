@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { GoogleMap, MarkerF, LoadScriptF } from '@react-google-maps/api';
+import { GoogleMap, MarkerF, LoadScript } from '@react-google-maps/api';
 
 interface PropertyMapProps {
   lat?: number;
@@ -59,7 +59,7 @@ export default function PropertyMap({
   }
 
   return (
-    <LoadScriptF googleMapsApiKey={apiKey}>
+    <LoadScript googleMapsApiKey={apiKey}>
       <GoogleMap
         mapContainerStyle={{ width: '100%', height }}
         center={{ lat, lng }}
@@ -69,13 +69,8 @@ export default function PropertyMap({
         <MarkerF
           position={{ lat, lng }}
           title={title}
-          icon={{
-            url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSI4IiBmaWxsPSIjMDZDMTY3Ii8+PC9zdmc+',
-            scaledSize: new window.google.maps.Size(32, 32),
-            anchor: new window.google.maps.Point(16, 16),
-          }}
         />
       </GoogleMap>
-    </LoadScriptF>
+    </LoadScript>
   );
 }
