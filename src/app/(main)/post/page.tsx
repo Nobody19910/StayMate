@@ -237,10 +237,13 @@ export default function PostPage() {
       for (const photo of photos) {
         const ext = photo.name.split(".").pop() ?? "jpg";
         const path = `listings/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError, data: uploadData } = await supabase.storage
           .from("listing-images")
           .upload(path, photo, { upsert: false });
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Storage upload error:", { uploadError, path, photoName: photo.name, photoSize: photo.size });
+          throw new Error(`Failed to upload image: ${uploadError.message}`);
+        }
         const { data: urlData } = supabase.storage.from("listing-images").getPublicUrl(path);
         imageUrls.push(urlData.publicUrl);
       }
@@ -339,7 +342,9 @@ export default function PostPage() {
       console.error("Submission error:", err);
       const msg = err?.message || err?.error_description || "Submission failed. Please try again.";
       const details = err?.details || err?.hint || "";
-      setSubmitError(`${msg}${details ? ` — ${details}` : ""}`);
+      const fullError = `${msg}${details ? ` — ${details}` : ""}`;
+      console.error("Full error details:", { message: msg, details, statusCode: err?.status, fullError });
+      setSubmitError(fullError);
     } finally {
       setSubmitting(false);
     }
