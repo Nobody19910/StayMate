@@ -1,18 +1,23 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/lib/auth-context";
 import PwaInit from "@/components/ui/PwaInit";
+import ThemeProvider from "@/lib/theme-context";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "StayMate — The Noir Estate",
-  description: "Luxury P2P real estate. No agents. No commission. Premium homes and student hostels directly from owners.",
+  title: "StayMate — Find Your Home",
+  description: "P2P real estate. No agents. No commission. Premium homes and student hostels directly from owners.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -23,14 +28,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className={`${inter.variable} antialiased`} style={{ background: "#F9F9F9", color: "#1A1A1A" }}>
-        <AuthProvider>{children}</AuthProvider>
-        <PwaInit />
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+          <PwaInit />
+        </ThemeProvider>
       </body>
     </html>
   );

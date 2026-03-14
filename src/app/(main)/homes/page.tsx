@@ -91,7 +91,7 @@ export default function HomesPage() {
   }, [homes, filter, searchQuery, radius, priceMin, priceMax, selectedAmenities, userLoc]);
 
   return (
-    <div className="h-screen bg-gray-50 overflow-y-auto" onScroll={handleScroll}>
+    <div className="min-h-screen bg-[#F6F6F6] overflow-y-auto" onScroll={handleScroll}>
 
       {/* Sticky header — slides fully off-screen on scroll down */}
       <div
@@ -101,7 +101,7 @@ export default function HomesPage() {
       >
         {/* Title row */}
         <div className="px-4 pt-12 pb-2">
-          <h1 className="text-2xl font-bold text-[#1A1A1A]" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>StayMate</h1>
+          <h1 className="text-2xl font-bold text-[#1A1A1A]" style={{  }}>StayMate</h1>
           <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-0.5">Residential & Rental Estate</p>
         </div>
 
@@ -116,7 +116,7 @@ export default function HomesPage() {
               placeholder="Search city, neighborhood..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white rounded-xl pl-9 pr-3 py-2.5 text-sm font-medium text-[#1A1A1A] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/60 transition-all"
+              className="w-full bg-white rounded-xl pl-9 pr-3 py-2.5 text-sm font-medium text-black focus:outline-none focus:ring-1 focus:ring-black/20 transition-all"
               style={{ border: "0.5px solid rgba(0,0,0,0.12)" }}
             />
           </div>
@@ -143,7 +143,7 @@ export default function HomesPage() {
               key={f}
               onClick={() => setFilter(f)}
               className={`px-4 py-1.5 rounded-full text-[11px] font-semibold transition-all shrink-0 ${filter === f ? "text-white shadow-sm" : "bg-white text-gray-500"}`}
-              style={filter === f ? { background: "#1A1A1A", border: "none" } : { border: "0.5px solid rgba(0,0,0,0.12)" }}
+              style={filter === f ? { background: "#000000", border: "none" } : { border: "0.5px solid rgba(0,0,0,0.12)" }}
             >
               {f === "all" ? "All Listings" : f === "rent" ? "For Rent" : "For Sale"}
             </button>
@@ -152,7 +152,7 @@ export default function HomesPage() {
           <span className="px-3 py-1.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-500 shrink-0 flex items-center gap-1">
             📍 {radius === 50 ? "50+ km" : `${radius} km`}
             <input type="range" min={1} max={50} value={radius} onChange={(e) => setRadius(parseInt(e.target.value))}
-              className="w-16 accent-emerald-500 h-1 ml-1" />
+              className="w-16 accent-black h-1 ml-1" />
           </span>
         </div>
       </div>
@@ -168,7 +168,7 @@ export default function HomesPage() {
             <p className="text-xs mt-1 text-center">Try adjusting your filters or radius.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filteredHomes.map((property) => (
               <div key={property.id}>
                 <HomeGridCard property={property} />
@@ -194,12 +194,12 @@ export default function HomesPage() {
 
 function GridSkeleton() {
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 animate-pulse">
-          <div className="aspect-square w-full bg-emerald-50/50" />
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse" style={{ border: "0.5px solid rgba(0,0,0,0.08)" }}>
+          <div className="aspect-square w-full bg-gray-100" />
           <div className="p-2.5 space-y-2.5 mt-1">
-            <div className="h-3 bg-emerald-100 rounded-full w-1/3" />
+            <div className="h-3 bg-gray-200 rounded-full w-1/3" />
             <div className="h-2.5 bg-gray-100 rounded-full w-2/3 mt-1" />
             <div className="h-2 bg-gray-100 rounded-full w-1/2" />
           </div>
@@ -208,6 +208,7 @@ function GridSkeleton() {
     </div>
   );
 }
+
 
 function HomeGridCard({ property }: { property: Property }) {
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -267,7 +268,7 @@ function HomeGridCard({ property }: { property: Property }) {
         </div>
         <div className="p-2.5 flex-1 flex flex-col justify-between">
           <div>
-            <p className="text-sm font-bold text-[#1A1A1A] leading-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>{property.priceLabel}</p>
+            <p className="text-sm font-bold text-[#1A1A1A] leading-tight" style={{  }}>{property.priceLabel}</p>
             <p className="text-xs text-gray-600 mt-0.5 line-clamp-2 leading-snug">{property.title}</p>
           </div>
           <div>

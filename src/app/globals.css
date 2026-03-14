@@ -1,26 +1,46 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700;800&display=swap");
 
-/* ── Noir Estate Design Tokens ─────────────────────────────────────────────── */
+
+/* ── Uber Estate Design Tokens ─────────────────────────────────────────────── */
 :root {
-  --noir-black: #1A1A1A;
-  --noir-white: #F9F9F9;
-  --noir-gold: #D4AF37;
-  --noir-gold-light: #f0d97a;
-  --noir-border: rgba(0, 0, 0, 0.09);
-  --background: #F9F9F9;
-  --foreground: #1A1A1A;
+  --uber-black:   #000000;
+  --uber-white:   #FFFFFF;
+  --uber-green:   #06C167;
+  --uber-green-dark: #04945A;
+  --uber-surface: #F6F6F6;
+  --uber-surface2: #EEEEEE;
+  --uber-text:    #000000;
+  --uber-muted:   #6B6B6B;
+  --uber-border:  rgba(0, 0, 0, 0.09);
+  /* Keep gold for fee banners */
+  --gold:         #D4AF37;
+  --gold-light:   #f0d97a;
+  --background:   #F6F6F6;
+  --foreground:   #000000;
+}
+
+/* Dark mode */
+html.dark {
+  --uber-black:   #FFFFFF;
+  --uber-white:   #1A1A1A;
+  --uber-surface: #0F0F0F;
+  --uber-surface2: #1A1A1A;
+  --uber-text:    #FFFFFF;
+  --uber-muted:   #A0A0A0;
+  --uber-border:  rgba(255, 255, 255, 0.09);
+  --background:   #0F0F0F;
+  --foreground:   #FFFFFF;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-noir-black: var(--noir-black);
-  --color-noir-white: var(--noir-white);
-  --color-noir-gold: var(--noir-gold);
-  --color-noir-gold-light: var(--noir-gold-light);
-  --font-sans: "Inter", Arial, sans-serif;
-  --font-serif: "Playfair Display", Georgia, serif;
+  --color-uber-black: var(--uber-black);
+  --color-uber-white: var(--uber-white);
+  --color-uber-green: var(--uber-green);
+  --color-uber-surface: var(--uber-surface);
+  --font-sans: var(--font-geist-sans), Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
 }
 
 body {
@@ -30,33 +50,36 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Serif headings */
 .font-serif { font-family: var(--font-serif); }
 
-/* Hairline border utility */
-.border-noir { border: 0.5px solid var(--noir-border); }
+/* Border utilities */
+.border-uber { border: 0.5px solid var(--uber-border); }
 
-/* Gold accent */
-.text-gold { color: var(--noir-gold); }
-.bg-gold { background: var(--noir-gold); }
-.border-gold { border-color: var(--noir-gold); }
+/* Green accent */
+.text-green  { color: var(--uber-green); }
+.bg-green    { background: var(--uber-green); }
 
-/* Safe area padding for notched devices */
-.safe-area-pb {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
+/* Safe area padding */
+.safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
-/* Hide scrollbar utility */
+/* Scrollbar hide */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Sponsored badge shimmer */
+/* Sponsored badge shimmer (keep gold) */
 @keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
 }
 .shimmer-gold {
   background: linear-gradient(90deg, #D4AF37 0%, #f0d97a 50%, #D4AF37 100%);
   background-size: 200% auto;
   animation: shimmer 2.5s linear infinite;
+}
+
+/* ── Responsive Layout Helpers ──────────────────────────────────────────────── */
+/* Desktop main content area expands naturally */
+.main-content {
+  width: 100%;
+  min-height: 100vh;
 }
