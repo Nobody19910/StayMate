@@ -580,10 +580,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
       
-      <style dangerouslySetInnerHTML={{__html: `
-        .HideScrollbar::-webkit-scrollbar { display: none; }
-        .HideScrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}} />
+
     </div>
   );
 }

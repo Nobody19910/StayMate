@@ -40,54 +40,18 @@ function useSeekerUnread() {
   return count;
 }
 
-/** Unread count for ADMIN — polls every 5 s, realtime as fast-path */
-function useAdminUnread() {
-  const { user, profile } = useAuth();
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    if (!user || profile?.role !== "admin") return;
-
-    async function refresh() {
-      const { count: c } = await supabase
-        .from("messages").select("id", { count: "exact", head: true })
-        .eq("is_read", false).neq("sender_id", user!.id);
-      setCount(c ?? 0);
-    }
-
-    refresh();
-    const iv = setInterval(refresh, 5000);
-    return () => clearInterval(iv);
-  }, [user, profile?.role]);
-
-  return count;
-}
-
-
-const baseTabs = [
+const tabs = [
   { href: "/homes",   label: "Homes",   icon: HomeIcon },
   { href: "/hostels", label: "Hostels", icon: HostelIcon },
+  { href: "/post",    label: "Post",    icon: PostIcon },
+  { href: "/chat",    label: "Chat",    icon: ChatIcon },
   { href: "/saved",   label: "Saved",   icon: HeartIcon },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
   const savedCount = useSavedCount();
-  const { profile } = useAuth();
-  const isAdmin = profile?.role === "admin";
   const seekerUnread = useSeekerUnread();
-  const adminUnread  = useAdminUnread();
-  const chatUnread   = isAdmin ? adminUnread : seekerUnread;
-
-  const tabs = [
-    baseTabs[0],
-    baseTabs[1],
-    isAdmin
-      ? { href: "/admin", label: "Dashboard", icon: ManageIcon }
-      : { href: "/post",  label: "Post",      icon: PostIcon },
-    { href: "/chat", label: "Chat", icon: ChatIcon },
-    ...(!isAdmin ? [baseTabs[2]] : []),
-  ];
 
   return (
     <nav
@@ -129,9 +93,9 @@ export default function BottomNav() {
                     {savedCount > 99 ? "99+" : savedCount}
                   </span>
                 )}
-                {isChat && chatUnread > 0 && (
+                {isChat && seekerUnread > 0 && (
                   <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5">
-                    {chatUnread > 99 ? "99+" : chatUnread}
+                    {seekerUnread > 99 ? "99+" : seekerUnread}
                   </span>
                 )}
               </div>
@@ -146,14 +110,6 @@ export default function BottomNav() {
         })}
       </div>
     </nav>
-  );
-}
-
-function ManageIcon({ active }: { active: boolean }) {
-  return (
-    <svg className="w-6 h-6" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" style={{ color: active ? UBER_BLACK : "#9CA3AF" }}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 0H4.5m-1.5 6h18m-18 6h18m-3-6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 0H4.5m10.5 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 0H4.5" />
-    </svg>
   );
 }
 

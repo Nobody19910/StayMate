@@ -65,6 +65,8 @@ body {
 /* Scrollbar hide */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.HideScrollbar::-webkit-scrollbar { display: none; }
+.HideScrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Sponsored badge shimmer (keep gold) */
 @keyframes shimmer {

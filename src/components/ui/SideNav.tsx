@@ -33,26 +33,11 @@ function useSeekerUnread() {
   return count;
 }
 
-function useAdminUnread() {
-  const { user, profile } = useAuth();
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!user || profile?.role !== "admin") return;
-    async function refresh() {
-      const { count: c } = await supabase.from("messages").select("id", { count: "exact", head: true })
-        .eq("is_read", false).neq("sender_id", user!.id);
-      setCount(c ?? 0);
-    }
-    refresh();
-    const ch = setInterval(refresh, 5000);
-    return () => clearInterval(ch);
-  }, [user, profile?.role]);
-  return count;
-}
-
-const baseTabs = [
+const tabs = [
   { href: "/homes",   label: "Homes",   icon: HomeIcon },
   { href: "/hostels", label: "Hostels", icon: HostelIcon },
+  { href: "/post",    label: "Partner", icon: PostIcon },
+  { href: "/chat",    label: "Chat",    icon: ChatIcon },
   { href: "/saved",   label: "Saved",   icon: HeartIcon },
   { href: "/profile", label: "Profile", icon: ProfileIcon },
 ];
@@ -60,22 +45,7 @@ const baseTabs = [
 export default function SideNav() {
   const pathname = usePathname();
   const savedCount = useSavedCount();
-  const { profile } = useAuth();
-  const isAdmin = profile?.role === "admin";
   const seekerUnread = useSeekerUnread();
-  const adminUnread  = useAdminUnread();
-  const chatUnread   = isAdmin ? adminUnread : seekerUnread;
-
-  const tabs = [
-    baseTabs[0],
-    baseTabs[1],
-    isAdmin
-      ? { href: "/admin", label: "Manage", icon: ManageIcon }
-      : { href: "/post",  label: "Partner", icon: PostIcon },
-    { href: "/chat", label: "Chat", icon: ChatIcon },
-    ...(!isAdmin ? [baseTabs[2]] : []),
-    baseTabs[3],
-  ];
 
   return (
     <nav className="flex flex-col h-full bg-white px-4 py-8" style={{ borderRight: "0.5px solid rgba(0,0,0,0.09)" }}>
@@ -111,9 +81,9 @@ export default function SideNav() {
                     {savedCount > 99 ? "99+" : savedCount}
                   </span>
                 )}
-                {isChat && chatUnread > 0 && (
+                {isChat && seekerUnread > 0 && (
                   <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 bg-red-500 text-white">
-                    {chatUnread > 99 ? "99+" : chatUnread}
+                    {seekerUnread > 99 ? "99+" : seekerUnread}
                   </span>
                 )}
               </div>
@@ -130,14 +100,6 @@ export default function SideNav() {
         </p>
       </div>
     </nav>
-  );
-}
-
-function ManageIcon({ active }: { active: boolean }) {
-  return (
-    <svg className="w-5 h-5" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 0H4.5m-1.5 6h18m-18 6h18m-3-6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 0H4.5m10.5 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 0H4.5" />
-    </svg>
   );
 }
 
