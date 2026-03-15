@@ -1,12 +1,8 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+"use client";
+
 import Link from "next/link";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       {/* Dark Admin Sidebar */}
@@ -31,11 +27,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       {/* Main Content */}
       {children}
-
-      <style dangerouslySetInnerHTML={{__html: `
-        .HideScrollbar::-webkit-scrollbar { display: none; }
-        .HideScrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}} />
     </div>
   );
 }

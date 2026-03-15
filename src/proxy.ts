@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
-  const { pathname, searchParams } = request.nextUrl;
+  const { pathname } = request.nextUrl;
 
-  // Skip middleware for assets and API routes
+  // Skip proxy for assets and API routes
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||

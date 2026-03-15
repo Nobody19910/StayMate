@@ -3,10 +3,6 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   // @ts-ignore
   turbopack: {},
-  // @ts-expect-error
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },

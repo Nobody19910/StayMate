@@ -83,7 +83,7 @@ StayMate uses Next.js route groups to host two separate sub-domains in a single 
 - Admin command centre (AdminInbox), direct listing uploads, metrics dashboard
 
 **Routing Strategy:**
-- Middleware (`src/middleware.ts`) reads the `host` header to determine domain
+- Proxy (`src/proxy.ts`) reads the `host` header to determine domain
 - Seeker domain routes admin paths (like `/inbox`) to `/homes`
 - Admin domain routes seeker paths (like `/homes`) to `/inbox`
 - Both groups have their own layout.tsx with separate shells
@@ -118,7 +118,7 @@ src/
     signup/                     # Role-based signup (seeker / owner / manager)
     dashboard/                  # Owner/manager property dashboard
 
-  middleware.ts                 # Sub-domain routing: reads host header, blocks cross-domain routes
+  proxy.ts                      # Sub-domain routing: reads host header, blocks cross-domain routes
 
   components/
     swipe/                      # SwipeCard, SwipeDeck (shared, dormant)
@@ -135,13 +135,13 @@ src/
     paystack.ts                 # Paystack script loader + openPaystackPopup helper
 ```
 
-**Middleware Routing Logic** (`src/middleware.ts`):
+**Proxy Routing Logic** (`src/proxy.ts`):
 - Reads `request.headers.get("host")` to determine domain
 - Admin domain: starts with `"admin."` (e.g., `admin.localhost`, `admin.staymate-eight.vercel.app`)
 - Redirects root `/` to `/inbox` on admin domain, `/homes` on seeker domain
 - Blocks seeker routes (`/homes`, `/hostels`, `/saved`, etc.) on admin domain
 - Blocks admin routes (`/inbox`) on seeker domain
-- All redirects return middleware response or pass through
+- All redirects return proxy response or pass through
 
 ## Core UX Rules
 

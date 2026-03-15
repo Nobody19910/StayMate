@@ -158,34 +158,7 @@ export default function AdminDashboardPage() {
   if (!profile || profile.role !== "admin") return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
-      {/* Sidebar for Desktop / Top Nav for Mobile */}
-      <div className="bg-gray-900 text-white md:w-64 shrink-0 flex flex-col md:h-screen sticky top-0 md:border-r border-gray-800 z-50">
-        <div className="p-6 border-b border-gray-800">
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">StayMate Command</h1>
-          <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-widest">Super Admin</p>
-        </div>
-        <div className="flex flex-row md:flex-col p-4 gap-2 overflow-x-auto md:overflow-y-auto HideScrollbar">
-          <TabButton active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon="📊" label="Dashboard" />
-          <TabButton active={tab === "properties"} onClick={() => setTab("properties")} icon="🏢" label="Live Properties" count={liveHomes.length + liveHostels.length} />
-          <TabButton active={tab === "agents"} onClick={() => { setTab("agents"); setSelectedAgentId(null); }} icon="👔" label="Active Agents" count={activeAgents} />
-          <TabButton active={tab === "queue"} onClick={() => setTab("queue")} icon="⏳" label="Agent Queue" count={pendingHomes.length + pendingHostels.length} />
-          <TabButton active={tab === "audit"} onClick={() => setTab("audit")} icon="🪪" label="KYC Audit" count={pendingKyc.length} />
-          <TabButton active={tab === "leads"} onClick={() => setTab("leads")} icon="🎯" label="Seeker Leads" count={leads.filter(l => l.status === "pending").length} />
-          
-          <div className="hidden md:block mt-auto pt-6 border-t border-gray-800">
-            <Link 
-              href="/admin/post"
-              className="w-full flex items-center justify-center gap-2 bg-emerald-500 text-white font-bold py-3 rounded-xl active:scale-95 transition-transform"
-            >
-              <span>+</span> Upload Listing
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 p-4 md:p-8 overflow-y-auto flex flex-col">
+    <div className="flex-1 p-4 md:p-8 overflow-y-auto flex flex-col">
         <div className="max-w-6xl mx-auto space-y-8 flex-1 flex flex-col w-full pb-20 md:pb-0">
           
           {tab === "dashboard" && (
@@ -578,9 +551,6 @@ export default function AdminDashboardPage() {
           )}
 
         </div>
-      </div>
-      
-
     </div>
   );
 }
