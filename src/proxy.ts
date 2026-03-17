@@ -26,10 +26,8 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Block admin routes on seeker domain
-  if (!isAdminDomain && pathname.startsWith("/inbox")) {
-    return NextResponse.redirect(new URL("/homes", request.url));
-  }
+  // Allow /inbox on all domains — admin page has its own client-side auth guard
+  // (subdomain routing is optional; admins can access /inbox directly)
 
   // Block seeker routes on admin domain
   if (
