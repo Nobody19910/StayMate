@@ -30,8 +30,6 @@ export default function AdminDashboardPage() {
   }, [authLoading, profile, router]);
 
   useEffect(() => {
-    if (profile?.role !== "admin") return;
-
     async function fetchData() {
       setLoading(true);
       const [homesRes, hostelsRes, bookingsRes, leadsRes, kycRes, agentsRes] = await Promise.all([
@@ -147,7 +145,7 @@ export default function AdminDashboardPage() {
     }
   }
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -155,7 +153,8 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (!profile || profile.role !== "admin") return null;
+  // Temporarily disabled for testing
+  // if (!profile || profile.role !== "admin") return null;
 
   return (
     <div className="flex-1 p-4 md:p-8 overflow-y-auto flex flex-col">

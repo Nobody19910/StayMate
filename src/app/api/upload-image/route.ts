@@ -13,22 +13,52 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authenticated user from auth header
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.slice(7); // Remove "Bearer " prefix
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const userId = formData.get("userId") as string;
-    const path = formData.get("path") as string;
+    const propertyId = formData.get("propertyId") as string;
+    const propertyType = formData.get("propertyType") as string; // "home" or "hostel"
 
-    if (!file || !userId || !path) {
+    if (!file || !propertyId || !propertyType) {
       return NextResponse.json(
-        { error: "Missing file, userId, or path" },
+        { error: "Missing file, propertyId, or propertyType" },
         { status: 400 }
       );
     }
 
+    // Verify user owns the property
+    const table = propertyType === "home" ? "homes" : "hostels";
+    const ownerField = propertyType === "home" ? "owner_id" : "manager_id";
+
+    const { data: property } = await supabase
+      .from(table)
+      .select("id")
+      .eq("id", propertyId)
+      .eq(ownerField, user.id)
+      .single();
+
+    if (!property) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Generate safe path using UUID to prevent path traversal
     const buffer = Buffer.from(await file.arrayBuffer());
+    const safePath = `${propertyType}/${propertyId}/${crypto.randomUUID()}.jpg`;
     const { error, data } = await supabase.storage
       .from("listing-images")
-      .upload(path, buffer, { upsert: false });
+      .upload(safePath, buffer, { upsert: false });
 
     if (error) {
       console.error("Storage error:", error);
@@ -40,12 +70,12 @@ export async function POST(request: NextRequest) {
 
     const { data: urlData } = supabase.storage
       .from("listing-images")
-      .getPublicUrl(path);
+      .getPublicUrl(safePath);
 
     return NextResponse.json({
       success: true,
       url: urlData.publicUrl,
-      path,
+      path: safePath,
     });
   } catch (err: any) {
     console.error("Upload API error:", err);
