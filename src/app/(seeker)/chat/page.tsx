@@ -250,9 +250,19 @@ function ChatView({ user }: { user: any }) {
       email: user.email ?? "guest@staymate.app",
       amount: 20000, currency: "GHS",
       metadata: { booking_id: booking.id, user_id: user.id },
-      onSuccess: async (reference) => {
-        await supabase.from("bookings").update({ status: "fee_paid", payment_reference: reference }).eq("id", booking.id);
-        setPayingFee(false);
+      onSuccess: async () => {
+        // Payment verified server-side via Paystack webhook
+        // Poll for updated booking status
+        let attempts = 0;
+        const poll = setInterval(async () => {
+          attempts++;
+          const { data } = await supabase.from("bookings").select("*").eq("id", booking.id).single();
+          if (data?.status === "fee_paid" || attempts >= 10) {
+            clearInterval(poll);
+            if (data) setBooking(data);
+            setPayingFee(false);
+          }
+        }, 2000);
       },
       onClose: () => setPayingFee(false),
     });
