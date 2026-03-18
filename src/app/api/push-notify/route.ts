@@ -9,7 +9,7 @@ import { firebaseAdmin } from "@/lib/firebase-admin";
 export async function POST(req: NextRequest) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
   try {
     // Verify caller is authenticated
@@ -37,30 +37,28 @@ export async function POST(req: NextRequest) {
     const { userId, role: targetRole, title, body, url } = await req.json();
     if (!userId && !targetRole) return NextResponse.json({ error: "userId or role required" }, { status: 400 });
 
-    let targetUserIds: string[] = [];
+    let subs: any[] | null = null;
+    let subsError: any = null;
 
     if (targetRole) {
-      // Notify all users with the given role
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("role", targetRole);
-      targetUserIds = (profiles ?? []).map((p: any) => p.id).filter((id: string) => id !== user.id);
-      console.log("[push-notify] target role:", targetRole, "found", targetUserIds.length, "users, caller:", user.id);
+      // Use SECURITY DEFINER RPC to bypass RLS and get subscriptions by role
+      const { data, error } = await supabase.rpc("get_push_subs_by_role", {
+        target_role: targetRole,
+        exclude_user_id: user.id,
+      });
+      subs = data;
+      subsError = error;
+      console.log("[push-notify] target role:", targetRole, "subs found:", subs?.length ?? 0, "error:", subsError?.message ?? "none", "caller:", user.id);
     } else {
       if (userId === user.id) return NextResponse.json({ ok: true, sent: 0 });
-      targetUserIds = [userId];
       console.log("[push-notify] target userId:", userId, "caller:", user.id);
+      const { data, error } = await supabase
+        .from("push_subscriptions")
+        .select("*")
+        .eq("user_id", userId);
+      subs = data;
+      subsError = error;
     }
-
-    if (targetUserIds.length === 0) {
-      return NextResponse.json({ ok: true, sent: 0 });
-    }
-
-    const { data: subs, error: subsError } = await supabase
-      .from("push_subscriptions")
-      .select("*")
-      .in("user_id", targetUserIds);
 
     console.log("[push-notify] subscriptions found:", subs?.length ?? 0, "error:", subsError?.message ?? "none");
 
