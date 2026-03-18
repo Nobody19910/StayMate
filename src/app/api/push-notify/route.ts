@@ -3,6 +3,8 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { firebaseAdmin } from "@/lib/firebase-admin";
 
 export async function POST(req: NextRequest) {
   // Set VAPID details inside the handler so env vars are available at runtime
@@ -30,19 +32,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify caller is admin
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // Rate limit: 30 requests per 60 seconds per user
+    const rl = checkRateLimit(`push-notify:${user.id}`, { limit: 30, windowSeconds: 60 });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+      );
     }
 
     const { userId, title, body, url } = await req.json();
     if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
+
+    // Prevent users from sending push to themselves
+    if (userId === user.id) {
+      return NextResponse.json({ ok: true, sent: 0 });
+    }
 
     const { data: subs } = await supabase
       .from("push_subscriptions")
@@ -53,26 +58,63 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, sent: 0 });
     }
 
-    const payload = JSON.stringify({ title, body, url: url ?? "/chat" });
     let sent = 0;
     const stale: string[] = [];
 
-    await Promise.all(
-      subs.map(async (sub) => {
-        try {
-          await webpush.sendNotification(
-            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-            payload
-          );
-          sent++;
-        } catch (err: any) {
-          // 410 Gone = subscription expired/unsubscribed
-          if (err.statusCode === 410 || err.statusCode === 404) {
-            stale.push(sub.id);
+    // Split subscriptions into FCM (native) and Web Push
+    const fcmSubs = subs.filter((s) => s.endpoint.startsWith("fcm://"));
+    const webSubs = subs.filter((s) => !s.endpoint.startsWith("fcm://"));
+
+    // Send via FCM for native Capacitor tokens
+    if (fcmSubs.length > 0) {
+      const fcmTokens = fcmSubs.map((s) => s.endpoint.replace("fcm://", ""));
+      try {
+        const response = await firebaseAdmin.messaging().sendEachForMulticast({
+          tokens: fcmTokens,
+          notification: { title: title ?? "StayMate", body: body ?? "" },
+          data: { url: url ?? "/chat" },
+          android: {
+            priority: "high",
+            notification: { channelId: "staymate_default", sound: "default" },
+          },
+          apns: {
+            payload: { aps: { sound: "default", badge: 1 } },
+          },
+        });
+        response.responses.forEach((r, i) => {
+          if (r.success) {
+            sent++;
+          } else if (
+            r.error?.code === "messaging/registration-token-not-registered" ||
+            r.error?.code === "messaging/invalid-registration-token"
+          ) {
+            stale.push(fcmSubs[i].id);
           }
-        }
-      })
-    );
+        });
+      } catch (fcmErr: any) {
+        console.error("[FCM] send error:", fcmErr.message);
+      }
+    }
+
+    // Send via Web Push for browser subscriptions
+    if (webSubs.length > 0) {
+      const payload = JSON.stringify({ title, body, url: url ?? "/chat" });
+      await Promise.all(
+        webSubs.map(async (sub) => {
+          try {
+            await webpush.sendNotification(
+              { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+              payload
+            );
+            sent++;
+          } catch (err: any) {
+            if (err.statusCode === 410 || err.statusCode === 404) {
+              stale.push(sub.id);
+            }
+          }
+        })
+      );
+    }
 
     // Clean up expired subscriptions
     if (stale.length) {

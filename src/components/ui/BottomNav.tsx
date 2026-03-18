@@ -10,7 +10,7 @@ import { supabase } from "@/lib/supabase";
 const UBER_BLACK = "#000000";
 const UBER_GREEN = "#06C167";
 
-/** Unread count for SEEKER — polls every 5 s, realtime as fast-path */
+/** Unread count for SEEKER — polls every 5 s */
 function useSeekerUnread() {
   const { user } = useAuth();
   const [count, setCount] = useState(0);
@@ -40,6 +40,60 @@ function useSeekerUnread() {
   return count;
 }
 
+/** Unread messages across ALL conversations for ADMIN — polls every 5 s */
+function useAdminUnread() {
+  const { user, profile } = useAuth();
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!user || profile?.role !== "admin") return;
+
+    async function refresh() {
+      // Get all conversations
+      const { data: convs } = await supabase.from("conversations").select("id, seeker_id");
+      if (!convs?.length) { setCount(0); return; }
+      const convIds = convs.map((c: any) => c.id);
+      const seekerIds = convs.map((c: any) => c.seeker_id);
+      // Count unread messages sent by seekers (not by admin)
+      const { count: c } = await supabase
+        .from("messages").select("id", { count: "exact", head: true })
+        .in("conversation_id", convIds)
+        .in("sender_id", seekerIds)
+        .eq("is_read", false);
+      setCount(c ?? 0);
+    }
+
+    refresh();
+    const iv = setInterval(refresh, 5000);
+    return () => clearInterval(iv);
+  }, [user, profile]);
+
+  return count;
+}
+
+/** Pending bookings count for ADMIN — polls every 8 s */
+function useAdminPending() {
+  const { user, profile } = useAuth();
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!user || profile?.role !== "admin") return;
+
+    async function refresh() {
+      const { count: c } = await supabase
+        .from("bookings").select("id", { count: "exact", head: true })
+        .eq("status", "pending");
+      setCount(c ?? 0);
+    }
+
+    refresh();
+    const iv = setInterval(refresh, 8000);
+    return () => clearInterval(iv);
+  }, [user, profile]);
+
+  return count;
+}
+
 const tabs = [
   { href: "/homes",   label: "Homes",   icon: HomeIcon },
   { href: "/hostels", label: "Hostels", icon: HostelIcon },
@@ -53,9 +107,18 @@ export default function BottomNav() {
   const savedCount = useSavedCount();
   const seekerUnread = useSeekerUnread();
   const { profile } = useAuth();
+  const adminUnread = useAdminUnread();
+  const adminPending = useAdminPending();
 
-  const allTabs = profile?.role === "admin"
-    ? [...tabs, { href: "/inbox", label: "Admin", icon: AdminIcon }]
+  const isAdmin = profile?.role === "admin";
+  const adminBadge = adminUnread + adminPending;
+  const allTabs = isAdmin
+    ? [
+        { href: "/homes",   label: "Homes",   icon: HomeIcon },
+        { href: "/hostels", label: "Hostels", icon: HostelIcon },
+        { href: "/chat",    label: "Chat",    icon: ChatIcon },
+        { href: "/admin",   label: "Admin",   icon: AdminIcon },
+      ]
     : tabs;
 
   return (
@@ -98,9 +161,19 @@ export default function BottomNav() {
                     {savedCount > 99 ? "99+" : savedCount}
                   </span>
                 )}
-                {isChat && seekerUnread > 0 && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5">
+                {isChat && !isAdmin && seekerUnread > 0 && (
+                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5" style={{ background: UBER_GREEN }}>
                     {seekerUnread > 99 ? "99+" : seekerUnread}
+                  </span>
+                )}
+                {isChat && isAdmin && adminUnread > 0 && (
+                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5" style={{ background: UBER_GREEN }}>
+                    {adminUnread > 99 ? "99+" : adminUnread}
+                  </span>
+                )}
+                {href === "/admin" && adminBadge > 0 && (
+                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5" style={{ background: "#EF4444" }}>
+                    {adminBadge > 99 ? "99+" : adminBadge}
                   </span>
                 )}
               </div>
