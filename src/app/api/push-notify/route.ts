@@ -7,13 +7,6 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { firebaseAdmin } from "@/lib/firebase-admin";
 
 export async function POST(req: NextRequest) {
-  // Set VAPID details inside the handler so env vars are available at runtime
-  webpush.setVapidDetails(
-    process.env.VAPID_EMAIL!,
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!
-  );
-
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -41,18 +34,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { userId, title, body, url } = await req.json();
-    if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
+    const { userId, role: targetRole, title, body, url } = await req.json();
+    if (!userId && !targetRole) return NextResponse.json({ error: "userId or role required" }, { status: 400 });
 
-    // Prevent users from sending push to themselves
-    if (userId === user.id) {
+    let targetUserIds: string[] = [];
+
+    if (targetRole) {
+      // Notify all users with the given role
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("role", targetRole);
+      targetUserIds = (profiles ?? []).map((p: any) => p.id).filter((id: string) => id !== user.id);
+      console.log("[push-notify] target role:", targetRole, "found", targetUserIds.length, "users, caller:", user.id);
+    } else {
+      if (userId === user.id) return NextResponse.json({ ok: true, sent: 0 });
+      targetUserIds = [userId];
+      console.log("[push-notify] target userId:", userId, "caller:", user.id);
+    }
+
+    if (targetUserIds.length === 0) {
       return NextResponse.json({ ok: true, sent: 0 });
     }
 
-    const { data: subs } = await supabase
+    const { data: subs, error: subsError } = await supabase
       .from("push_subscriptions")
       .select("*")
-      .eq("user_id", userId);
+      .in("user_id", targetUserIds);
+
+    console.log("[push-notify] subscriptions found:", subs?.length ?? 0, "error:", subsError?.message ?? "none");
 
     if (!subs || subs.length === 0) {
       return NextResponse.json({ ok: true, sent: 0 });
@@ -64,6 +74,7 @@ export async function POST(req: NextRequest) {
     // Split subscriptions into FCM (native) and Web Push
     const fcmSubs = subs.filter((s) => s.endpoint.startsWith("fcm://"));
     const webSubs = subs.filter((s) => !s.endpoint.startsWith("fcm://"));
+    console.log("[push-notify] fcm:", fcmSubs.length, "web:", webSubs.length);
 
     // Send via FCM for native Capacitor tokens
     if (fcmSubs.length > 0) {
@@ -84,11 +95,15 @@ export async function POST(req: NextRequest) {
         response.responses.forEach((r, i) => {
           if (r.success) {
             sent++;
-          } else if (
-            r.error?.code === "messaging/registration-token-not-registered" ||
-            r.error?.code === "messaging/invalid-registration-token"
-          ) {
-            stale.push(fcmSubs[i].id);
+            console.log("[FCM] sent successfully to token", i);
+          } else {
+            console.error("[FCM] token", i, "error:", r.error?.code, r.error?.message);
+            if (
+              r.error?.code === "messaging/registration-token-not-registered" ||
+              r.error?.code === "messaging/invalid-registration-token"
+            ) {
+              stale.push(fcmSubs[i].id);
+            }
           }
         });
       } catch (fcmErr: any) {
@@ -98,6 +113,11 @@ export async function POST(req: NextRequest) {
 
     // Send via Web Push for browser subscriptions
     if (webSubs.length > 0) {
+      webpush.setVapidDetails(
+        process.env.VAPID_EMAIL!,
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+        process.env.VAPID_PRIVATE_KEY!
+      );
       const payload = JSON.stringify({ title, body, url: url ?? "/chat" });
       await Promise.all(
         webSubs.map(async (sub) => {
