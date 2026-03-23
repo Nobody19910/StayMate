@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef, memo } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import FilterModal, { DEFAULT_FILTERS, type FilterState } from "@/components/ui/FilterModal";
+import { useUserLocation } from "@/lib/useUserLocation";
 import { getHostels } from "@/lib/api";
 import { addSaved, removeSaved, isSaved } from "@/lib/saved-store";
 import type { Hostel } from "@/lib/types";
@@ -22,6 +22,24 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
 const DEFAULT_LAT = 5.6037;
 const DEFAULT_LNG = -0.1870;
 
+function LocationBanner({ onAllow }: { onAllow: () => void }) {
+  return (
+    <div className="mx-4 mt-3 px-4 py-3 rounded-xl flex items-center gap-3" style={{ background: "color-mix(in srgb, var(--uber-green) 12%, var(--uber-surface))", border: "0.5px solid var(--uber-border)" }}>
+      <svg className="w-5 h-5 shrink-0" style={{ color: "var(--uber-green)" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+      </svg>
+      <div className="flex-1">
+        <p className="text-xs font-semibold" style={{ color: "var(--uber-text)" }}>Enable location</p>
+        <p className="text-[10px] mt-0.5" style={{ color: "var(--uber-muted)" }}>See hostels near you first</p>
+      </div>
+      <button onClick={onAllow} className="text-[11px] font-bold px-3 py-1.5 rounded-lg" style={{ background: "var(--uber-green)", color: "#fff" }}>
+        Allow
+      </button>
+    </div>
+  );
+}
+
 export default function HostelsPage() {
   const [hostels, setHostels] = useState<Hostel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,50 +47,39 @@ export default function HostelsPage() {
   const [radius, setRadius] = useState<number>(50);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ ...DEFAULT_FILTERS, priceMax: 25000 });
-  const [userLoc, setUserLoc] = useState<{ lat: number; lng: number }>({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
+  const { loc: userLoc, denied: locDenied } = useUserLocation();
 
-  // Sticky header that slides fully off-screen on scroll down
+  // Sticky header that slides off-screen on scroll down (passive listener for perf)
   const headerRef = useRef<HTMLDivElement>(null);
-  const lastY = useRef(0);
-  const isHidden = useRef(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const rafId = useRef(0);
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const y = e.currentTarget.scrollTop;
-    cancelAnimationFrame(rafId.current);
-    rafId.current = requestAnimationFrame(() => {
-      const delta = y - lastY.current;
-      if (delta > 8 && !isHidden.current) {
-        isHidden.current = true;
-        if (headerRef.current) headerRef.current.style.transform = "translateY(-100%)";
-      } else if (delta < -8 && isHidden.current) {
-        isHidden.current = false;
-        if (headerRef.current) headerRef.current.style.transform = "translateY(0)";
-      }
-      lastY.current = y;
-    });
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let lastY = 0;
+    let hidden = false;
+    let rafId = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const y = el.scrollTop;
+        const delta = y - lastY;
+        if (delta > 8 && !hidden) {
+          hidden = true;
+          if (headerRef.current) headerRef.current.style.transform = "translateY(-100%)";
+        } else if (delta < -8 && hidden) {
+          hidden = false;
+          if (headerRef.current) headerRef.current.style.transform = "translateY(0)";
+        }
+        lastY = y;
+      });
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => { el.removeEventListener("scroll", onScroll); cancelAnimationFrame(rafId); };
   }, []);
 
   useEffect(() => {
     getHostels().then((data) => { setHostels(data); setLoading(false); }).catch(() => setLoading(false));
-
-    async function fetchUserLocation() {
-      try {
-        const isNative = typeof (window as any).Capacitor !== "undefined" &&
-          (window as any).Capacitor.isNativePlatform?.();
-        if (isNative) {
-          const { Geolocation } = await import("@capacitor/geolocation");
-          await Geolocation.requestPermissions();
-          const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 });
-          setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        } else if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition((pos) =>
-            setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-          );
-        }
-      } catch (_) { /* silently fall back to default coords */ }
-    }
-    fetchUserLocation();
   }, []);
 
   const filteredHostels = useMemo(() => {
@@ -119,7 +126,7 @@ export default function HostelsPage() {
       });
     }
 
-    // Separate sponsored (basic/standard) and regular, sort by distance, interleave
+    // Separate sponsored (basic/standard) and regular, sort by distance
     const sponsored = list.filter(h => h.isSponsored && h.sponsorTier !== "featured");
     const regular = list.filter(h => !h.isSponsored || h.sponsorTier === "featured");
 
@@ -129,23 +136,21 @@ export default function HostelsPage() {
       return dA - dB;
     });
 
-    const interleaved: typeof list = [];
-    let sIdx = 0;
-    for (let i = 0; i < regular.length; i++) {
-      interleaved.push(regular[i]);
-      if ((i + 1) % 4 === 0 && sIdx < sponsored.length) {
-        interleaved.push(sponsored[sIdx++]);
-      }
-    }
-    while (sIdx < sponsored.length) {
-      interleaved.push(sponsored[sIdx++]);
+    // Order: 2 nearest → all sponsored → rest randomized
+    const nearest = regular.slice(0, 2);
+    const rest = regular.slice(2);
+    let seed = rest.length;
+    const seededRandom = () => { seed = (seed * 16807 + 0) % 2147483647; return seed / 2147483647; };
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(seededRandom() * (i + 1));
+      [rest[i], rest[j]] = [rest[j], rest[i]];
     }
 
-    return interleaved;
+    return [...nearest, ...sponsored, ...rest];
   }, [hostels, searchQuery, radius, filters, userLoc]);
 
   return (
-    <div className="min-h-screen overflow-y-auto" style={{ background: "var(--background)" }} onScroll={handleScroll}>
+    <div ref={scrollRef} className="min-h-screen overflow-y-auto" style={{ background: "var(--background)" }}>
 
       {/* Sticky header — slides fully off-screen on scroll down */}
       <div
@@ -203,6 +208,13 @@ export default function HostelsPage() {
         </div>
       </div>
 
+      {/* Location prompt */}
+      {locDenied && <LocationBanner onAllow={() => {
+        navigator.geolocation.getCurrentPosition(() => window.location.reload(), () => {
+          window.alert("Please enable location access in your browser settings to see nearby hostels.");
+        });
+      }} />}
+
       {/* Featured carousel */}
       {!loading && (() => {
         const featured = hostels.filter(h => h.isSponsored && h.sponsorTier === "featured").slice(0, 10).map(h => ({
@@ -224,9 +236,7 @@ export default function HostelsPage() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filteredHostels.map((hostel) => (
-              <div key={hostel.id}>
-                <HostelGridCard hostel={hostel} />
-              </div>
+              <HostelGridCard key={hostel.id} hostel={hostel} />
             ))}
           </div>
         )}
@@ -260,13 +270,8 @@ function GridSkeleton() {
   );
 }
 
-function HostelGridCard({ hostel }: { hostel: Hostel }) {
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    setSaved(isSaved(hostel.id));
-  }, [hostel.id]);
+const HostelGridCard = memo(function HostelGridCard({ hostel }: { hostel: Hostel }) {
+  const [saved, setSaved] = useState(() => isSaved(hostel.id));
 
   function toggleSave(e: React.MouseEvent) {
     e.preventDefault();
@@ -281,18 +286,17 @@ function HostelGridCard({ hostel }: { hostel: Hostel }) {
 
   return (
     <Link href={`/hostels/${hostel.id}`}>
-      <div className="rounded-2xl overflow-hidden active:scale-95 transition-transform cursor-pointer h-full flex flex-col" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", border: "0.5px solid var(--uber-border)", background: "var(--uber-white)" }}>
+      <div className="rounded-2xl overflow-hidden cursor-pointer h-full flex flex-col" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", contain: "layout style paint" }}>
         <div className="relative aspect-square w-full shrink-0" style={{ background: "var(--uber-surface2)" }}>
-          {!imgLoaded && <div className="absolute inset-0 animate-pulse" style={{ background: "var(--uber-surface2)" }} />}
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={hostel.images[0] || ""}
             alt={hostel.name || ""}
-            fill
-            className={`object-cover transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
-            onLoad={() => setImgLoaded(true)}
-            unoptimized
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-cover"
           />
-          <span className={`absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm text-white`}
+          <span className="absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm text-white"
             style={{ background: hostel.availableRooms > 0 ? "#06C167" : "#000000" }}>
             {hostel.availableRooms > 0 ? `${hostel.availableRooms} free` : "Full"}
           </span>
@@ -309,7 +313,7 @@ function HostelGridCard({ hostel }: { hostel: Hostel }) {
           <button
             onClick={toggleSave}
             className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-sm transition-all active:scale-90 ${
-              saved ? "bg-red-500 text-white" : "bg-white/90 text-gray-400 hover:text-red-400"
+              saved ? "bg-red-500 text-white" : "bg-white/90 text-gray-400"
             }`}
           >
             <svg className="w-4 h-4" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -335,4 +339,4 @@ function HostelGridCard({ hostel }: { hostel: Hostel }) {
       </div>
     </Link>
   );
-}
+});

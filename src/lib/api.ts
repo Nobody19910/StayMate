@@ -183,6 +183,29 @@ function rowToHostel(row: HostelRow): Hostel {
   };
 }
 
+// ─── Agent name enrichment (separate lookup, no FK required) ─────────────────
+
+async function enrichWithAgentNames<T extends { ownerId?: string; managerId?: string; agentName?: string | null; isAgent?: boolean }>(
+  items: T[],
+  ownerField: "ownerId" | "managerId"
+): Promise<T[]> {
+  const ids = [...new Set(items.map(i => (i as any)[ownerField]).filter(Boolean))];
+  if (!ids.length) return items;
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, display_name, full_name, is_agent")
+    .in("id", ids);
+  if (!profiles?.length) return items;
+  const profileMap = new Map(profiles.map(p => [p.id, p]));
+  return items.map(item => {
+    const p = profileMap.get((item as any)[ownerField]);
+    if (p?.is_agent) {
+      return { ...item, agentName: p.display_name || p.full_name || null, isAgent: true };
+    }
+    return item;
+  });
+}
+
 // ─── Queries (Sponsored-first ordering) ──────────────────────────────────────
 
 export async function getHomes(): Promise<Property[]> {
@@ -195,7 +218,8 @@ export async function getHomes(): Promise<Property[]> {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return (data as HomeRow[]).map(rowToProperty);
+  const homes = (data as HomeRow[]).map(rowToProperty);
+  return enrichWithAgentNames(homes, "ownerId");
 }
 
 export async function getHomeById(id: string): Promise<Property | null> {
@@ -219,7 +243,8 @@ export async function getHostels(): Promise<Hostel[]> {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return (data as HostelRow[]).map(rowToHostel);
+  const hostels = (data as HostelRow[]).map(rowToHostel);
+  return enrichWithAgentNames(hostels, "managerId");
 }
 
 export async function getHostelById(id: string): Promise<Hostel | null> {
@@ -320,7 +345,7 @@ export async function searchHomes(filters: HomeSearchFilters = {}): Promise<Prop
     );
   }
 
-  return results;
+  return enrichWithAgentNames(results, "ownerId");
 }
 
 // ─── Admin: toggle sponsored status ──────────────────────────────────────────

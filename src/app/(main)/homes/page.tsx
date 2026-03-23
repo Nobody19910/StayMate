@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef, memo } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import FilterModal, { DEFAULT_FILTERS, type FilterState } from "@/components/ui/FilterModal";
+import { useUserLocation } from "@/lib/useUserLocation";
 import { searchHomes } from "@/lib/api";
 import { addSaved, removeSaved, isSaved } from "@/lib/saved-store";
 import type { Property } from "@/lib/types";
@@ -23,6 +23,24 @@ const DEFAULT_LAT = 5.6037;
 const DEFAULT_LNG = -0.1870;
 type ListingFilter = "all" | "rent" | "sale";
 
+function LocationBanner({ onAllow }: { onAllow: () => void }) {
+  return (
+    <div className="mx-4 mt-3 px-4 py-3 rounded-xl flex items-center gap-3" style={{ background: "color-mix(in srgb, var(--uber-green) 12%, var(--uber-surface))", border: "0.5px solid var(--uber-border)" }}>
+      <svg className="w-5 h-5 shrink-0" style={{ color: "var(--uber-green)" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+      </svg>
+      <div className="flex-1">
+        <p className="text-xs font-semibold" style={{ color: "var(--uber-text)" }}>Enable location</p>
+        <p className="text-[10px] mt-0.5" style={{ color: "var(--uber-muted)" }}>See properties near you first</p>
+      </div>
+      <button onClick={onAllow} className="text-[11px] font-bold px-3 py-1.5 rounded-lg" style={{ background: "var(--uber-green)", color: "#fff" }}>
+        Allow
+      </button>
+    </div>
+  );
+}
+
 export default function HomesPage() {
   const [filter, setFilter] = useState<ListingFilter>("all");
   const [homes, setHomes] = useState<Property[]>([]);
@@ -31,28 +49,35 @@ export default function HomesPage() {
   const [radius, setRadius] = useState<number>(50);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
-  const [userLoc, setUserLoc] = useState<{ lat: number; lng: number }>({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
+  const { loc: userLoc, denied: locDenied } = useUserLocation();
 
-  // Sticky header that slides fully off-screen on scroll down
+  // Sticky header that slides off-screen on scroll down (passive listener for perf)
   const headerRef = useRef<HTMLDivElement>(null);
-  const lastY = useRef(0);
-  const isHidden = useRef(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const rafId = useRef(0);
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const y = e.currentTarget.scrollTop;
-    cancelAnimationFrame(rafId.current);
-    rafId.current = requestAnimationFrame(() => {
-      const delta = y - lastY.current;
-      if (delta > 8 && !isHidden.current) {
-        isHidden.current = true;
-        if (headerRef.current) headerRef.current.style.transform = "translateY(-100%)";
-      } else if (delta < -8 && isHidden.current) {
-        isHidden.current = false;
-        if (headerRef.current) headerRef.current.style.transform = "translateY(0)";
-      }
-      lastY.current = y;
-    });
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let lastY = 0;
+    let hidden = false;
+    let rafId = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const y = el.scrollTop;
+        const delta = y - lastY;
+        if (delta > 8 && !hidden) {
+          hidden = true;
+          if (headerRef.current) headerRef.current.style.transform = "translateY(-100%)";
+        } else if (delta < -8 && hidden) {
+          hidden = false;
+          if (headerRef.current) headerRef.current.style.transform = "translateY(0)";
+        }
+        lastY = y;
+      });
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => { el.removeEventListener("scroll", onScroll); cancelAnimationFrame(rafId); };
   }, []);
 
   // Fetch homes whenever server-side filters change
@@ -73,25 +98,6 @@ export default function HomesPage() {
       .catch(() => setLoading(false));
   }, [filter, filters, searchQuery]);
 
-  useEffect(() => {
-    async function fetchUserLocation() {
-      try {
-        const isNative = typeof (window as any).Capacitor !== "undefined" &&
-          (window as any).Capacitor.isNativePlatform?.();
-        if (isNative) {
-          const { Geolocation } = await import("@capacitor/geolocation");
-          await Geolocation.requestPermissions();
-          const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 });
-          setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        } else if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition((pos) =>
-            setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-          );
-        }
-      } catch (_) { /* silently fall back to default coords */ }
-    }
-    fetchUserLocation();
-  }, []);
 
   // Client-side radius + location filter + interleaved sponsored
   const filteredHomes = useMemo(() => {
@@ -130,21 +136,18 @@ export default function HomesPage() {
       return dA - dB;
     });
 
-    // Interleave: insert 1 sponsored every 4 regular listings
-    const interleaved: typeof list = [];
-    let sIdx = 0;
-    for (let i = 0; i < regular.length; i++) {
-      interleaved.push(regular[i]);
-      if ((i + 1) % 4 === 0 && sIdx < sponsored.length) {
-        interleaved.push(sponsored[sIdx++]);
-      }
-    }
-    // Append remaining sponsored at the end
-    while (sIdx < sponsored.length) {
-      interleaved.push(sponsored[sIdx++]);
+    // Order: 2 nearest → all sponsored → rest randomized
+    const nearest = regular.slice(0, 2);
+    const rest = regular.slice(2);
+    // Stable shuffle (seeded by list length so it doesn't change on every render)
+    let seed = rest.length;
+    const seededRandom = () => { seed = (seed * 16807 + 0) % 2147483647; return seed / 2147483647; };
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(seededRandom() * (i + 1));
+      [rest[i], rest[j]] = [rest[j], rest[i]];
     }
 
-    return interleaved;
+    return [...nearest, ...sponsored, ...rest];
   }, [homes, radius, userLoc, filters.regions, filters.districts]);
 
   const activeFilterCount =
@@ -159,7 +162,7 @@ export default function HomesPage() {
     filters.districts.length;
 
   return (
-    <div className="min-h-screen overflow-y-auto" style={{ background: "var(--background)" }} onScroll={handleScroll}>
+    <div ref={scrollRef} className="min-h-screen overflow-y-auto" style={{ background: "var(--background)" }}>
 
       {/* Sticky header — slides fully off-screen on scroll down */}
       <div
@@ -229,6 +232,13 @@ export default function HomesPage() {
         </div>
       </div>
 
+      {/* Location prompt */}
+      {locDenied && <LocationBanner onAllow={() => {
+        navigator.geolocation.getCurrentPosition(() => window.location.reload(), () => {
+          window.alert("Please enable location access in your browser settings to see nearby properties.");
+        });
+      }} />}
+
       {/* Featured carousel */}
       {!loading && (() => {
         const featured = homes.filter(h => h.isSponsored && h.sponsorTier === "featured").slice(0, 10).map(h => ({
@@ -250,9 +260,7 @@ export default function HomesPage() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filteredHomes.map((property) => (
-              <div key={property.id}>
-                <HomeGridCard property={property} />
-              </div>
+              <HomeGridCard key={property.id} property={property} />
             ))}
           </div>
         )}
@@ -287,13 +295,8 @@ function GridSkeleton() {
 }
 
 
-function HomeGridCard({ property }: { property: Property }) {
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    setSaved(isSaved(property.id));
-  }, [property.id]);
+const HomeGridCard = memo(function HomeGridCard({ property }: { property: Property }) {
+  const [saved, setSaved] = useState(() => isSaved(property.id));
 
   function toggleSave(e: React.MouseEvent) {
     e.preventDefault();
@@ -309,36 +312,31 @@ function HomeGridCard({ property }: { property: Property }) {
   return (
     <Link href={`/homes/${property.id}`}>
       <div
-        className="rounded-2xl overflow-hidden active:scale-95 transition-transform cursor-pointer h-full flex flex-col"
-        style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", border: "0.5px solid var(--uber-border)", background: "var(--uber-white)" }}
+        className="rounded-2xl overflow-hidden cursor-pointer h-full flex flex-col"
+        style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", contain: "layout style paint" }}
       >
         <div className="relative aspect-square w-full shrink-0" style={{ background: "var(--uber-surface2)" }}>
-          {!imgLoaded && <div className="absolute inset-0 animate-pulse" style={{ background: "var(--uber-surface2)" }} />}
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={property.images[0] || ""}
             alt={property.title || ""}
-            fill
-            className={`object-cover transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
-            onLoad={() => setImgLoaded(true)}
-            unoptimized
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-cover"
           />
-          {/* Listing type badge */}
           <span className="absolute top-2 left-2 text-[9px] font-bold uppercase bg-[#1A1A1A]/80 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">
             {property.forSale ? "For Sale" : "Rent"}
           </span>
-          {/* Sponsored badge */}
           {property.isSponsored && (
             <span className="absolute top-2 left-2 mt-5 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shimmer-gold text-[#1A1A1A]">
               ✦ Sponsored
             </span>
           )}
-          {/* Verified badge */}
           {property.isVerified && (
             <span className="absolute bottom-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm" style={{ background: "#06C167", color: "#fff" }}>
               ✓ Verified
             </span>
           )}
-          {/* Negotiable badge */}
           {property.isNegotiable && (
             <span className="absolute bottom-2 left-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded backdrop-blur-sm" style={{ background: "var(--uber-green)", color: "#fff" }}>
               Negotiable
@@ -385,4 +383,4 @@ function HomeGridCard({ property }: { property: Property }) {
       </div>
     </Link>
   );
-}
+});

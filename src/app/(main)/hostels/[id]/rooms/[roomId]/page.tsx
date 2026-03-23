@@ -259,7 +259,7 @@ export default function RoomDetailPage({ params }: Props) {
       </div>
 
       {/* CTA */}
-      <div className="fixed bottom-16 left-0 right-0 px-4 py-3 space-y-2 max-w-lg mx-auto z-40" style={{ background: "var(--uber-white)", borderTop: "0.5px solid var(--uber-border)" }}>
+      <div className="fixed left-0 right-0 px-4 py-3 space-y-2 max-w-lg mx-auto z-40 bottom-nav-offset" style={{ background: "var(--uber-white)", borderTop: "0.5px solid var(--uber-border)" }}>
         {room.available ? (
           profile?.role === "admin" ? (
             <div className="text-center py-2 text-sm font-medium" style={{ color: "var(--uber-muted)" }}>

@@ -121,7 +121,7 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             className="w-full font-bold py-3.5 rounded-2xl active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed text-base"
-            style={{ background: "var(--uber-black)", color: "var(--uber-white)" }}
+            style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}
           >
             {loading ? "Signing in\u2026" : "Sign In"}
           </button>

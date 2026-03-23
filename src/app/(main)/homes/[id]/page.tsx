@@ -313,7 +313,7 @@ export default function HomeDetailPage({ params }: Props) {
 
       {/* CTA — sticky bottom (hidden when closed) */}
       {property.status !== "rented" && property.status !== "sold" && (
-      <div className="fixed bottom-16 left-0 right-0 px-4 py-3 space-y-2 max-w-lg mx-auto z-40" style={{ background: "var(--uber-white)", borderTop: "0.5px solid var(--uber-border)" }}>
+      <div className="fixed left-0 right-0 px-4 py-3 space-y-2 max-w-lg mx-auto z-40 bottom-nav-offset" style={{ background: "var(--uber-white)", borderTop: "0.5px solid var(--uber-border)" }}>
         {/* Owner sponsor button */}
         {user && property.ownerId === user.id && profile?.role !== "admin" && (
           property.isSponsored ? (

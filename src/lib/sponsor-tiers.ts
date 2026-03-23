@@ -34,3 +34,7 @@ export const SPONSOR_TIERS: SponsorTierOption[] = [
 export const AGENT_SUBSCRIPTION_PRICE = 100; // GHS
 export const AGENT_SUBSCRIPTION_PESEWAS = 10000;
 export const AGENT_SUBSCRIPTION_DAYS = 30;
+
+export const FREE_LISTING_LIMIT = 2;
+export const PER_LISTING_FEE = 30; // GHS
+export const PER_LISTING_FEE_PESEWAS = 3000;

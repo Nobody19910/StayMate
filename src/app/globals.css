@@ -94,6 +94,18 @@ body {
 
 /* Safe area padding */
 .safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Bottom nav total height = 4rem (h-16) + safe area inset */
+.bottom-nav-offset {
+  bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+.pb-nav {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 1024px) {
+  .bottom-nav-offset { bottom: 0; }
+  .pb-nav { padding-bottom: 0; }
+}
 .safe-area-pt { padding-top: env(safe-area-inset-top, 0px); }
 
 /* Scrollbar hide */

@@ -8,7 +8,8 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import { usePaystackScript, openPaystackPopup } from "@/lib/paystack";
 import { activateAgentSubscription } from "@/lib/api";
-import { AGENT_SUBSCRIPTION_PESEWAS } from "@/lib/sponsor-tiers";
+import { AGENT_SUBSCRIPTION_PESEWAS, SPONSOR_TIERS } from "@/lib/sponsor-tiers";
+import { sponsorProperty } from "@/lib/api";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 
 const UBER_GREEN = "#06C167";
@@ -38,6 +39,10 @@ export default function ProfilePage() {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Sponsorship
+  const [sponsoringId, setSponsoringId] = useState<string | null>(null);
+  const [payingSponsor, setPayingSponsor] = useState(false);
 
   // Ticket modal
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
@@ -79,7 +84,7 @@ export default function ProfilePage() {
     }
 
     fetchTickets();
-    if (profile?.role === "owner" || profile?.role === "manager") {
+    if (profile?.role !== "admin") {
       fetchAgentProperties();
     } else {
       setLoadingProperties(false);
@@ -199,7 +204,7 @@ export default function ProfilePage() {
           </Link>
           <div className="rounded-xl px-4 py-3 mt-4" style={{ background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }}>
             <p className="text-xs font-medium text-center" style={{ color: "var(--uber-muted)" }}>
-              No agents. No commission. List your own property or find your next home directly from owners.
+              List your property or find your next home — premium listings across Ghana.
             </p>
           </div>
         </div>
@@ -304,9 +309,9 @@ export default function ProfilePage() {
         )}
 
         {/* My Properties */}
-        {profile?.role !== "admin" && (profile?.role === "owner" || profile?.role === "manager") && (
+        {profile?.role !== "admin" && (
           <div className="mb-6 pt-2">
-            <h2 className="text-lg font-bold mb-3 px-1" style={{ color: "var(--uber-text)" }}>My Hosted Properties</h2>
+            <h2 className="text-lg font-bold mb-3 px-1" style={{ color: "var(--uber-text)" }}>My Properties</h2>
             {loadingProperties ? (
               <div className="space-y-3">
                 {[1, 2].map(i => (
@@ -323,24 +328,26 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 {myProperties.map(property => {
                   const isHostel = "manager_id" in property;
+                  const isSponsoredActive = property.is_sponsored && new Date(property.sponsored_until ?? 0) > new Date();
+                  const showSponsorPicker = sponsoringId === property.id;
                   return (
                     <div key={property.id} className="rounded-2xl p-4 flex flex-col gap-3" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
                       <div className="flex justify-between items-start gap-3">
                         {property.images?.[0] ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img src={property.images[0]} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" style={{ background: "var(--uber-surface)" }} />
                         ) : (
                           <div className="w-16 h-16 rounded-xl flex items-center justify-center shrink-0 text-xl" style={{ background: "var(--uber-surface)" }}>🏠</div>
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold line-clamp-1" style={{ color: "var(--uber-text)" }}>{property.name || property.title}</p>
-                          <div className="flex gap-2 mt-1">
+                          <div className="flex flex-wrap gap-1.5 mt-1">
                             <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded" style={{ color: "var(--uber-muted)", background: "var(--uber-surface)" }}>
                               {isHostel ? "Hostel" : "Home"}
                             </span>
                             <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
                               property.status === "approved" ? "text-white" :
-                              property.status === "rented"   ? "text-white" :
-                              ""
+                              property.status === "rented"   ? "text-white" : ""
                             }`}
                               style={property.status === "approved" ? { background: UBER_GREEN } :
                                      property.status === "rented"   ? { background: "var(--uber-black)" } :
@@ -348,10 +355,75 @@ export default function ProfilePage() {
                             >
                               {property.status}
                             </span>
+                            {isSponsoredActive && (
+                              <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded shimmer-gold text-[#1A1A1A]">
+                                ✦ Sponsored
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2 pt-2" style={{ borderTop: "0.5px solid var(--uber-border)" }}>
+
+                      {/* Sponsor tier picker */}
+                      <AnimatePresence>
+                        {showSponsorPicker && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="pt-2 space-y-2" style={{ borderTop: "0.5px solid var(--uber-border)" }}>
+                              <p className="text-xs font-bold" style={{ color: "var(--uber-text)" }}>Choose a Sponsorship Plan</p>
+                              {SPONSOR_TIERS.map(tier => (
+                                <button
+                                  key={tier.tier}
+                                  disabled={payingSponsor}
+                                  onClick={() => {
+                                    setPayingSponsor(true);
+                                    openPaystackPopup({
+                                      email: user?.email ?? "",
+                                      amount: tier.pricePesewas,
+                                      currency: "GHS",
+                                      ref: `sponsor-${property.id}-${tier.tier}-${Date.now()}`,
+                                      metadata: { type: "sponsor", property_id: property.id, tier: tier.tier },
+                                      onSuccess: async (reference) => {
+                                        try {
+                                          await sponsorProperty(
+                                            isHostel ? "hostels" : "homes",
+                                            property.id, tier.tier, tier.durationDays, reference, user!.id
+                                          );
+                                          setMyProperties(prev => prev.map(p =>
+                                            p.id === property.id
+                                              ? { ...p, is_sponsored: true, sponsor_tier: tier.tier, sponsored_until: new Date(Date.now() + tier.durationDays * 86400000).toISOString() }
+                                              : p
+                                          ));
+                                          setSponsoringId(null);
+                                        } catch {
+                                          alert("Payment received but sponsorship activation failed. Contact support.");
+                                        }
+                                        setPayingSponsor(false);
+                                      },
+                                      onClose: () => setPayingSponsor(false),
+                                    });
+                                  }}
+                                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl active:scale-[0.98] transition-all disabled:opacity-60"
+                                  style={{ background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }}
+                                >
+                                  <div className="text-left">
+                                    <p className="text-xs font-bold" style={{ color: "var(--uber-text)" }}>{tier.label}</p>
+                                    <p className="text-[10px]" style={{ color: "var(--uber-muted)" }}>{tier.perks[0]}</p>
+                                  </div>
+                                  <span className="text-xs font-extrabold shrink-0" style={{ color: "#D4AF37" }}>GH₵{tier.price}</span>
+                                </button>
+                              ))}
+                              <button onClick={() => setSponsoringId(null)} className="w-full text-xs font-bold py-1.5" style={{ color: "var(--uber-muted)" }}>
+                                Cancel
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      <div className="flex gap-2 pt-2" style={{ borderTop: showSponsorPicker ? "none" : "0.5px solid var(--uber-border)" }}>
                         <Link
                           href={isHostel ? `/hostels/${property.id}` : `/homes/${property.id}`}
                           className="flex-1 py-1.5 text-center text-xs font-bold rounded-lg active:scale-95"
@@ -359,18 +431,27 @@ export default function ProfilePage() {
                         >
                           View
                         </Link>
+                        {!isSponsoredActive && !showSponsorPicker && (
+                          <button
+                            onClick={() => setSponsoringId(property.id)}
+                            className="flex-1 py-1.5 text-[10px] uppercase tracking-wider font-extrabold rounded-lg active:scale-95"
+                            style={{ background: "#D4AF37", color: "#1A1A1A" }}
+                          >
+                            ✦ Sponsor
+                          </button>
+                        )}
                         <button
                           onClick={() => togglePropertyStatus(property.id, isHostel, property.status)}
                           className="flex-1 py-1.5 text-[10px] uppercase tracking-wider font-extrabold text-white rounded-lg active:scale-95"
                           style={{ background: UBER_GREEN }}
                         >
-                          {property.status === "rented" ? "Mark Available" : "Mark Rented"}
+                          {property.status === "rented" ? "Available" : "Rented"}
                         </button>
                         <button
                           onClick={() => deleteProperty(property.id, isHostel)}
-                          className="flex-1 py-1.5 text-[10px] uppercase tracking-wider font-extrabold text-red-500 bg-red-50 rounded-lg active:scale-95"
+                          className="py-1.5 px-2 text-[10px] uppercase tracking-wider font-extrabold text-red-500 bg-red-50 rounded-lg active:scale-95"
                         >
-                          Delete
+                          ✕
                         </button>
                       </div>
                     </div>
@@ -516,14 +597,14 @@ export default function ProfilePage() {
           <span className="text-xl">ℹ️</span>
           <div className="flex-1">
             <p className="text-sm font-semibold" style={{ color: "var(--uber-text)" }}>About StayMate</p>
-            <p className="text-xs" style={{ color: "var(--uber-muted)" }}>No agents. No commission.</p>
+            <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Property listings & sales across Ghana.</p>
           </div>
         </div>
 
         <button
           onClick={handleSignOut}
           className="w-full mt-2 text-red-500 font-bold py-3 rounded-2xl active:scale-95 transition-transform text-sm"
-          style={{ border: "0.5px solid rgba(239,68,68,0.3)", background: "#fff5f5" }}
+          style={{ border: "0.5px solid rgba(239,68,68,0.3)", background: "color-mix(in srgb, #ef4444 8%, var(--uber-surface))" }}
         >
           Sign Out
         </button>
@@ -576,7 +657,7 @@ export default function ProfilePage() {
                 )}
 
                 {selectedTicket.status === "accepted" && (
-                  <div className="rounded-2xl p-5" style={{ background: "#FDF8E7", border: "0.5px solid rgba(212,175,55,0.3)" }}>
+                  <div className="rounded-2xl p-5" style={{ background: "color-mix(in srgb, #D4AF37 15%, var(--uber-surface))", border: "0.5px solid rgba(212,175,55,0.3)" }}>
                     <div className="flex items-center gap-3 mb-3">
                       <span className="text-2xl">💳</span>
                       <div>
@@ -598,7 +679,7 @@ export default function ProfilePage() {
                 )}
 
                 {(selectedTicket.status === "fee_paid" || selectedTicket.status === "paid") && (
-                  <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: "#EAFAF1", border: "0.5px solid rgba(6,193,103,0.3)" }}>
+                  <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: "color-mix(in srgb, #06C167 12%, var(--uber-surface))", border: "0.5px solid rgba(6,193,103,0.3)" }}>
                     <span className="text-2xl">✅</span>
                     <div>
                       <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Fee Paid</p>

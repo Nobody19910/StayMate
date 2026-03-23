@@ -64,7 +64,7 @@ export default function SideNav() {
       {/* Logo */}
       <div className="mb-10 px-2">
         <span className="text-xl font-extrabold tracking-tight" style={{ color: "var(--uber-text)" }}>StayMate</span>
-        <p className="text-[10px] mt-0.5" style={{ color: "var(--uber-muted)" }}>No agents. No commission.</p>
+        <p className="text-[10px] mt-0.5" style={{ color: "var(--uber-muted)" }}>Property Listings & Sales</p>
       </div>
 
       {/* Nav links */}

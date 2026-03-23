@@ -289,12 +289,14 @@ export default function AdminInbox() {
       if (!ownerId) { setReleasingContact(false); return; }
       const { data: ownerProfile } = await supabase
         .from("profiles")
-        .select("full_name, phone, is_agent")
+        .select("full_name, phone, is_agent, display_name")
         .eq("id", ownerId)
         .single();
-      if (!ownerProfile?.is_agent || !ownerProfile.phone) { setReleasingContact(false); return; }
+      if (!ownerProfile?.phone) { setReleasingContact(false); return; }
       const { data: adminData } = await supabase.auth.getUser();
-      const contactMsg = `📞 Agent Contact Released:\n${ownerProfile.full_name} — ${ownerProfile.phone}\nYou can now contact the agent directly.`;
+      const ownerName = ownerProfile.display_name || ownerProfile.full_name || "Property Owner";
+      const label = ownerProfile.is_agent ? "Agent" : "Owner";
+      const contactMsg = `📞 ${label} Contact Released:\n${ownerName} — ${ownerProfile.phone}\nYou can now contact them directly.`;
       await supabase.from("messages").insert({
         conversation_id: selectedConv.id,
         sender_id: adminData.user?.id,
@@ -308,7 +310,7 @@ export default function AdminInbox() {
         await fetch("/api/push-notify", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-          body: JSON.stringify({ userId: selectedConv.seeker_id, title: "Agent Contact Released", body: `You can now contact ${ownerProfile.full_name} directly.`, url: "/chat" }),
+          body: JSON.stringify({ userId: selectedConv.seeker_id, title: `${label} Contact Released`, body: `You can now contact ${ownerName} directly.`, url: "/chat" }),
         });
       } catch (_) {}
       fetchMessages(selectedConv, false);
@@ -521,7 +523,7 @@ export default function AdminInbox() {
                         className="shrink-0 px-3 py-1.5 text-[10px] font-bold text-white rounded-xl active:scale-95 disabled:opacity-50 flex items-center gap-1"
                         style={{ background: UBER_GREEN }}>
                         {releasingContact && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                        Release Agent Contact
+                        Release Contact
                       </button>
                     )}
                   </div>

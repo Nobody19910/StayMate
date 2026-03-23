@@ -7,6 +7,9 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import type { PropertyType, PropertyCondition, FurnishingLevel, RoomAmenity, RoomType } from "@/lib/types";
 import SponsorModal from "@/components/ui/SponsorModal";
+import { FREE_LISTING_LIMIT, PER_LISTING_FEE_PESEWAS, PER_LISTING_FEE, AGENT_SUBSCRIPTION_PESEWAS, AGENT_SUBSCRIPTION_PRICE } from "@/lib/sponsor-tiers";
+import { usePaystackScript, openPaystackPopup } from "@/lib/paystack";
+import { activateAgentSubscription } from "@/lib/api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -206,8 +209,33 @@ export default function PostPage() {
   const [lastInsertedId, setLastInsertedId] = useState<string | null>(null);
   const [lastInsertedKind, setLastInsertedKind] = useState<"homes" | "hostels" | null>(null);
   const [showSponsor, setShowSponsor] = useState(false);
+  const [listingCount, setListingCount] = useState(0);
+  const [listingCountLoaded, setListingCountLoaded] = useState(false);
+  const [listingFeePaid, setListingFeePaid] = useState(false);
+  const [isActiveAgent, setIsActiveAgent] = useState(false);
+
+  usePaystackScript();
 
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  // Check listing count and agent status
+  useEffect(() => {
+    if (!user) return;
+    async function checkListings() {
+      const [{ count: homeCount }, { count: hostelCount }] = await Promise.all([
+        supabase.from("homes").select("id", { count: "exact", head: true }).eq("owner_id", user!.id),
+        supabase.from("hostels").select("id", { count: "exact", head: true }).eq("manager_id", user!.id),
+      ]);
+      setListingCount((homeCount ?? 0) + (hostelCount ?? 0));
+      // Check agent subscription
+      const { data: prof } = await supabase.from("profiles").select("is_agent, agent_subscription_until").eq("id", user!.id).single();
+      if (prof?.is_agent && new Date(prof.agent_subscription_until ?? 0) > new Date()) {
+        setIsActiveAgent(true);
+      }
+      setListingCountLoaded(true);
+    }
+    checkListings();
+  }, [user]);
 
   // Pre-fill phone from profile
   useEffect(() => {
@@ -518,6 +546,46 @@ export default function PostPage() {
     setPhotos([]);
     setHomeInfo({ propertyType: "apartment", title: "", description: "", price: "", region: "", city: "", address: "", beds: "", baths: "", sqft: "", forSale: false, amenities: [], ownerPhone: profile?.phone ?? "", lat: "", lng: "", condition: "used", furnishing: "unfurnished", serviceCharge: "", isNegotiable: false, landSize: "" });
     setHostelInfo({ title: "", description: "", region: "", city: "", address: "", nearbyUniversities: "", managerPhone: profile?.phone ?? "", rooms: [makeRoomDraft()], lat: "", lng: "" });
+  }
+
+  // Admin bypasses all limits
+  const isAdmin = profile?.role === "admin";
+  const needsListingFee = !isAdmin && !isActiveAgent && listingCount >= FREE_LISTING_LIMIT && !listingFeePaid;
+
+  function handlePayListingFee() {
+    if (!user) return;
+    openPaystackPopup({
+      email: user.email ?? "",
+      amount: PER_LISTING_FEE_PESEWAS,
+      currency: "GHS",
+      ref: `listing-fee-${user.id}-${Date.now()}`,
+      metadata: { type: "listing_fee", user_id: user.id },
+      onSuccess: () => { setListingFeePaid(true); },
+      onClose: () => {},
+    });
+  }
+
+  function handlePayAgentSub() {
+    if (!user) return;
+    openPaystackPopup({
+      email: user.email ?? "",
+      amount: AGENT_SUBSCRIPTION_PESEWAS,
+      currency: "GHS",
+      ref: `agent-sub-${user.id}-${Date.now()}`,
+      metadata: { type: "agent_subscription", user_id: user.id },
+      onSuccess: async (reference: string) => {
+        try {
+          await activateAgentSubscription(user!.id, reference);
+          if (profile?.fullName) {
+            await supabase.from("profiles").update({ display_name: profile.fullName }).eq("id", user!.id);
+          }
+          setIsActiveAgent(true);
+        } catch {
+          alert("Payment received but activation failed. Contact support.");
+        }
+      },
+      onClose: () => {},
+    });
   }
 
   if (authLoading || !user) return null;
@@ -1099,6 +1167,34 @@ export default function PostPage() {
           {currentStep === "Preview" && (
             <div className="space-y-4">
               <h2 className="text-base font-bold" style={{ color: "var(--uber-text)" }}>Review &amp; Publish</h2>
+
+              {/* Listing fee paywall */}
+              {needsListingFee && listingCountLoaded && (
+                <div className="rounded-2xl p-5 space-y-3" style={{ background: "#FDF8E7", border: "0.5px solid rgba(212,175,55,0.3)" }}>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🔒</span>
+                    <div>
+                      <p className="text-sm font-extrabold" style={{ color: "var(--uber-text)" }}>Listing Limit Reached</p>
+                      <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>
+                        You&apos;ve used your {FREE_LISTING_LIMIT} free listings. Choose an option below to continue posting.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <button onClick={handlePayListingFee}
+                      className="w-full py-3 text-sm font-bold rounded-xl active:scale-95 transition-transform"
+                      style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>
+                      Pay GH₵{PER_LISTING_FEE} for This Listing
+                    </button>
+                    <button onClick={handlePayAgentSub}
+                      className="w-full py-3 text-sm font-bold rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2"
+                      style={{ background: "#06C167", color: "#fff" }}>
+                      Subscribe — GH₵{AGENT_SUBSCRIPTION_PRICE}/mo (Unlimited)
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="rounded-2xl p-4 space-y-3" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
                 {photoPreviews[0] && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -1195,7 +1291,7 @@ export default function PostPage() {
           </button>
         )}
         <button
-          disabled={!canGoNext() || submitting}
+          disabled={!canGoNext() || submitting || (currentStep === "Preview" && needsListingFee)}
           onClick={() => {
             if (currentStep === "Preview") {
               handleSubmit();

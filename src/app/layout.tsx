@@ -18,7 +18,7 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "StayMate — Find Your Home",
-  description: "P2P real estate. No agents. No commission. Premium homes and student hostels directly from owners.",
+  description: "Premium property listings — homes, rentals, and student hostels across Ghana.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
