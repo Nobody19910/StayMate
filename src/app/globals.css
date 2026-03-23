@@ -9,27 +9,35 @@
   --uber-green-dark: #04945A;
   --uber-surface: #F6F6F6;
   --uber-surface2: #EEEEEE;
-  --uber-text:    #000000;
+  --uber-text:    #1A1A1A;
   --uber-muted:   #6B6B6B;
   --uber-border:  rgba(0, 0, 0, 0.09);
   /* Keep gold for fee banners */
   --gold:         #D4AF37;
   --gold-light:   #f0d97a;
   --background:   #F6F6F6;
-  --foreground:   #000000;
+  --foreground:   #1A1A1A;
+  /* Button/badge tokens (same as text in light) */
+  --uber-btn-bg:  #1A1A1A;
+  --uber-btn-text: #FFFFFF;
+  --uber-card-bg: #FFFFFF;
 }
 
 /* Dark mode */
 html.dark {
   --uber-black:   #FFFFFF;
   --uber-white:   #1A1A1A;
-  --uber-surface: #0F0F0F;
-  --uber-surface2: #1A1A1A;
-  --uber-text:    #FFFFFF;
-  --uber-muted:   #A0A0A0;
-  --uber-border:  rgba(255, 255, 255, 0.09);
-  --background:   #0F0F0F;
-  --foreground:   #FFFFFF;
+  --uber-surface: #111111;
+  --uber-surface2: #1E1E1E;
+  --uber-text:    #F0F0F0;
+  --uber-muted:   #8E8E8E;
+  --uber-border:  rgba(255, 255, 255, 0.10);
+  --background:   #111111;
+  --foreground:   #F0F0F0;
+  /* Dark mode specific: button/badge backgrounds stay dark */
+  --uber-btn-bg:  #F0F0F0;
+  --uber-btn-text: #111111;
+  --uber-card-bg: #1A1A1A;
 }
 
 @theme inline {
@@ -39,8 +47,9 @@ html.dark {
   --color-uber-white: var(--uber-white);
   --color-uber-green: var(--uber-green);
   --color-uber-surface: var(--uber-surface);
-  --font-sans: var(--font-geist-sans), Arial, sans-serif;
-  --font-mono: var(--font-geist-mono), monospace;
+  --font-sans: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-serif: var(--font-playfair), 'Playfair Display', Georgia, serif;
+  --font-mono: 'SF Mono', monospace;
 }
 
 body {
@@ -48,6 +57,30 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── 120Hz / ProMotion Scroll Optimizations ────────────────────────────────── */
+
+/* Hint the compositor to promote scrollable containers to their own layer */
+.scroll-container,
+[style*="overflow"] {
+  will-change: scroll-position;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* GPU-accelerate all transforms and opacity transitions */
+* {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Ensure animations use the highest available refresh rate */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+    interpolate-size: allow-keywords;
+  }
 }
 
 .font-serif { font-family: var(--font-serif); }
@@ -61,6 +94,7 @@ body {
 
 /* Safe area padding */
 .safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-area-pt { padding-top: env(safe-area-inset-top, 0px); }
 
 /* Scrollbar hide */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -77,6 +111,32 @@ body {
   background: linear-gradient(90deg, #D4AF37 0%, #f0d97a 50%, #D4AF37 100%);
   background-size: 200% auto;
   animation: shimmer 2.5s linear infinite;
+}
+
+/* ── Dark-mode aware utility classes ───────────────────────────────────────── */
+/* Buttons: always high contrast regardless of theme */
+.btn-primary {
+  background: var(--uber-btn-bg);
+  color: var(--uber-btn-text);
+}
+.btn-primary:hover {
+  opacity: 0.85;
+}
+
+/* Input fields */
+.input-field {
+  background: var(--uber-white);
+  color: var(--uber-text);
+  border: 0.5px solid var(--uber-border);
+}
+.input-field::placeholder {
+  color: var(--uber-muted);
+}
+
+/* Cards */
+.card {
+  background: var(--uber-card-bg);
+  border: 0.5px solid var(--uber-border);
 }
 
 /* ── Responsive Layout Helpers ──────────────────────────────────────────────── */

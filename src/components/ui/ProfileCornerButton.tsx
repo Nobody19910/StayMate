@@ -1,14 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 
 export default function ProfileCornerButton() {
   const pathname = usePathname();
+  const router = useRouter();
   const { profile, user } = useAuth();
 
-  // Don't show on profile page itself
   if (pathname.startsWith("/profile")) return null;
 
   const initials = (profile?.fullName ?? user?.email ?? "?")
@@ -19,8 +18,8 @@ export default function ProfileCornerButton() {
     .slice(0, 2);
 
   return (
-    <Link
-      href="/profile"
+    <button
+      onClick={() => router.push("/profile")}
       className="fixed top-4 right-4 z-50 lg:hidden"
       aria-label="Profile"
     >
@@ -29,13 +28,14 @@ export default function ProfileCornerButton() {
         <img
           src={profile.avatarUrl}
           alt=""
-          className="w-9 h-9 rounded-full object-cover border-2 border-white shadow-md"
+          className="w-9 h-9 rounded-full object-cover border-2 shadow-md"
+            style={{ borderColor: "var(--uber-white)" }}
         />
       ) : (
-        <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center text-[11px] font-extrabold border-2 border-white shadow-md">
+        <div className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-extrabold border-2 shadow-md" style={{ background: "var(--uber-black)", color: "var(--uber-white)", borderColor: "var(--uber-white)" }}>
           {initials}
         </div>
       )}
-    </Link>
+    </button>
   );
 }

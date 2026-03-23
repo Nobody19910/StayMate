@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" ry="96" fill="#FFFFFF"/>
+  <text x="256" y="275" text-anchor="middle" dominant-baseline="central"
+    font-family="SF Pro Rounded, Nunito, Rubik, -apple-system, sans-serif"
+    font-weight="700" font-size="80" letter-spacing="-2" fill="#1A1A1A">staymate</text>
+</svg>

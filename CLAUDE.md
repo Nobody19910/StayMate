@@ -12,18 +12,26 @@ StayMate as the coordinating concierge. No third-party broker. No commission.
 
 ## Design System: Uber
 
-| Token              | Value                  | Usage                              |
-|--------------------|------------------------|------------------------------------||
-| `--uber-black`     | `#000000`              | Primary text, buttons, accents     |
-| `--uber-white`     | `#FFFFFF`              | Cards, panels                      |
-| `--uber-green`     | `#06C167`              | CTAs, badges, active nav, status   |
-| `--uber-surface`   | `#F6F6F6`              | Page background, surfaces          |
-| `--gold`           | `#D4AF37`              | Fee banners, sponsored badges only |
-| Serif font         | Playfair Display       | Property titles, H1 headings       |
-| Sans font          | Inter                  | UI text, labels, inputs            |
+| Token              | Light                  | Dark                   | Usage                              |
+|--------------------|------------------------|------------------------|------------------------------------|
+| `--uber-black`     | `#000000`              | `#FFFFFF`              | Primary text, accents              |
+| `--uber-white`     | `#FFFFFF`              | `#1A1A1A`              | Cards, panels                      |
+| `--uber-green`     | `#06C167`              | `#06C167`              | CTAs, badges, active nav, status   |
+| `--uber-surface`   | `#F6F6F6`              | `#111111`              | Page background                    |
+| `--uber-surface2`  | `#EEEEEE`              | `#1E1E1E`              | Secondary surfaces                 |
+| `--uber-text`      | `#1A1A1A`              | `#F0F0F0`              | Body text (softened contrast)      |
+| `--uber-muted`     | `#6B6B6B`              | `#8E8E8E`              | Secondary text, placeholders       |
+| `--uber-btn-bg`    | `#1A1A1A`              | `#F0F0F0`              | Button backgrounds (inverts)       |
+| `--uber-btn-text`  | `#FFFFFF`              | `#111111`              | Button text (inverts with bg)      |
+| `--uber-card-bg`   | `#FFFFFF`              | `#1A1A1A`              | Card backgrounds                   |
+| `--uber-border`    | `rgba(0,0,0,0.09)`    | `rgba(255,255,255,0.10)` | Hairline borders                 |
+| `--gold`           | `#D4AF37`              | `#D4AF37`              | Fee banners, sponsored badges only |
+| Serif font         | Playfair Display       | —                      | Property titles, H1 headings       |
+| Sans font          | Inter                  | —                      | UI text, labels, inputs            |
 
-All borders must be `0.5px` hairlines using `rgba(0,0,0,0.09)`. No thick borders.
+All borders must be `0.5px` hairlines. No thick borders.
 Shadows: `box-shadow: 0 2px 16px rgba(0,0,0,0.07)`.
+Dark mode: toggled via `html.dark` class (ThemeProvider, persisted to localStorage).
 
 ## Two Core Sections
 
@@ -251,8 +259,8 @@ PAYSTACK_SECRET_KEY
 - [x] Phase 3 — Auth, Roles & Two-Sided User System
 - [x] Phase 4 — Direct Messaging, Booking Flow & Admin Command Centre
 - [x] Phase 5 — Noir Rebrand, Sponsored Listings, Realtime Chat, Push Notifications
-- [x] Phase 6 — Uber Theme, Desktop Responsive Layout, Realtime Chat Push (seeker→admin), KYC Removed
-- [ ] Phase 7 — Video Tours, Capacitor Native Build
+- [x] Phase 6 — Uber Theme, Desktop Responsive Layout, Realtime Chat Push (seeker→admin), KYC Removed, Dark Mode Dual-Token System
+- [ ] Phase 7 — Sub-Domain Split (seeker vs admin domains), Video Tours, Capacitor Native Build
 
 ---
 
@@ -269,13 +277,22 @@ PAYSTACK_SECRET_KEY
 **Styling & Theme**
 - Tailwind CSS v4 with custom theme tokens in `:root` CSS variables
 - Color palette defined in `src/app/globals.css`:
-  - `--uber-black: #000000` — primary text, borders, buttons
-  - `--uber-white: #FFFFFF` — cards, panels
-  - `--uber-green: #06C167` — active states, CTAs, badges
-  - `--uber-surface: #F6F6F6` — page backgrounds
-  - `--gold: #D4AF37` — sponsored badges and fee banners only
-  - `--uber-border: rgba(0,0,0,0.09)` — hairline 0.5px borders
-- Dark mode toggle implemented via `ThemeContext` (persisted to localStorage)
+  - `--uber-black: #000000` / dark: `#FFFFFF` — primary text, borders
+  - `--uber-white: #FFFFFF` / dark: `#1A1A1A` — cards, panels
+  - `--uber-green: #06C167` — active states, CTAs, badges (same in both modes)
+  - `--uber-surface: #F6F6F6` / dark: `#111111` — page backgrounds
+  - `--uber-surface2: #EEEEEE` / dark: `#1E1E1E` — secondary surfaces
+  - `--uber-text: #1A1A1A` / dark: `#F0F0F0` — primary body text (softened, not pure black/white)
+  - `--uber-muted: #6B6B6B` / dark: `#8E8E8E` — secondary text, placeholders
+  - `--uber-border: rgba(0,0,0,0.09)` / dark: `rgba(255,255,255,0.10)` — hairline borders
+  - `--uber-btn-bg: #1A1A1A` / dark: `#F0F0F0` — button backgrounds (inverts for contrast)
+  - `--uber-btn-text: #FFFFFF` / dark: `#111111` — button text (inverts with bg)
+  - `--uber-card-bg: #FFFFFF` / dark: `#1A1A1A` — card backgrounds
+  - `--gold: #D4AF37` — sponsored badges and fee banners only (same in both modes)
+- Dark mode toggle via `ThemeProvider` (`src/lib/theme-context.tsx`), toggles `html.dark` class, persisted to localStorage
+- Pages use CSS variable inline styles (`style={{ color: "var(--uber-text)" }}`) instead of hardcoded Tailwind color classes for dark mode compatibility
+- Utility classes in globals.css: `.btn-primary`, `.input-field`, `.card` for consistent dark mode styling
+- Fonts: Inter (sans, `--font-inter`) + Playfair Display (serif, `--font-playfair`) loaded via `next/font/google` in root layout
 - Responsive breakpoints: mobile-first (375px+), lg breakpoint (1024px) for desktop sidebar layout
 
 **Animation Framework**
@@ -416,6 +433,20 @@ CREATE POLICY "Admin can delete homes" ON homes FOR DELETE
     EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid()::text AND profiles.role = 'admin')
   );
 ```
+
+**Account Storage Summary**
+- **Passwords**: managed entirely by Supabase Auth (hashed internally, never stored in app DB)
+- **Sessions**: Supabase Auth SDK stores JWT in browser localStorage (auto-refreshed)
+- **User profile data**: `profiles` table (full_name, phone, avatar_url, role) — created automatically via DB trigger on signup
+- **No separate admin account system**: admins use the same `profiles` table with `role = 'admin'` (set manually in DB)
+- **Saved items**: localStorage only (not synced to DB) via `src/lib/saved-store.ts`
+- **Theme preference**: localStorage (`theme` key) via ThemeProvider
+
+**Admin UI Restrictions**
+- Admin users see "Edit Property Details" instead of booking CTA on home detail pages
+- Admin users see "Admin accounts cannot book rooms" instead of booking CTA on room detail pages
+- Admin gets AdminInbox instead of seeker chat
+- Admin can toggle sponsored status, schedule viewings, accept/reject bookings
 
 ### Payment Processing
 

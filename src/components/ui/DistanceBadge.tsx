@@ -26,7 +26,7 @@ export default function DistanceBadge({ lat, lng }: { lat?: number; lng?: number
   if (distanceKm === null) return null;
 
   return (
-    <span className="text-[10px] font-bold bg-black/5 text-black border border-black/10 px-2 py-0.5 rounded-full">
+    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--uber-surface2)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}>
       📍 {distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m away` : `${distanceKm.toFixed(1)}km away`}
     </span>
   );

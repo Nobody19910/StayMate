@@ -2,9 +2,25 @@
 
 export type ListingType = "home" | "hostel";
 
+// ─── Sponsorship ─────────────────────────────────────────────────────────────
+
+export type SponsorTier = "basic" | "standard" | "featured";
+
+export interface SponsorTierOption {
+  tier: SponsorTier;
+  label: string;
+  price: number;         // GHS
+  pricePesewas: number;  // for Paystack
+  durationDays: number;
+  perks: string[];
+}
+
 // ─── Homes ────────────────────────────────────────────────────────────────────
 
 export type PropertyType = "apartment" | "house" | "studio" | "duplex" | "townhouse";
+
+export type PropertyCondition = "new" | "renovated" | "used";
+export type FurnishingLevel = "furnished" | "semi-furnished" | "unfurnished";
 
 export interface Property {
   id: string;
@@ -28,6 +44,13 @@ export interface Property {
   savedAt?: string;       // ISO date, set when saved
   lat?: number;
   lng?: number;
+  // Metadata
+  condition?: PropertyCondition;
+  furnishing?: FurnishingLevel;
+  serviceCharge?: number;       // monthly service charge in GHS
+  isNegotiable?: boolean;
+  landSize?: number;            // land size in sq meters (houses only)
+  createdAt?: string;           // ISO timestamp for time-based filtering
   // Sponsored / marketplace fields
   isSponsored?: boolean;
   sponsoredUntil?: string;
@@ -35,6 +58,13 @@ export interface Property {
   // Rich media
   videoUrl?: string;
   lifestyleTags?: string[];
+  // Listing status
+  status?: string;
+  // Verified & agent fields
+  isVerified?: boolean;
+  sponsorTier?: SponsorTier | null;
+  agentName?: string | null;
+  isAgent?: boolean;
 }
 
 // ─── Hostels ──────────────────────────────────────────────────────────────────
@@ -97,6 +127,13 @@ export interface Hostel {
   // Rich media
   videoUrl?: string;
   lifestyleTags?: string[];
+  // Listing status
+  status?: string;
+  // Verified & agent fields
+  isVerified?: boolean;
+  sponsorTier?: SponsorTier | null;
+  agentName?: string | null;
+  isAgent?: boolean;
 }
 
 // ─── Swipe ────────────────────────────────────────────────────────────────────
