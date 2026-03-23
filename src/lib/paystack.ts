@@ -20,6 +20,7 @@ interface PaystackOptions {
   amount: number; // in kobo/pesewas (smallest unit × 100)
   currency?: string;
   ref?: string;
+  channels?: string[];
   metadata?: Record<string, unknown>;
   onSuccess: (reference: string) => void;
   onClose: () => void;
@@ -47,6 +48,7 @@ export function openPaystackPopup(options: PaystackOptions) {
     amount: options.amount,
     currency: options.currency ?? "GHS",
     ref,
+    channels: options.channels ?? ["card", "mobile_money"],
     metadata: options.metadata ?? {},
     callback: (response: { reference: string }) => {
       options.onSuccess(response.reference);
