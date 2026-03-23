@@ -332,7 +332,7 @@ function ChatView({ user }: { user: any }) {
       {/* ── Fee Banner ── */}
       {hasProperty && (
         <div className="px-4 py-2.5 flex items-center gap-2"
-          style={{ background: "#FDF8E7", borderBottom: "0.5px solid rgba(212,175,55,0.3)" }}>
+          style={{ background: "color-mix(in srgb, #D4AF37 15%, var(--uber-surface))", borderBottom: "0.5px solid rgba(212,175,55,0.3)" }}>
           <span style={{ color: "#D4AF37" }}>✦</span>
           <p className="text-xs font-medium" style={{ color: "var(--uber-text)" }}>
             Coordination & Viewing Fee: <span className="font-bold" style={{ color: "#D4AF37" }}>GH₵ 200</span>
@@ -366,8 +366,10 @@ function ChatView({ user }: { user: any }) {
         {messages.map((msg) => {
           const isMe = msg.sender_id === user.id;
           const isOpt = msg.id.startsWith("opt-");
-          const isAccepted = msg.content.includes("ACCEPTED") && !isMe;
+          const isAcceptedMsg = msg.content.includes("ACCEPTED") && !isMe;
           const isDeclined = msg.content.includes("declined") && !isMe;
+          // Only show inline pay button if booking is still "accepted" (not already paid)
+          const isAccepted = isAcceptedMsg && booking?.status === "accepted";
           // Parse inquiry image from message content
           const inquiryImageMatch = msg.content.match(/^\[INQUIRY_IMAGE:(.*?)\]\n/);
           const inquiryImage = inquiryImageMatch?.[1] || null;
@@ -379,7 +381,7 @@ function ChatView({ user }: { user: any }) {
                 <div className="w-6 h-6 flex items-center justify-center rounded-full text-[9px] font-bold mb-1 ml-1" style={{ background: "var(--uber-black)", color: "var(--uber-white)" }}>SM</div>
               )}
               {isAccepted ? (
-                <div className="w-full px-3 py-3 rounded-2xl max-w-lg" style={{ background: "#FDF8E7", border: "0.5px solid rgba(212,175,55,0.3)" }}>
+                <div className="w-full px-3 py-3 rounded-2xl max-w-lg" style={{ background: "color-mix(in srgb, #D4AF37 15%, var(--uber-surface))", border: "0.5px solid rgba(212,175,55,0.3)" }}>
                   <div className="flex gap-3">
                     <span className="text-lg shrink-0">✅</span>
                     <div className="flex-1">
@@ -390,6 +392,13 @@ function ChatView({ user }: { user: any }) {
                         {payingFee ? <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <>💳 Pay GH₵ 200 Fee</>}
                       </button>
                     </div>
+                  </div>
+                </div>
+              ) : isAcceptedMsg ? (
+                <div className="w-full px-3 py-3 rounded-2xl max-w-lg" style={{ background: "color-mix(in srgb, #06C167 12%, var(--uber-surface))", border: "0.5px solid rgba(6,193,103,0.3)" }}>
+                  <div className="flex gap-3">
+                    <span className="text-lg shrink-0">✅</span>
+                    <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>{msg.content}</p>
                   </div>
                 </div>
               ) : isDeclined ? (
@@ -423,7 +432,7 @@ function ChatView({ user }: { user: any }) {
 
       {/* ── Pay Fee strip ── */}
       {booking?.status === "accepted" && (
-        <div className="px-3 py-2.5" style={{ background: "#FDF8E7", borderTop: "0.5px solid rgba(212,175,55,0.3)" }}>
+        <div className="px-3 py-2.5" style={{ background: "color-mix(in srgb, #D4AF37 15%, var(--uber-surface))", borderTop: "0.5px solid rgba(212,175,55,0.3)" }}>
           <div className="flex items-center gap-3 max-w-lg mx-auto">
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--uber-text)" }}>Inquiry Accepted</p>
@@ -438,14 +447,14 @@ function ChatView({ user }: { user: any }) {
         </div>
       )}
       {(booking?.status === "fee_paid" || booking?.status === "paid") && (
-        <div className="px-4 py-2 flex items-center gap-2" style={{ borderTop: "0.5px solid rgba(6,193,103,0.3)", background: "#EAFAF1" }}>
+        <div className="px-4 py-2 flex items-center gap-2" style={{ borderTop: "0.5px solid rgba(6,193,103,0.3)", background: "color-mix(in srgb, #06C167 12%, var(--uber-surface))" }}>
           <span>✅</span>
           <p className="text-xs font-semibold" style={{ color: "var(--uber-text)" }}>Fee paid — your spot is confirmed.</p>
         </div>
       )}
 
       {/* ── Input ── */}
-      <div className="backdrop-blur-md p-3 pb-6 fixed bottom-16 left-0 right-0 lg:relative lg:bottom-auto"
+      <div className="backdrop-blur-md p-3 pb-6 fixed left-0 right-0 lg:relative lg:bottom-auto bottom-nav-offset"
         style={{ borderTop: "0.5px solid var(--uber-border)", background: "var(--uber-white)" }}>
         <form onSubmit={sendMessage}
           className="flex items-center rounded-full p-1 pl-4 max-w-3xl mx-auto"
