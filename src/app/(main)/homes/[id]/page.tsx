@@ -519,7 +519,7 @@ function AdminEditPanel({
           onChange={(e) => {
             const price = parseInt(e.target.value) || 0;
             onPropertyChange("price", price);
-            onPropertyChange("price_label", `GH₵${price.toLocaleString()}${editedProperty.for_sale ? "" : "/mo"}`);
+            onPropertyChange("price_label", `GH₵${price.toLocaleString()}${editedProperty.forSale ? "" : "/mo"}`);
           }}
           className="w-full rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-black/20" style={{ border: "0.5px solid var(--uber-border)", color: "var(--uber-text)", background: "var(--uber-surface)" }}
         />

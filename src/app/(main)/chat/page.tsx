@@ -373,7 +373,7 @@ function ChatView({ user }: { user: any }) {
           const inquiryImage = inquiryImageMatch?.[1] || null;
           const displayContent = inquiryImage ? msg.content.replace(/^\[INQUIRY_IMAGE:.*?\]\n/, "") : msg.content;
           return (
-            <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            <div key={msg.id}
               className={`flex flex-col ${isMe ? "items-end" : "items-start"} w-full`}>
               {!isMe && (
                 <div className="w-6 h-6 flex items-center justify-center rounded-full text-[9px] font-bold mb-1 ml-1" style={{ background: "var(--uber-black)", color: "var(--uber-white)" }}>SM</div>
@@ -416,7 +416,7 @@ function ChatView({ user }: { user: any }) {
               <span className={`text-[9px] font-medium mt-1 uppercase tracking-wider ${isMe ? "mr-1" : "ml-1"}`} style={{ color: "var(--uber-muted)" }}>
                 {isOpt ? "Sending…" : new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </span>
-            </motion.div>
+            </div>
           );
         })}
       </div>

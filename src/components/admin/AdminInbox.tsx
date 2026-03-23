@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import AdminLocationButton from "@/components/ui/AdminLocationButton";
 
 const UBER_GREEN = "#06C167";
@@ -160,9 +159,6 @@ export default function AdminInbox() {
         .single()
         .then(({ data }) => {
           if (data) setPropertyData(data);
-        })
-        .catch(() => {
-          // Property not found or error
         });
     }
   }, []);
@@ -457,7 +453,7 @@ export default function AdminInbox() {
                   const inquiryImg = imgMatch?.[1] || null;
                   const displayContent = inquiryImg ? msg.content.replace(/^\[INQUIRY_IMAGE:.*?\]\n/, "") : msg.content;
                   return (
-                    <motion.div key={msg.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                    <div key={msg.id}
                       className={`flex flex-col ${isAdmin ? "items-end" : "items-start"}`}>
                       <div className={`rounded-2xl max-w-[80%] overflow-hidden text-[13px] leading-relaxed ${isAdmin ? "rounded-br-sm" : "rounded-bl-sm"} ${isOpt ? "opacity-60" : ""}`}
                         style={isAdmin
@@ -472,7 +468,7 @@ export default function AdminInbox() {
                       <span className="text-[9px] mt-0.5 uppercase tracking-wider mx-1" style={{ color: "var(--uber-muted)" }}>
                         {isOpt ? "Sending…" : new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </span>
-                    </motion.div>
+                    </div>
                   );
                 })
               }
