@@ -48,7 +48,7 @@ export function openPaystackPopup(options: PaystackOptions) {
     amount: options.amount,
     currency: options.currency ?? "GHS",
     ref,
-    channels: options.channels ?? ["card", "mobile_money"],
+    ...(options.channels ? { channels: options.channels } : {}),
     metadata: options.metadata ?? {},
     callback: (response: { reference: string }) => {
       options.onSuccess(response.reference);
