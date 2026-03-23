@@ -188,7 +188,7 @@ function rowToHostel(row: HostelRow): Hostel {
 export async function getHomes(): Promise<Property[]> {
   const { data, error } = await supabase
     .from("homes")
-    .select("*, profiles:owner_id(display_name, is_agent)")
+    .select("*")
     .not("status", "in", '("rented","sold")')
     .order("is_sponsored", { ascending: false })
     .order("priority_score", { ascending: false })
@@ -201,7 +201,7 @@ export async function getHomes(): Promise<Property[]> {
 export async function getHomeById(id: string): Promise<Property | null> {
   const { data, error } = await supabase
     .from("homes")
-    .select("*, profiles:owner_id(display_name, is_agent)")
+    .select("*")
     .eq("id", id)
     .single();
 
@@ -212,7 +212,7 @@ export async function getHomeById(id: string): Promise<Property | null> {
 export async function getHostels(): Promise<Hostel[]> {
   const { data, error } = await supabase
     .from("hostels")
-    .select("*, rooms(*), profiles:manager_id(display_name, is_agent)")
+    .select("*, rooms(*)")
     .not("status", "in", '("rented","sold","full")')
     .order("is_sponsored", { ascending: false })
     .order("priority_score", { ascending: false })
@@ -225,7 +225,7 @@ export async function getHostels(): Promise<Hostel[]> {
 export async function getHostelById(id: string): Promise<Hostel | null> {
   const { data, error } = await supabase
     .from("hostels")
-    .select("*, rooms(*), profiles:manager_id(display_name, is_agent)")
+    .select("*, rooms(*)")
     .eq("id", id)
     .single();
 
@@ -264,7 +264,7 @@ export interface HomeSearchFilters {
 export async function searchHomes(filters: HomeSearchFilters = {}): Promise<Property[]> {
   let q = supabase
     .from("homes")
-    .select("*, profiles:owner_id(display_name, is_agent)")
+    .select("*")
     .not("status", "in", '("rented","sold")');
 
   // Listing type
