@@ -8,6 +8,8 @@ import { searchHomes } from "@/lib/api";
 import { addSaved, removeSaved, isSaved } from "@/lib/saved-store";
 import type { Property } from "@/lib/types";
 import FeaturedCarousel from "@/components/ui/FeaturedCarousel";
+import { usePullToRefresh } from "@/lib/usePullToRefresh";
+import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -62,6 +64,28 @@ export default function HomesPage() {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const { loc: userLoc, denied: locDenied } = useUserLocation();
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Pull-to-refresh: bust cache and re-fetch
+  const handleRefresh = useCallback(async () => {
+    const cacheKey = getCacheKey(filter, filters, searchQuery);
+    homesCache.delete(cacheKey);
+    const data = await searchHomes({
+      query: searchQuery.trim() || undefined,
+      forSale: filter === "sale" ? true : filter === "rent" ? false : null,
+      propertyTypes: filters.propertyTypes.length > 0 ? filters.propertyTypes : undefined,
+      amenities: filters.amenities.length > 0 ? filters.amenities : undefined,
+      priceMin: filters.priceMin,
+      priceMax: filters.priceMax,
+      condition: filters.condition ?? undefined,
+      furnishing: filters.furnishing ?? undefined,
+      timePosted: filters.timePosted,
+    });
+    setHomes(data);
+    setTotalCount(data.length);
+    homesCache.set(cacheKey, { data, count: data.length, ts: Date.now() });
+  }, [filter, filters, searchQuery]);
+
+  const { refreshing, pullDistance, handlers: pullHandlers } = usePullToRefresh({ onRefresh: handleRefresh });
 
   // Sticky header that slides off-screen on scroll down (passive listener for perf)
   const headerRef = useRef<HTMLDivElement>(null);
@@ -202,7 +226,9 @@ export default function HomesPage() {
     filters.districts.length;
 
   return (
-    <div ref={scrollRef} className="min-h-screen overflow-y-auto" style={{ background: "var(--background)" }}>
+    <div ref={scrollRef} className="min-h-screen overflow-y-auto" style={{ background: "var(--background)" }} {...pullHandlers}>
+
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
 
       {/* Sticky header — slides fully off-screen on scroll down */}
       <div

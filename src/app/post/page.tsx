@@ -1301,10 +1301,14 @@ export default function PostPage() {
           }}
           className={`flex-1 font-bold py-3 rounded-2xl active:scale-95 transition-all text-sm ${
             canGoNext() && !submitting
-              ? kind === "hostel" ? "bg-blue-600 text-white" : "bg-emerald-500 text-white"
+              ? ""
               : "cursor-not-allowed"
           }`}
-          style={!(canGoNext() && !submitting) ? { background: "var(--uber-surface2)", color: "var(--uber-muted)" } : undefined}
+          style={
+            !(canGoNext() && !submitting)
+              ? { background: "var(--uber-surface2)", color: "var(--uber-muted)" }
+              : { background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }
+          }
         >
           {submitting ? "Publishing…" : currentStep === "Preview" ? "Publish Listing" : "Continue"}
         </button>

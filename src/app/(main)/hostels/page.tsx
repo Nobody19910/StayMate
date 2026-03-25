@@ -8,6 +8,8 @@ import { getHostels } from "@/lib/api";
 import { addSaved, removeSaved, isSaved } from "@/lib/saved-store";
 import type { Hostel } from "@/lib/types";
 import FeaturedCarousel from "@/components/ui/FeaturedCarousel";
+import { usePullToRefresh } from "@/lib/usePullToRefresh";
+import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -60,6 +62,18 @@ export default function HostelsPage() {
   const [filters, setFilters] = useState<FilterState>({ ...DEFAULT_FILTERS, priceMax: 25000 });
   const { loc: userLoc, denied: locDenied } = useUserLocation();
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Pull-to-refresh: bust cache and re-fetch
+  const handleRefresh = useCallback(async () => {
+    const cacheKey = getCacheKey(filters, searchQuery);
+    hostelsCache.delete(cacheKey);
+    const data = await getHostels();
+    setHostels(data);
+    setTotalCount(data.length);
+    hostelsCache.set(cacheKey, { data, count: data.length, ts: Date.now() });
+  }, [filters, searchQuery]);
+
+  const { refreshing, pullDistance, handlers: pullHandlers } = usePullToRefresh({ onRefresh: handleRefresh });
 
   // Sticky header that slides off-screen on scroll down (passive listener for perf)
   const headerRef = useRef<HTMLDivElement>(null);
@@ -195,7 +209,9 @@ export default function HostelsPage() {
   }, [hostels, searchQuery, radius, filters, userLoc]);
 
   return (
-    <div ref={scrollRef} className="min-h-screen overflow-y-auto" style={{ background: "var(--background)" }}>
+    <div ref={scrollRef} className="min-h-screen overflow-y-auto" style={{ background: "var(--background)" }} {...pullHandlers}>
+
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
 
       {/* Sticky header — slides fully off-screen on scroll down */}
       <div

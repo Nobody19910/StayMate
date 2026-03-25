@@ -103,8 +103,8 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-100 rounded-xl px-3 py-2">
-              <p className="text-xs text-red-600 font-medium">{error}</p>
+            <div className="rounded-xl px-3 py-2" style={{ background: "rgba(239,68,68,0.08)", border: "0.5px solid rgba(239,68,68,0.2)" }}>
+              <p className="text-xs font-medium" style={{ color: "#EF4444" }}>{error}</p>
             </div>
           )}
 
@@ -112,7 +112,7 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             className="w-full font-bold py-3.5 rounded-2xl active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed text-base"
-            style={{ background: "var(--uber-black)", color: "var(--uber-white)" }}
+            style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}
           >
             {loading ? "Signing in\u2026" : "Sign In"}
           </button>
@@ -144,7 +144,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => handleSocialLogin('apple')}
               className="flex-1 font-bold py-3 rounded-xl active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
-              style={{ background: "var(--uber-black)", border: "0.5px solid var(--uber-black)", color: "var(--uber-white)" }}
+              style={{ background: "var(--uber-btn-bg)", border: "0.5px solid var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M14.71 5.46a3.81 3.81 0 00.93-2.61c0-.18-.03-.36-.06-.54a3.9 3.9 0 00-2.65 1.35 3.73 3.73 0 00-.97 2.51c0 .2.02.4.06.6a3.53 3.53 0 002.69-1.31zm-2.45 1.4c-2.07 0-3.5 1.15-4.51 1.15s-2.01-1.07-3.66-1.11c-2.12-.05-4.1 1.25-5.2 3.14-2.22 3.84-.57 9.53 1.58 12.63 1.05 1.52 2.3 3.23 3.96 3.17 1.59-.06 2.2-.98 4.14-.98 1.93 0 2.51.98 4.16.95 1.7-.03 2.76-1.53 3.79-3.04 1.19-1.74 1.68-3.41 1.7-3.49-.04-.01-3.23-1.29-3.27-4.99-.03-3.11 2.5-4.66 2.61-4.73-1.46-2.19-3.75-2.43-4.58-2.49-1.92-.22-3.83 1.05-4.91 1.05z" />

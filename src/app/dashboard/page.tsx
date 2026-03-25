@@ -160,13 +160,13 @@ export default function DashboardPage() {
             <p className="text-2xl font-extrabold" style={{ color: "var(--uber-text)" }}>{totalListings}</p>
             <p className="text-[10px] font-semibold mt-0.5" style={{ color: "var(--uber-text)" }}>Active Listings</p>
           </div>
-          <div className="flex-1 bg-amber-50 rounded-xl p-3 text-center">
-            <p className="text-2xl font-extrabold text-amber-600">{pendingBookings}</p>
-            <p className="text-[10px] text-amber-700 font-semibold mt-0.5">Pending Requests</p>
+          <div className="flex-1 rounded-xl p-3 text-center" style={{ background: "rgba(245,158,11,0.1)" }}>
+            <p className="text-2xl font-extrabold" style={{ color: "#D97706" }}>{pendingBookings}</p>
+            <p className="text-[10px] font-semibold mt-0.5" style={{ color: "#B45309" }}>Pending Requests</p>
           </div>
-          <div className="flex-1 bg-blue-50 rounded-xl p-3 text-center">
-            <p className="text-2xl font-extrabold text-blue-600">{bookings.filter((b) => b.status === "confirmed").length}</p>
-            <p className="text-[10px] text-blue-700 font-semibold mt-0.5">Confirmed</p>
+          <div className="flex-1 rounded-xl p-3 text-center" style={{ background: "rgba(59,130,246,0.1)" }}>
+            <p className="text-2xl font-extrabold" style={{ color: "#2563EB" }}>{bookings.filter((b) => b.status === "confirmed").length}</p>
+            <p className="text-[10px] font-semibold mt-0.5" style={{ color: "#1D4ED8" }}>Confirmed</p>
           </div>
         </div>
 
@@ -184,7 +184,7 @@ export default function DashboardPage() {
             >
               {t}
               {t === "bookings" && pendingBookings > 0 && (
-                <span className="ml-1 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{pendingBookings}</span>
+                <span className="ml-1 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "#D97706" }}>{pendingBookings}</span>
               )}
             </button>
           ))}
@@ -229,7 +229,7 @@ export default function DashboardPage() {
                           <p className="text-sm font-bold leading-tight truncate" style={{ color: "var(--uber-text)" }}>{home.title}</p>
                           <div className="flex items-center gap-1 shrink-0">
                             {(home.status === "rented" || home.status === "sold") && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-600 uppercase">{home.status}</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase" style={{ background: "rgba(239,68,68,0.12)", color: "#EF4444" }}>{home.status}</span>
                             )}
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ color: "var(--uber-text)", background: "var(--uber-surface)" }}>
                               {home.for_sale ? "Sale" : "Rent"}
@@ -248,14 +248,16 @@ export default function DashboardPage() {
                           </button>
                           <button
                             onClick={() => router.push(`/edit/${home.id}?type=home`)}
-                            className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg"
+                            className="text-[10px] font-semibold px-2 py-1 rounded-lg"
+                            style={{ background: "rgba(59,130,246,0.12)", color: "#3B82F6" }}
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => deleteListing("home", home.id)}
                             disabled={deletingId === home.id}
-                            className="text-[10px] font-semibold text-red-500 bg-red-50 px-2 py-1 rounded-lg disabled:opacity-50"
+                            className="text-[10px] font-semibold px-2 py-1 rounded-lg disabled:opacity-50"
+                            style={{ background: "rgba(239,68,68,0.1)", color: "#EF4444" }}
                           >
                             {deletingId === home.id ? "Removing…" : "Remove"}
                           </button>
@@ -275,7 +277,8 @@ export default function DashboardPage() {
                           <div className="flex gap-2 mt-1.5">
                             <button
                               onClick={() => updateListingStatus("home", home.id, "approved")}
-                              className="text-[10px] font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-lg"
+                              className="text-[10px] font-semibold px-2 py-1 rounded-lg"
+                              style={{ background: "rgba(6,193,103,0.12)", color: "#06C167" }}
                             >
                               Re-activate Listing
                             </button>
@@ -305,30 +308,33 @@ export default function DashboardPage() {
                           <p className="text-sm font-bold leading-tight truncate" style={{ color: "var(--uber-text)" }}>{hostel.name}</p>
                           <div className="flex items-center gap-1 shrink-0">
                             {hostel.status === "full" && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-600 uppercase">Full</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase" style={{ background: "rgba(239,68,68,0.12)", color: "#EF4444" }}>Full</span>
                             )}
-                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">Hostel</span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(59,130,246,0.12)", color: "#3B82F6" }}>Hostel</span>
                           </div>
                         </div>
-                        <p className="text-xs text-blue-600 font-semibold mt-0.5">{hostel.price_range_label}</p>
+                        <p className="text-xs font-semibold mt-0.5" style={{ color: "#3B82F6" }}>{hostel.price_range_label}</p>
                         <p className="text-[10px] mt-0.5" style={{ color: "var(--uber-muted)" }}>{hostel.city} · {hostel.available_rooms}/{hostel.total_rooms} rooms available</p>
                         <div className="flex gap-2 mt-2">
                           <button
                             onClick={() => router.push(`/hostels/${hostel.id}`)}
-                            className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg"
+                            className="text-[10px] font-semibold px-2 py-1 rounded-lg"
+                            style={{ background: "rgba(59,130,246,0.12)", color: "#3B82F6" }}
                           >
                             View
                           </button>
                           <button
                             onClick={() => router.push(`/edit/${hostel.id}?type=hostel`)}
-                            className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg"
+                            className="text-[10px] font-semibold px-2 py-1 rounded-lg"
+                            style={{ background: "rgba(99,102,241,0.12)", color: "#6366F1" }}
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => deleteListing("hostel", hostel.id)}
                             disabled={deletingId === hostel.id}
-                            className="text-[10px] font-semibold text-red-500 bg-red-50 px-2 py-1 rounded-lg disabled:opacity-50"
+                            className="text-[10px] font-semibold px-2 py-1 rounded-lg disabled:opacity-50"
+                            style={{ background: "rgba(239,68,68,0.1)", color: "#EF4444" }}
                           >
                             {deletingId === hostel.id ? "Removing…" : "Remove"}
                           </button>
@@ -348,7 +354,8 @@ export default function DashboardPage() {
                           <div className="flex gap-2 mt-1.5">
                             <button
                               onClick={() => updateListingStatus("hostel", hostel.id, "approved")}
-                              className="text-[10px] font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-lg"
+                              className="text-[10px] font-semibold px-2 py-1 rounded-lg"
+                              style={{ background: "rgba(6,193,103,0.12)", color: "#06C167" }}
                             >
                               Re-activate Listing
                             </button>
@@ -410,7 +417,8 @@ export default function DashboardPage() {
                       </button>
                       <button
                         onClick={() => updateBookingStatus(booking.id, "cancelled")}
-                        className="flex-1 border border-red-200 text-red-500 font-bold text-xs py-2.5 rounded-xl active:scale-95 transition-transform"
+                        className="flex-1 font-bold text-xs py-2.5 rounded-xl active:scale-95 transition-transform"
+                        style={{ border: "0.5px solid rgba(239,68,68,0.3)", color: "#EF4444" }}
                       >
                         Decline
                       </button>
@@ -419,7 +427,8 @@ export default function DashboardPage() {
                   {booking.status === "confirmed" && (
                     <button
                       onClick={() => updateBookingStatus(booking.id, "completed")}
-                      className="w-full bg-blue-500 text-white font-bold text-xs py-2.5 rounded-xl active:scale-95 transition-transform"
+                      className="w-full font-bold text-xs py-2.5 rounded-xl active:scale-95 transition-transform"
+                      style={{ background: "rgba(59,130,246,0.15)", color: "#3B82F6" }}
                     >
                       Mark as Completed (Payment Received)
                     </button>
@@ -435,14 +444,15 @@ export default function DashboardPage() {
 }
 
 function BookingStatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    pending: "bg-amber-100 text-amber-700",
-    confirmed: "bg-black/10 text-black",
-    cancelled: "bg-red-100 text-red-600",
-    completed: "bg-blue-100 text-blue-700",
+  const styles: Record<string, { background: string; color: string }> = {
+    pending: { background: "rgba(245,158,11,0.12)", color: "#D97706" },
+    confirmed: { background: "var(--uber-surface2)", color: "var(--uber-text)" },
+    cancelled: { background: "rgba(239,68,68,0.12)", color: "#EF4444" },
+    completed: { background: "rgba(59,130,246,0.12)", color: "#3B82F6" },
   };
+  const s = styles[status] ?? { background: "var(--uber-surface2)", color: "var(--uber-muted)" };
   return (
-    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${styles[status] ?? "bg-gray-100 text-gray-600"}`}>
+    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full capitalize" style={s}>
       {status}
     </span>
   );
