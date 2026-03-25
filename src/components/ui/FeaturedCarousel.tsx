@@ -19,7 +19,7 @@ interface FeaturedCarouselProps {
 
 export default function FeaturedCarousel({ items }: FeaturedCarouselProps) {
   const [current, setCurrent] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
   const touchStartX = useRef(0);
   const touchDeltaX = useRef(0);
 

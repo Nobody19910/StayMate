@@ -151,6 +151,45 @@ body {
   border: 0.5px solid var(--uber-border);
 }
 
+/* ── Confetti & Status Celebrations ────────────────────────────────────────── */
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+.confetti-particle {
+  animation: confettiFall 2s ease-in forwards;
+}
+@keyframes fadeInScale {
+  0%   { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes pulseGreen {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(6, 193, 103, 0.4); }
+  50%      { box-shadow: 0 0 0 12px rgba(6, 193, 103, 0); }
+}
+
+/* ── Skeleton Shimmer ─────────────────────────────────────────────────────── */
+@keyframes skeletonShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--uber-surface2) 25%, var(--uber-surface) 50%, var(--uber-surface2) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Virtual Scroll ───────────────────────────────────────────────────────── */
+.grid-card-virtual {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 280px;
+}
+
+/* ── Progressive Image Loading ────────────────────────────────────────────── */
+/* Simple fade-in instead of blur (blur + scale on 20+ cards kills GPU) */
+.img-blur-load { opacity: 0; transition: opacity 0.3s ease; }
+.img-blur-load.loaded { opacity: 1; }
+
 /* ── Responsive Layout Helpers ──────────────────────────────────────────────── */
 /* Desktop main content area expands naturally */
 .main-content {

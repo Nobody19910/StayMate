@@ -33,29 +33,20 @@ export default function LoginPage() {
     const isNative = typeof (window as any).Capacitor !== "undefined" &&
       (window as any).Capacitor.isNativePlatform?.();
 
-    const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+    await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: isNative
           ? "com.staymate.app://auth/callback"
           : `${window.location.origin}/homes`,
-        skipBrowserRedirect: true,
       },
     });
-
-    if (oauthError || !data.url) {
-      setError(oauthError?.message || "OAuth failed");
-      return;
-    }
-
-    // Redirect in same tab so no orphan tabs are left open
-    window.location.assign(data.url);
   }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--background)" }}>
       {/* Header */}
-      <div className="px-4 pb-6 text-center" style={{ paddingTop: "calc(env(safe-area-inset-top, 20px) + 12px)", background: "var(--uber-white)", borderBottom: "0.5px solid var(--uber-border)" }}>
+      <div className="px-4 pt-14 pb-6 text-center" style={{ background: "var(--uber-white)", borderBottom: "0.5px solid var(--uber-border)" }}>
         <h1 className="text-2xl font-extrabold" style={{ color: "var(--uber-text)" }}>StayMate</h1>
         <p className="text-xs mt-0.5" style={{ color: "var(--uber-muted)" }}>Secure Managed Platform</p>
       </div>
@@ -121,7 +112,7 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             className="w-full font-bold py-3.5 rounded-2xl active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed text-base"
-            style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}
+            style={{ background: "var(--uber-black)", color: "var(--uber-white)" }}
           >
             {loading ? "Signing in\u2026" : "Sign In"}
           </button>

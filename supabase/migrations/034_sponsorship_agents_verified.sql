@@ -40,7 +40,7 @@ CREATE POLICY "Anyone can insert sponsor payments"
 CREATE POLICY "Admin can read sponsor payments"
   ON sponsor_payments FOR SELECT
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+    EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid()::text AND profiles.role = 'admin')
   );
 
 CREATE POLICY "Owner can read own sponsor payments"

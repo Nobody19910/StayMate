@@ -4,29 +4,28 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { PropertyType, PropertyCondition, FurnishingLevel } from "@/lib/types";
 import type { TimePosted } from "@/lib/api";
-import { REGION_NAMES, getDistrictsForRegion } from "@/lib/ghana-locations";
 
 // ─── Expanded Amenity List ───────────────────────────────────────────────────
 
 const FACILITY_LIST = [
   { value: "AC", label: "Air Con" },
   { value: "Generator", label: "Standby Generator" },
-  { value: "Borehole", label: "Borehole" },
-  { value: "Water Supply", label: "Water Supply" },
+  { value: "Borehole", label: "Borehole / Water Tank" },
   { value: "Security", label: "24/7 Security" },
-  { value: "Gated Estate", label: "Gated Estate" },
+  { value: "Gated Community", label: "Gated Community" },
   { value: "Electric Fencing", label: "Electric Fencing" },
+  { value: "CCTV", label: "CCTV" },
+  { value: "En-suite", label: "En-suite Bathrooms" },
+  { value: "Water Heater", label: "Water Heater" },
   { value: "Fitted Kitchen", label: "Fitted Kitchen" },
-  { value: "Wardrobe", label: "Wardrobe" },
+  { value: "Wardrobes", label: "Wardrobes" },
   { value: "POP Ceiling", label: "POP Ceiling" },
   { value: "Pool", label: "Swimming Pool" },
-  { value: "Boys Quarters", label: "BQ" },
+  { value: "Gym", label: "Gym" },
+  { value: "Boys Quarter", label: "BQ" },
   { value: "WiFi", label: "Fiber Wi-Fi" },
   { value: "Parking", label: "Parking" },
   { value: "Furnished", label: "Furnished" },
-  { value: "Garden", label: "Garden" },
-  { value: "Smart Home", label: "Smart Home" },
-  { value: "Cleaning Service", label: "Cleaning Service" },
 ];
 
 const PROPERTY_TYPE_OPTIONS: { value: PropertyType; label: string }[] = [
@@ -67,9 +66,6 @@ export interface FilterState {
   timePosted: TimePosted;
   priceMin: number;
   priceMax: number;
-  region: string;
-  district: string;
-  /** Multi-select locations — array of "Region > District" or just "Region" */
   regions: string[];
   districts: string[];
 }
@@ -82,8 +78,6 @@ export const DEFAULT_FILTERS: FilterState = {
   timePosted: "any",
   priceMin: 0,
   priceMax: 50000,
-  region: "",
-  district: "",
   regions: [],
   districts: [],
 };
@@ -148,9 +142,7 @@ export default function FilterModal({
     (local.furnishing ? 1 : 0) +
     (local.timePosted !== "any" ? 1 : 0) +
     (local.priceMin > 0 ? 1 : 0) +
-    (local.priceMax < 50000 ? 1 : 0) +
-    local.regions.length +
-    local.districts.length;
+    (local.priceMax < 50000 ? 1 : 0);
 
   return (
     <AnimatePresence>
@@ -168,7 +160,7 @@ export default function FilterModal({
           {/* Bottom Sheet */}
           <motion.div
             className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl shadow-2xl flex flex-col"
-            style={{ background: "var(--uber-white)", maxHeight: "85vh" }}
+            style={{ background: "var(--uber-white)", maxHeight: "88vh" }}
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
@@ -209,54 +201,6 @@ export default function FilterModal({
                     value={local.priceMax}
                     onChange={v => setLocal(p => ({ ...p, priceMax: v }))}
                   />
-                </div>
-              </Section>
-
-              {/* ── Location (multi-select) ─────────────────────────── */}
-              <Section title="Location">
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-[10px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--uber-muted)" }}>Region</label>
-                    <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
-                      {REGION_NAMES.map(r => (
-                        <ChipButton
-                          key={r}
-                          label={r}
-                          active={local.regions.includes(r)}
-                          onToggle={() => setLocal(p => ({
-                            ...p,
-                            regions: p.regions.includes(r)
-                              ? p.regions.filter(x => x !== r)
-                              : [...p.regions, r],
-                            // Remove districts that belong to deselected region
-                            districts: p.regions.includes(r)
-                              ? p.districts.filter(d => !getDistrictsForRegion(r).includes(d))
-                              : p.districts,
-                          }))}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  {local.regions.length > 0 && (
-                    <div>
-                      <label className="text-[10px] font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--uber-muted)" }}>District / Town</label>
-                      <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto">
-                        {local.regions.flatMap(r => getDistrictsForRegion(r)).map(d => (
-                          <ChipButton
-                            key={d}
-                            label={d}
-                            active={local.districts.includes(d)}
-                            onToggle={() => setLocal(p => ({
-                              ...p,
-                              districts: p.districts.includes(d)
-                                ? p.districts.filter(x => x !== d)
-                                : [...p.districts, d],
-                            }))}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </Section>
 
@@ -333,7 +277,7 @@ export default function FilterModal({
             </div>
 
             {/* Apply button */}
-            <div className="px-5 pt-4 shrink-0" style={{ borderTop: "0.5px solid var(--uber-border)", paddingBottom: "calc(env(safe-area-inset-bottom, 16px) + 80px)" }}>
+            <div className="px-5 py-4 shrink-0" style={{ borderTop: "0.5px solid var(--uber-border)" }}>
               <button
                 onClick={apply}
                 className="w-full font-bold py-3.5 rounded-2xl active:scale-95 transition-transform text-base"
@@ -400,6 +344,7 @@ function PriceInput({ label, value, onChange }: { label: string; value: number; 
             border: "0.5px solid var(--uber-border)",
             background: "var(--uber-white)",
             color: "var(--uber-text)",
+            focusRingColor: "var(--uber-black)",
           }}
         />
       </div>

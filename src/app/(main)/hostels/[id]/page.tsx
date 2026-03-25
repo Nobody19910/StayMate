@@ -1,8 +1,11 @@
-import { notFound } from "next/navigation";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getHostelById } from "@/lib/api";
-import type { Room, RoomAmenity } from "@/lib/types";
+import type { Hostel, Room, RoomAmenity } from "@/lib/types";
 import DistanceBadge from "@/components/ui/DistanceBadge";
 import ImageGallery from "@/components/ui/ImageGallery";
 
@@ -29,14 +32,47 @@ const ROOM_TYPE_LABELS: Record<string, string> = {
   dormitory: "Dormitory",
 };
 
-interface Props {
-  params: Promise<{ id: string }>;
-}
+export default function HostelRoomPickerPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const [hostel, setHostel] = useState<Hostel | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default async function HostelRoomPickerPage({ params }: Props) {
-  const { id } = await params;
-  const hostel = await getHostelById(id);
-  if (!hostel) notFound();
+  useEffect(() => {
+    if (!id) return;
+    getHostelById(id).then((data) => {
+      setHostel(data);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--uber-surface)" }}>
+        <div className="animate-pulse space-y-4 w-full max-w-md px-4">
+          <div className="h-56 rounded-xl" style={{ background: "var(--uber-surface2)" }} />
+          <div className="h-4 rounded w-3/4" style={{ background: "var(--uber-surface2)" }} />
+          <div className="h-3 rounded w-1/2" style={{ background: "var(--uber-surface2)" }} />
+          <div className="space-y-3 mt-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 rounded-xl" style={{ background: "var(--uber-surface2)" }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hostel) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--uber-surface)" }}>
+        <p className="text-lg font-bold" style={{ color: "var(--uber-text)" }}>Hostel not found</p>
+        <Link href="/hostels" className="mt-4 px-5 py-2.5 rounded-full text-sm font-bold" style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>
+          Back to Hostels
+        </Link>
+      </div>
+    );
+  }
 
   const availableRooms = hostel.rooms.filter((r) => r.available);
   const unavailableRooms = hostel.rooms.filter((r) => !r.available);
@@ -70,7 +106,7 @@ export default async function HostelRoomPickerPage({ params }: Props) {
           <span>{hostel.priceRangeLabel}</span>
           <DistanceBadge lat={hostel.lat} lng={hostel.lng} />
         </div>
-        <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>Near: {hostel.nearbyUniversities.join(", ")}</p>
+        <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>Near: {(hostel.nearbyUniversities || []).join(", ")}</p>
       </div>
 
       {/* Room list */}
@@ -99,6 +135,10 @@ export default async function HostelRoomPickerPage({ params }: Props) {
             </div>
           </>
         )}
+
+        {availableRooms.length === 0 && unavailableRooms.length === 0 && (
+          <p className="text-sm py-8 text-center" style={{ color: "var(--uber-muted)" }}>No rooms listed yet.</p>
+        )}
       </div>
     </div>
   );
@@ -111,7 +151,7 @@ function RoomCard({ room, hostelId, unavailable = false }: { room: Room; hostelI
         {/* Thumbnail */}
         <div className="relative w-28 h-24 shrink-0">
           <Image
-            src={room.images[0]}
+            src={room.images?.[0] || "/placeholder.png"}
             alt={room.name}
             fill
             className="object-cover"
@@ -129,7 +169,7 @@ function RoomCard({ room, hostelId, unavailable = false }: { room: Room; hostelI
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[10px] font-bold uppercase text-[#06C167] bg-[#06C167]/10 px-1.5 py-0.5 rounded">
-                {ROOM_TYPE_LABELS[room.roomType]}
+                {ROOM_TYPE_LABELS[room.roomType] || room.roomType}
               </span>
               <p className="text-sm font-bold mt-0.5 leading-tight" style={{ color: "var(--uber-text)" }}>{room.name}</p>
               <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Up to {room.capacity} {room.capacity === 1 ? "person" : "people"}</p>
@@ -139,12 +179,16 @@ function RoomCard({ room, hostelId, unavailable = false }: { room: Room; hostelI
 
           {/* Amenity badges */}
           <div className="flex flex-wrap gap-1 mt-2">
-            {room.amenities.slice(0, 4).map((a) => (
-              <span key={a} className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--uber-surface)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" }}>
-                {AMENITY_LABELS[a].emoji} {AMENITY_LABELS[a].label}
-              </span>
-            ))}
-            {room.amenities.length > 4 && (
+            {(room.amenities || []).slice(0, 4).map((a) => {
+              const info = AMENITY_LABELS[a];
+              if (!info) return null;
+              return (
+                <span key={a} className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--uber-surface)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" }}>
+                  {info.emoji} {info.label}
+                </span>
+              );
+            })}
+            {(room.amenities || []).length > 4 && (
               <span className="text-[10px] px-1 py-0.5" style={{ color: "var(--uber-muted)" }}>
                 +{room.amenities.length - 4} more
               </span>

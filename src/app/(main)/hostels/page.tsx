@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, memo } from "react";
+import { useState, useEffect, useMemo, useRef, memo, useCallback } from "react";
 import Link from "next/link";
 import FilterModal, { DEFAULT_FILTERS, type FilterState } from "@/components/ui/FilterModal";
 import { useUserLocation } from "@/lib/useUserLocation";
@@ -21,6 +21,15 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
 
 const DEFAULT_LAT = 5.6037;
 const DEFAULT_LNG = -0.1870;
+const PAGE_SIZE = 20;
+
+// Simple in-memory cache
+const hostelsCache = new Map<string, { data: Hostel[]; count: number; ts: number }>();
+const CACHE_TTL = 5 * 60 * 1000;
+
+function getCacheKey(filters: FilterState, searchQuery: string): string {
+  return JSON.stringify({ searchQuery, ...filters });
+}
 
 function LocationBanner({ onAllow }: { onAllow: () => void }) {
   return (
@@ -42,12 +51,15 @@ function LocationBanner({ onAllow }: { onAllow: () => void }) {
 
 export default function HostelsPage() {
   const [hostels, setHostels] = useState<Hostel[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [radius, setRadius] = useState<number>(50);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ ...DEFAULT_FILTERS, priceMax: 25000 });
   const { loc: userLoc, denied: locDenied } = useUserLocation();
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Sticky header that slides off-screen on scroll down (passive listener for perf)
   const headerRef = useRef<HTMLDivElement>(null);
@@ -78,9 +90,42 @@ export default function HostelsPage() {
     return () => { el.removeEventListener("scroll", onScroll); cancelAnimationFrame(rafId); };
   }, []);
 
+  // Fetch first page on mount
   useEffect(() => {
-    getHostels().then((data) => { setHostels(data); setLoading(false); }).catch(() => setLoading(false));
+    const cacheKey = getCacheKey(filters, searchQuery);
+    const cached = hostelsCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      setHostels(cached.data);
+      setTotalCount(cached.count);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    getHostels()
+      .then(data => {
+        setHostels(data);
+        setTotalCount(data.length);
+        hostelsCache.set(cacheKey, { data, count: data.length, ts: Date.now() });
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
+
+  // Load more (no-op since API returns all; kept for infinite scroll sentinel compat)
+  const loadMore = useCallback(() => {}, []);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore(); },
+      { rootMargin: "400px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   const filteredHostels = useMemo(() => {
     let list = hostels;
@@ -238,6 +283,19 @@ export default function HostelsPage() {
             {filteredHostels.map((hostel) => (
               <HostelGridCard key={hostel.id} hostel={hostel} />
             ))}
+          </div>
+        )}
+
+        {/* Infinite scroll sentinel */}
+        {!loading && hostels.length < totalCount && (
+          <div ref={sentinelRef} className="flex justify-center py-6">
+            {loadingMore && (
+              <div className="flex gap-1.5">
+                <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--uber-muted)", animationDelay: "0ms" }} />
+                <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--uber-muted)", animationDelay: "150ms" }} />
+                <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--uber-muted)", animationDelay: "300ms" }} />
+              </div>
+            )}
           </div>
         )}
       </div>

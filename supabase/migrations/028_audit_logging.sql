@@ -25,7 +25,7 @@ CREATE POLICY "Admins can read audit logs"
   USING (
     EXISTS (
       SELECT 1 FROM profiles
-      WHERE profiles.id = auth.uid()
+      WHERE profiles.id = auth.uid()::text
       AND profiles.role = 'admin'
     )
   );

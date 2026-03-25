@@ -11,8 +11,6 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:3001",
   "http://admin.localhost:3000",
-  "capacitor://localhost",
-  "http://localhost",
 ];
 
 export function checkCsrf(req: NextRequest): NextResponse | null {

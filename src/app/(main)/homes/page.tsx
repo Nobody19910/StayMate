@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, memo } from "react";
+import { useState, useEffect, useMemo, useRef, memo, useCallback } from "react";
 import Link from "next/link";
 import FilterModal, { DEFAULT_FILTERS, type FilterState } from "@/components/ui/FilterModal";
 import { useUserLocation } from "@/lib/useUserLocation";
@@ -22,6 +22,15 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
 const DEFAULT_LAT = 5.6037;
 const DEFAULT_LNG = -0.1870;
 type ListingFilter = "all" | "rent" | "sale";
+const PAGE_SIZE = 20;
+
+// Simple in-memory cache keyed by filter params
+const homesCache = new Map<string, { data: Property[]; count: number; ts: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey(filter: ListingFilter, filters: FilterState, searchQuery: string): string {
+  return JSON.stringify({ filter, searchQuery, ...filters });
+}
 
 function LocationBanner({ onAllow }: { onAllow: () => void }) {
   return (
@@ -44,12 +53,15 @@ function LocationBanner({ onAllow }: { onAllow: () => void }) {
 export default function HomesPage() {
   const [filter, setFilter] = useState<ListingFilter>("all");
   const [homes, setHomes] = useState<Property[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [radius, setRadius] = useState<number>(50);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const { loc: userLoc, denied: locDenied } = useUserLocation();
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Sticky header that slides off-screen on scroll down (passive listener for perf)
   const headerRef = useRef<HTMLDivElement>(null);
@@ -80,8 +92,17 @@ export default function HomesPage() {
     return () => { el.removeEventListener("scroll", onScroll); cancelAnimationFrame(rafId); };
   }, []);
 
-  // Fetch homes whenever server-side filters change
+  // Fetch first page whenever filters change
   useEffect(() => {
+    const cacheKey = getCacheKey(filter, filters, searchQuery);
+    const cached = homesCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      setHomes(cached.data);
+      setTotalCount(cached.count);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     searchHomes({
       query: searchQuery.trim() || undefined,
@@ -94,10 +115,29 @@ export default function HomesPage() {
       furnishing: filters.furnishing ?? undefined,
       timePosted: filters.timePosted,
     })
-      .then(data => { setHomes(data); setLoading(false); })
+      .then(data => {
+        setHomes(data);
+        setTotalCount(data.length);
+        homesCache.set(cacheKey, { data, count: data.length, ts: Date.now() });
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [filter, filters, searchQuery]);
 
+  // Load more (no-op — API returns all results at once)
+  const loadMore = useCallback(() => {}, []);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore(); },
+      { rootMargin: "400px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   // Client-side radius + location filter + interleaved sponsored
   const filteredHomes = useMemo(() => {
@@ -262,6 +302,19 @@ export default function HomesPage() {
             {filteredHomes.map((property) => (
               <HomeGridCard key={property.id} property={property} />
             ))}
+          </div>
+        )}
+
+        {/* Infinite scroll sentinel */}
+        {!loading && homes.length < totalCount && (
+          <div ref={sentinelRef} className="flex justify-center py-6">
+            {loadingMore && (
+              <div className="flex gap-1.5">
+                <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--uber-muted)", animationDelay: "0ms" }} />
+                <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--uber-muted)", animationDelay: "150ms" }} />
+                <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--uber-muted)", animationDelay: "300ms" }} />
+              </div>
+            )}
           </div>
         )}
       </div>

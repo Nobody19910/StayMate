@@ -24,5 +24,5 @@ CREATE TRIGGER trg_hash_payment_ref
 
 -- Hash any existing plaintext references
 UPDATE bookings
-SET payment_reference_hash = encode(extensions.digest(payment_reference, 'sha256'), 'hex')
+SET payment_reference_hash = encode(digest(payment_reference, 'sha256'), 'hex')
 WHERE payment_reference IS NOT NULL AND payment_reference <> '';

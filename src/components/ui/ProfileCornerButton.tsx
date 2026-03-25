@@ -28,11 +28,10 @@ export default function ProfileCornerButton() {
         <img
           src={profile.avatarUrl}
           alt=""
-          className="w-9 h-9 rounded-full object-cover border-2 shadow-md"
-            style={{ borderColor: "var(--uber-white)" }}
+          className="w-9 h-9 rounded-full object-cover border-2 border-white shadow-md"
         />
       ) : (
-        <div className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-extrabold border-2 shadow-md" style={{ background: "var(--uber-black)", color: "var(--uber-white)", borderColor: "var(--uber-white)" }}>
+        <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center text-[11px] font-extrabold border-2 border-white shadow-md">
           {initials}
         </div>
       )}
