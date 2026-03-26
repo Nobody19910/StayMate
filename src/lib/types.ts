@@ -4,7 +4,7 @@ export type ListingType = "home" | "hostel";
 
 // ─── Sponsorship ─────────────────────────────────────────────────────────────
 
-export type SponsorTier = "basic" | "standard" | "featured";
+export type SponsorTier = "basic" | "standard" | "featured" | "starter" | "growth" | "premium";
 
 export interface SponsorTierOption {
   tier: SponsorTier;

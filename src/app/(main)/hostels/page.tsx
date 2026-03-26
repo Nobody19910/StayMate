@@ -10,6 +10,8 @@ import type { Hostel } from "@/lib/types";
 import FeaturedCarousel from "@/components/ui/FeaturedCarousel";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
+import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
+import { IconPin, IconSchool, IconStar, IconCheck } from "@/components/ui/Icons";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -74,6 +76,9 @@ export default function HostelsPage() {
   }, [filters, searchQuery]);
 
   const { refreshing, pullDistance, handlers: pullHandlers } = usePullToRefresh({ onRefresh: handleRefresh });
+
+  // Jiji-style: refetch when tab regains focus or user navigates back
+  useVisibilityRefresh(handleRefresh);
 
   // Sticky header that slides off-screen on scroll down (passive listener for perf)
   const headerRef = useRef<HTMLDivElement>(null);
@@ -262,7 +267,7 @@ export default function HostelsPage() {
         {/* Radius pill */}
         <div className="px-4 pb-3 flex gap-2 overflow-x-auto hide-scrollbar">
           <span className="px-3 py-1.5 rounded-full text-[11px] font-bold shrink-0 flex items-center gap-1" style={{ background: "var(--uber-surface2)", color: "var(--uber-muted)" }}>
-            📍 {radius === 50 ? "50+ km" : `${radius} km`}
+            <IconPin /> {radius === 50 ? "50+ km" : `${radius} km`}
             <input type="range" min={1} max={50} value={radius} onChange={(e) => setRadius(parseInt(e.target.value))}
               className="w-16 accent-black h-1 ml-1" />
           </span>
@@ -290,7 +295,7 @@ export default function HostelsPage() {
           <GridSkeleton />
         ) : filteredHostels.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20" style={{ color: "var(--uber-muted)" }}>
-            <p className="text-5xl mb-4">🏫</p>
+            <p className="mb-4"><IconSchool className="w-12 h-12" /></p>
             <p className="text-base font-semibold" style={{ color: "var(--uber-muted)" }}>No hostels match</p>
             <p className="text-xs mt-1 text-center">Try adjusting your filters or radius.</p>
           </div>
@@ -376,12 +381,12 @@ const HostelGridCard = memo(function HostelGridCard({ hostel }: { hostel: Hostel
           </span>
           {hostel.isSponsored && (
             <span className="absolute top-2 left-2 mt-6 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shimmer-gold text-[#1A1A1A]">
-              ✦ Sponsored
+              <IconStar /> Sponsored
             </span>
           )}
           {hostel.isVerified && (
             <span className="absolute bottom-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm" style={{ background: "#06C167", color: "#fff" }}>
-              ✓ Verified
+              <IconCheck /> Verified
             </span>
           )}
           <button

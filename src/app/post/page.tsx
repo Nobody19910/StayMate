@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import type { PropertyType, PropertyCondition, FurnishingLevel, RoomAmenity, RoomType } from "@/lib/types";
 import SponsorModal from "@/components/ui/SponsorModal";
+import { IconBuilding, IconHome, IconCouch, IconNeighborhood, IconCity, IconSnowflake, IconBolt, IconDroplet, IconFaucet, IconLock, IconFrying, IconTie, IconSparkles, IconPool, IconWifi, IconCar, IconPlant, IconBroom, IconShower, IconThermometer, IconBook, IconShirt, IconUtensils, IconCamera, IconSchool, IconBed, IconFilm, IconShield, IconRuler, IconStar, IconClose, IconCheck, IconWarning } from "@/components/ui/Icons";
 import { FREE_LISTING_LIMIT, PER_LISTING_FEE_PESEWAS, PER_LISTING_FEE, AGENT_SUBSCRIPTION_PESEWAS, AGENT_SUBSCRIPTION_PRICE } from "@/lib/sponsor-tiers";
 import { usePaystackScript, openPaystackPopup } from "@/lib/paystack";
 import { activateAgentSubscription } from "@/lib/api";
@@ -15,12 +16,12 @@ import { activateAgentSubscription } from "@/lib/api";
 
 const MIN_PHOTOS = 5;
 
-const PROPERTY_TYPES: { value: PropertyType; label: string; icon: string }[] = [
-  { value: "apartment", label: "Apartment / Flat", icon: "🏢" },
-  { value: "house", label: "House", icon: "🏡" },
-  { value: "studio", label: "Studio", icon: "🛋️" },
-  { value: "duplex", label: "Duplex", icon: "🏘️" },
-  { value: "townhouse", label: "Townhouse", icon: "🏙️" },
+const PROPERTY_TYPES: { value: PropertyType; label: string; icon: React.ReactNode }[] = [
+  { value: "apartment", label: "Apartment / Flat", icon: <IconBuilding /> },
+  { value: "house", label: "House", icon: <IconHome /> },
+  { value: "studio", label: "Studio", icon: <IconCouch /> },
+  { value: "duplex", label: "Duplex", icon: <IconNeighborhood /> },
+  { value: "townhouse", label: "Townhouse", icon: <IconCity /> },
 ];
 
 const ROOM_TYPES: { value: RoomType; label: string; sub: string }[] = [
@@ -31,25 +32,25 @@ const ROOM_TYPES: { value: RoomType; label: string; sub: string }[] = [
   { value: "dormitory", label: "Dorm", sub: "5+" },
 ];
 
-const HOME_AMENITIES: { value: string; label: string; icon: string }[] = [
-  { value: "AC", label: "Air Con", icon: "❄️" },
-  { value: "Generator", label: "Standby Generator", icon: "⚡" },
-  { value: "Borehole", label: "Borehole", icon: "💧" },
-  { value: "Water Supply", label: "Water Supply", icon: "🚰" },
-  { value: "Security", label: "24/7 Security", icon: "🔐" },
-  { value: "Gated Estate", label: "Gated Estate", icon: "🏘️" },
-  { value: "Electric Fencing", label: "Electric Fencing", icon: "⚡" },
-  { value: "Fitted Kitchen", label: "Fitted Kitchen", icon: "🍳" },
-  { value: "Wardrobe", label: "Wardrobe", icon: "👔" },
-  { value: "POP Ceiling", label: "POP Ceiling", icon: "✨" },
-  { value: "Pool", label: "Swimming Pool", icon: "🏊" },
-  { value: "Boys Quarters", label: "BQ", icon: "🏠" },
-  { value: "WiFi", label: "Fiber Wi-Fi", icon: "📶" },
-  { value: "Parking", label: "Parking", icon: "🚗" },
-  { value: "Furnished", label: "Furnished", icon: "🛋️" },
-  { value: "Garden", label: "Garden", icon: "🌿" },
-  { value: "Smart Home", label: "Smart Home", icon: "🏡" },
-  { value: "Cleaning Service", label: "Cleaning Service", icon: "🧹" },
+const HOME_AMENITIES: { value: string; label: string; icon: React.ReactNode }[] = [
+  { value: "AC", label: "Air Con", icon: <IconSnowflake /> },
+  { value: "Generator", label: "Standby Generator", icon: <IconBolt /> },
+  { value: "Borehole", label: "Borehole", icon: <IconDroplet /> },
+  { value: "Water Supply", label: "Water Supply", icon: <IconFaucet /> },
+  { value: "Security", label: "24/7 Security", icon: <IconLock /> },
+  { value: "Gated Estate", label: "Gated Estate", icon: <IconNeighborhood /> },
+  { value: "Electric Fencing", label: "Electric Fencing", icon: <IconBolt /> },
+  { value: "Fitted Kitchen", label: "Fitted Kitchen", icon: <IconFrying /> },
+  { value: "Wardrobe", label: "Wardrobe", icon: <IconTie /> },
+  { value: "POP Ceiling", label: "POP Ceiling", icon: <IconSparkles /> },
+  { value: "Pool", label: "Swimming Pool", icon: <IconPool /> },
+  { value: "Boys Quarters", label: "BQ", icon: <IconHome /> },
+  { value: "WiFi", label: "Fiber Wi-Fi", icon: <IconWifi /> },
+  { value: "Parking", label: "Parking", icon: <IconCar /> },
+  { value: "Furnished", label: "Furnished", icon: <IconCouch /> },
+  { value: "Garden", label: "Garden", icon: <IconPlant /> },
+  { value: "Smart Home", label: "Smart Home", icon: <IconHome /> },
+  { value: "Cleaning Service", label: "Cleaning Service", icon: <IconBroom /> },
 ];
 
 const CONDITION_OPTIONS: { value: PropertyCondition; label: string }[] = [
@@ -64,19 +65,19 @@ const FURNISHING_OPTIONS: { value: FurnishingLevel; label: string }[] = [
   { value: "unfurnished", label: "Unfurnished" },
 ];
 
-const ROOM_AMENITIES: { value: RoomAmenity; label: string; icon: string }[] = [
-  { value: "wifi", label: "WiFi", icon: "📶" },
-  { value: "ac", label: "Air Con", icon: "❄️" },
-  { value: "attached-bath", label: "En-Suite", icon: "🚿" },
-  { value: "hot-water", label: "Hot Water", icon: "🌡️" },
-  { value: "study-desk", label: "Study Desk", icon: "📚" },
-  { value: "wardrobe", label: "Wardrobe", icon: "👔" },
-  { value: "laundry", label: "Laundry", icon: "👕" },
-  { value: "balcony", label: "Balcony", icon: "🌿" },
-  { value: "meal-included", label: "Meals", icon: "🍽️" },
-  { value: "security", label: "Security", icon: "🔐" },
-  { value: "cctv", label: "CCTV", icon: "📷" },
-  { value: "generator", label: "Generator", icon: "⚡" },
+const ROOM_AMENITIES: { value: RoomAmenity; label: string; icon: React.ReactNode }[] = [
+  { value: "wifi", label: "WiFi", icon: <IconWifi /> },
+  { value: "ac", label: "Air Con", icon: <IconSnowflake /> },
+  { value: "attached-bath", label: "En-Suite", icon: <IconShower /> },
+  { value: "hot-water", label: "Hot Water", icon: <IconThermometer /> },
+  { value: "study-desk", label: "Study Desk", icon: <IconBook /> },
+  { value: "wardrobe", label: "Wardrobe", icon: <IconTie /> },
+  { value: "laundry", label: "Laundry", icon: <IconShirt /> },
+  { value: "balcony", label: "Balcony", icon: <IconPlant /> },
+  { value: "meal-included", label: "Meals", icon: <IconUtensils /> },
+  { value: "security", label: "Security", icon: <IconLock /> },
+  { value: "cctv", label: "CCTV", icon: <IconCamera /> },
+  { value: "generator", label: "Generator", icon: <IconBolt /> },
 ];
 
 import { GHANA_REGIONS, REGION_NAMES, getDistrictsForRegion } from "@/lib/ghana-locations";
@@ -657,7 +658,7 @@ export default function PostPage() {
               className="font-bold px-8 py-3.5 rounded-2xl active:scale-95 transition-transform text-sm flex items-center gap-2"
               style={{ background: "#D4AF37", color: "#fff" }}
             >
-              <span>✦</span> Boost Your Listing
+              <IconStar /> Boost Your Listing
             </button>
           )}
           <div className="flex gap-3">
@@ -727,7 +728,7 @@ export default function PostPage() {
                     className={`flex flex-col items-start gap-2 p-4 rounded-2xl border-2 text-left transition-all ${kind === k ? "border-emerald-500 bg-emerald-50" : ""}`}
                     style={kind !== k ? { borderColor: "var(--uber-border)", background: "var(--uber-white)" } : undefined}
                   >
-                    <span className="text-3xl">{k === "home" ? "🏠" : "🏫"}</span>
+                    <span className="text-3xl">{k === "home" ? <IconHome /> : <IconSchool />}</span>
                     <div>
                       <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>{k === "home" ? "Home / Apartment" : "Hostel / Rooms"}</p>
                       <p className="text-[11px]" style={{ color: "var(--uber-muted)" }}>{k === "home" ? "Rent or sell your property" : "Student accommodation"}</p>
@@ -1078,7 +1079,7 @@ export default function PostPage() {
 
               {hostelInfo.rooms.length === 0 && (
                 <div className="text-center py-8" style={{ color: "var(--uber-muted)" }}>
-                  <p className="text-2xl mb-2">🛏️</p>
+                  <p className="text-2xl mb-2"><IconBed /></p>
                   <p className="text-sm font-medium">No rooms yet</p>
                   <p className="text-xs mt-1">Tap &quot;Add Room&quot; to get started</p>
                 </div>
@@ -1106,7 +1107,7 @@ export default function PostPage() {
                     {i === 0 && (
                       <div className="absolute top-1 left-1 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">Cover</div>
                     )}
-                    <button onClick={() => removePhoto(i)} className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white rounded-full text-[10px] flex items-center justify-center">✕</button>
+                    <button onClick={() => removePhoto(i)} className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white rounded-full text-[10px] flex items-center justify-center"><IconClose /></button>
                     <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1">
                       {i > 0 && (
                         <button onClick={() => movePhoto(i, i - 1)} className="w-5 h-5 bg-black/60 text-white rounded-full text-[10px] flex items-center justify-center">←</button>
@@ -1146,7 +1147,7 @@ export default function PostPage() {
                 {videoPreview ? (
                   <div className="relative rounded-xl overflow-hidden" style={{ border: "0.5px solid var(--uber-border)" }}>
                     <video src={videoPreview} controls className="w-full max-h-48 object-contain" style={{ background: "#000" }} />
-                    <button onClick={removeVideo} className="absolute top-2 right-2 w-6 h-6 bg-black/60 text-white rounded-full text-xs flex items-center justify-center">✕</button>
+                    <button onClick={removeVideo} className="absolute top-2 right-2 w-6 h-6 bg-black/60 text-white rounded-full text-xs flex items-center justify-center"><IconClose /></button>
                   </div>
                 ) : (
                   <button
@@ -1154,7 +1155,7 @@ export default function PostPage() {
                     className="w-full py-4 rounded-xl border-2 border-dashed flex flex-col items-center gap-1 hover:border-emerald-400 transition-colors"
                     style={{ borderColor: "var(--uber-border)", color: "var(--uber-muted)" }}
                   >
-                    <span className="text-xl">🎬</span>
+                    <span className="text-xl"><IconFilm /></span>
                     <span className="text-xs">Add Video Tour</span>
                   </button>
                 )}
@@ -1172,7 +1173,7 @@ export default function PostPage() {
               {needsListingFee && listingCountLoaded && (
                 <div className="rounded-2xl p-5 space-y-3" style={{ background: "#FDF8E7", border: "0.5px solid rgba(212,175,55,0.3)" }}>
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl">🔒</span>
+                    <span className="text-2xl"><IconShield /></span>
                     <div>
                       <p className="text-sm font-extrabold" style={{ color: "var(--uber-text)" }}>Listing Limit Reached</p>
                       <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>
@@ -1215,7 +1216,7 @@ export default function PostPage() {
                   </div>
                 )}
                 <div className="flex items-start gap-2">
-                  <span className="text-2xl mt-0.5">{kind === "hostel" ? "🏫" : "🏠"}</span>
+                  <span className="text-2xl mt-0.5">{kind === "hostel" ? <IconSchool /> : <IconHome />}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold truncate" style={{ color: "var(--uber-text)" }}>{kind === "home" ? homeInfo.title : hostelInfo.title}</p>
                     <p className="text-xs" style={{ color: "var(--uber-muted)" }}>
@@ -1232,9 +1233,9 @@ export default function PostPage() {
                       GH₵{parseFloat(homeInfo.price.replace(/[^\d.]/g, "") || "0").toLocaleString()}{homeInfo.forSale ? "" : "/mo"}
                     </p>
                     <div className="flex gap-4 text-xs" style={{ color: "var(--uber-muted)" }}>
-                      <span>🛏 {homeInfo.beds || "?"} beds</span>
-                      <span>🚿 {homeInfo.baths || "?"} baths</span>
-                      {homeInfo.sqft && <span>📐 {homeInfo.sqft} sqft</span>}
+                      <span><IconBed /> {homeInfo.beds || "?"} beds</span>
+                      <span><IconShower /> {homeInfo.baths || "?"} baths</span>
+                      {homeInfo.sqft && <span><IconRuler /> {homeInfo.sqft} sqft</span>}
                     </div>
                     {homeInfo.amenities.length > 0 && (
                       <div className="flex flex-wrap gap-1">
@@ -1261,7 +1262,7 @@ export default function PostPage() {
                     {kind === "home" ? homeInfo.description : hostelInfo.description}
                   </p>
                 )}
-                <p className="text-xs pt-2" style={{ color: "var(--uber-muted)", borderTop: "0.5px solid var(--uber-border)" }}>📷 {photos.length} photos</p>
+                <p className="text-xs pt-2" style={{ color: "var(--uber-muted)", borderTop: "0.5px solid var(--uber-border)" }}><IconCamera /> {photos.length} photos</p>
               </div>
 
               {submitError && (
@@ -1595,14 +1596,14 @@ function LocationPicker({
 
       {hasCoordinates && (
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2">
-          <span>✓</span>
+          <IconCheck />
           <span>Coordinates set: {lat}°, {lng}°</span>
         </div>
       )}
 
       {error && (
         <div className="bg-amber-50 border border-amber-200 text-amber-700 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2">
-          <span>⚠️</span>
+          <IconWarning />
           <span>{error}</span>
         </div>
       )}

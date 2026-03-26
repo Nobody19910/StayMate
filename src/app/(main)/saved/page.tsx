@@ -6,6 +6,7 @@ import Image from "next/image";
 import { getSavedByType, removeSaved } from "@/lib/saved-store";
 import { getHomes, getHostels } from "@/lib/api";
 import type { Property, Hostel } from "@/lib/types";
+import { IconHome, IconSchool, IconCheck } from "@/components/ui/Icons";
 
 type Tab = "homes" | "hostels";
 
@@ -306,7 +307,7 @@ export default function SavedPage() {
 function EmptyState({ type }: { type: Tab }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <p className="text-5xl mb-4">{type === "homes" ? "🏠" : "🏫"}</p>
+      <p className="text-5xl mb-4">{type === "homes" ? <IconHome className="w-12 h-12" /> : <IconSchool className="w-12 h-12" />}</p>
       <p className="text-base font-semibold" style={{ color: "var(--uber-text)" }}>No saved {type} yet</p>
       <p className="text-sm mt-1 max-w-xs" style={{ color: "var(--uber-muted)" }}>
         Tap the ♡ heart icon on any {type === "homes" ? "home" : "hostel"} listing to save it here.
@@ -381,7 +382,7 @@ function CompareHomesSheet({ homes, onClose }: { homes: Property[]; onClose: () 
                       {homes.map(h => (
                         <span key={h.id} className="flex-1 text-center text-xs">
                           {(h.amenities || []).includes(amenity)
-                            ? <span style={{ color: "#06C167" }}>✓</span>
+                            ? <span style={{ color: "#06C167" }}><IconCheck className="w-3 h-3 inline-block" /></span>
                             : <span style={{ color: "var(--uber-muted)" }}>—</span>}
                         </span>
                       ))}
@@ -454,7 +455,7 @@ function CompareHostelsSheet({ hostels, onClose }: { hostels: Hostel[]; onClose:
                       {hostels.map(h => (
                         <span key={h.id} className="flex-1 text-center text-xs">
                           {(h.amenities || []).includes(amenity)
-                            ? <span style={{ color: "#06C167" }}>✓</span>
+                            ? <span style={{ color: "#06C167" }}><IconCheck className="w-3 h-3 inline-block" /></span>
                             : <span style={{ color: "var(--uber-muted)" }}>—</span>}
                         </span>
                       ))}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { IconCalendar, IconParty } from "@/components/ui/Icons";
 
 interface Particle {
   id: number;
@@ -88,7 +89,7 @@ export function StatusCelebration({ status }: { status: string }) {
     return (
       <div className="flex flex-col items-center gap-2 py-4 animate-[fadeInScale_0.5s_ease-out]">
         <div className="w-14 h-14 rounded-full flex items-center justify-center animate-[pulseGreen_1s_ease-in-out_2]" style={{ background: "#4ECDC4" }}>
-          <span className="text-2xl">📅</span>
+          <IconCalendar className="w-7 h-7 text-white" />
         </div>
         <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Viewing Scheduled!</p>
         <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Check your chat for details</p>
@@ -100,7 +101,7 @@ export function StatusCelebration({ status }: { status: string }) {
     return (
       <div className="flex flex-col items-center gap-2 py-4 animate-[fadeInScale_0.5s_ease-out]">
         <div className="w-14 h-14 rounded-full flex items-center justify-center animate-[pulseGreen_1s_ease-in-out_2]" style={{ background: "#D4AF37" }}>
-          <span className="text-2xl">🎉</span>
+          <IconParty className="w-7 h-7 text-white" />
         </div>
         <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>All Done!</p>
         <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Thank you for using StayMate</p>

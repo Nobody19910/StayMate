@@ -10,20 +10,21 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import type { Hostel, Room, RoomAmenity } from "@/lib/types";
 import ImageGallery from "@/components/ui/ImageGallery";
+import { IconWifi, IconSnowflake, IconShower, IconFire, IconBasket, IconChair, IconDoor, IconMountain, IconUtensils, IconLock, IconCamera, IconBolt } from "@/components/ui/Icons";
 
-const AMENITY_LABELS: Record<RoomAmenity, { label: string; emoji: string; description: string }> = {
-  wifi: { label: "High-Speed WiFi", emoji: "📶", description: "Fast internet throughout the building" },
-  ac: { label: "Air Conditioning", emoji: "❄️", description: "Individual AC unit in room" },
-  "attached-bath": { label: "En-suite Bathroom", emoji: "🚿", description: "Private bathroom within the room" },
-  "hot-water": { label: "Hot Water", emoji: "🔥", description: "24/7 hot water supply" },
-  laundry: { label: "Laundry Access", emoji: "🧺", description: "In-house laundry machines available" },
-  "study-desk": { label: "Study Desk & Chair", emoji: "🪑", description: "Dedicated study area in room" },
-  wardrobe: { label: "Wardrobe / Closet", emoji: "🚪", description: "Built-in wardrobe space" },
-  balcony: { label: "Private Balcony", emoji: "🏞️", description: "Room opens onto a private balcony" },
-  "meal-included": { label: "Meals Included", emoji: "🍽️", description: "Daily meal plan included in rent" },
-  security: { label: "24/7 Security", emoji: "🔒", description: "Manned security gate round the clock" },
-  cctv: { label: "CCTV Surveillance", emoji: "📷", description: "Cameras covering common areas" },
-  generator: { label: "Standby Generator", emoji: "⚡", description: "Generator backup during power outages" },
+const AMENITY_LABELS: Record<RoomAmenity, { label: string; emoji: React.ReactNode; description: string }> = {
+  wifi: { label: "High-Speed WiFi", emoji: <IconWifi />, description: "Fast internet throughout the building" },
+  ac: { label: "Air Conditioning", emoji: <IconSnowflake />, description: "Individual AC unit in room" },
+  "attached-bath": { label: "En-suite Bathroom", emoji: <IconShower />, description: "Private bathroom within the room" },
+  "hot-water": { label: "Hot Water", emoji: <IconFire />, description: "24/7 hot water supply" },
+  laundry: { label: "Laundry Access", emoji: <IconBasket />, description: "In-house laundry machines available" },
+  "study-desk": { label: "Study Desk & Chair", emoji: <IconChair />, description: "Dedicated study area in room" },
+  wardrobe: { label: "Wardrobe / Closet", emoji: <IconDoor />, description: "Built-in wardrobe space" },
+  balcony: { label: "Private Balcony", emoji: <IconMountain />, description: "Room opens onto a private balcony" },
+  "meal-included": { label: "Meals Included", emoji: <IconUtensils />, description: "Daily meal plan included in rent" },
+  security: { label: "24/7 Security", emoji: <IconLock />, description: "Manned security gate round the clock" },
+  cctv: { label: "CCTV Surveillance", emoji: <IconCamera />, description: "Cameras covering common areas" },
+  generator: { label: "Standby Generator", emoji: <IconBolt />, description: "Generator backup during power outages" },
 };
 
 const ROOM_TYPE_LABELS: Record<string, string> = {
@@ -235,7 +236,7 @@ export default function RoomDetailPage({ params }: Props) {
             const info = AMENITY_LABELS[amenity];
             return (
               <div key={amenity} className="flex items-start gap-2 rounded-xl p-3" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
-                <span className="text-lg leading-none">{info.emoji}</span>
+                <span className="text-lg leading-none flex items-center">{info.emoji}</span>
                 <div>
                   <p className="text-xs font-semibold" style={{ color: "var(--uber-text)" }}>{info.label}</p>
                   <p className="text-[10px] mt-0.5" style={{ color: "var(--uber-muted)" }}>{info.description}</p>

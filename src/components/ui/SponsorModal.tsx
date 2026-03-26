@@ -6,6 +6,7 @@ import { usePaystackScript, openPaystackPopup } from "@/lib/paystack";
 import { sponsorProperty } from "@/lib/api";
 import { SPONSOR_TIERS } from "@/lib/sponsor-tiers";
 import type { SponsorTier } from "@/lib/types";
+import { IconStar, IconCheck } from "@/components/ui/Icons";
 
 interface SponsorModalProps {
   open: boolean;
@@ -96,7 +97,7 @@ export default function SponsorModal({
             {/* Header */}
             <div className="px-5 py-3 shrink-0" style={{ borderBottom: "0.5px solid var(--uber-border)" }}>
               <h2 className="text-base font-bold" style={{ color: "var(--uber-text)" }}>
-                <span style={{ color: "#D4AF37" }}>✦</span> Boost Your Listing
+                <span style={{ color: "#D4AF37" }}><IconStar className="w-4 h-4 inline-block" /></span> Boost Your Listing
               </h2>
               <p className="text-xs mt-0.5 line-clamp-1" style={{ color: "var(--uber-muted)" }}>
                 {propertyTitle}
@@ -137,7 +138,7 @@ export default function SponsorModal({
                   <div className="mt-2 space-y-1">
                     {tier.perks.map((perk, i) => (
                       <p key={i} className="text-[11px] flex items-center gap-1.5" style={{ color: "var(--uber-muted)" }}>
-                        <span style={{ color: "#06C167" }}>✓</span> {perk}
+                        <span style={{ color: "#06C167" }}><IconCheck className="w-3 h-3" /></span> {perk}
                       </p>
                     ))}
                   </div>

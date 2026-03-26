@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { IconPin } from "@/components/ui/Icons";
 
 export default function DistanceBadge({ lat, lng }: { lat?: number; lng?: number }) {
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
@@ -27,7 +28,7 @@ export default function DistanceBadge({ lat, lng }: { lat?: number; lng?: number
 
   return (
     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--uber-surface2)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}>
-      📍 {distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m away` : `${distanceKm.toFixed(1)}km away`}
+      <IconPin className="w-3 h-3 inline-block" /> {distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m away` : `${distanceKm.toFixed(1)}km away`}
     </span>
   );
 }

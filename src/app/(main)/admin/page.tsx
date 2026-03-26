@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { toggleSponsored, toggleVerified, getActiveAgents } from "@/lib/api";
 import AdminLocationButton from "@/components/ui/AdminLocationButton";
+import { IconChart, IconBuilding, IconTie, IconIdCard, IconStar, IconTarget, IconChat, IconNeighborhood, IconWarning, IconPhone, IconPin, IconCheck, IconClose, IconBroom, IconTrash, IconCheckCircle, IconMailbox, IconShrug, IconMail } from "@/components/ui/Icons";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -180,13 +181,13 @@ export default function AdminDashboardPage() {
           <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-widest">Super Admin</p>
         </div>
         <div className="flex flex-row md:flex-col p-4 gap-2 overflow-x-auto md:overflow-y-auto HideScrollbar">
-          <TabButton active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon="📊" label="Dashboard" />
-          <TabButton active={tab === "properties"} onClick={() => setTab("properties")} icon="🏢" label="Live Properties" count={liveHomes.length + liveHostels.length} />
-          <TabButton active={tab === "agents"} onClick={() => { setTab("agents"); setSelectedAgentId(null); }} icon="👔" label="Active Agents" count={activeAgents} />
+          <TabButton active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon={<IconChart />} label="Dashboard" />
+          <TabButton active={tab === "properties"} onClick={() => setTab("properties")} icon={<IconBuilding />} label="Live Properties" count={liveHomes.length + liveHostels.length} />
+          <TabButton active={tab === "agents"} onClick={() => { setTab("agents"); setSelectedAgentId(null); }} icon={<IconTie />} label="Active Agents" count={activeAgents} />
           <TabButton active={tab === "queue"} onClick={() => setTab("queue")} icon="⏳" label="Agent Queue" count={pendingHomes.length + pendingHostels.length} />
-          <TabButton active={false} onClick={() => {}} icon="🪪" label="KYC Audit" disabled />
-          <TabButton active={tab === "featured"} onClick={() => setTab("featured")} icon="✦" label="Featured" count={homes.filter(h => h.is_sponsored).length + hostels.filter(h => h.is_sponsored).length} />
-          <TabButton active={tab === "leads"} onClick={() => setTab("leads")} icon="🎯" label="Seeker Leads" count={leads.filter(l => l.status === "pending").length} />
+          <TabButton active={false} onClick={() => {}} icon={<IconIdCard />} label="KYC Audit" disabled />
+          <TabButton active={tab === "featured"} onClick={() => setTab("featured")} icon={<IconStar />} label="Featured" count={homes.filter(h => h.is_sponsored).length + hostels.filter(h => h.is_sponsored).length} />
+          <TabButton active={tab === "leads"} onClick={() => setTab("leads")} icon={<IconTarget />} label="Seeker Leads" count={leads.filter(l => l.status === "pending").length} />
 
           <div className="hidden md:block mt-auto pt-6 border-t border-gray-800">
             <Link
@@ -207,10 +208,10 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col flex-1 gap-8">
               {/* Metrics Header */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <MetricCard title="Total Inquiries" value={totalInquiries.toString()} icon="💬" color="text-amber-500" />
-                <MetricCard title="Active Agents" value={activeAgents.toString()} icon="👔" color="text-blue-500" onClick={() => { setTab("agents"); setSelectedAgentId(null); }} />
-                <MetricCard title="Live Properties" value={(liveHomes.length + liveHostels.length).toString()} icon="🏘️" color="text-emerald-500" onClick={() => setTab("properties")} />
-                <MetricCard title="Pending Approvals" value={(pendingHomes.length + pendingHostels.length + pendingKyc.length).toString()} icon="⚠️" color="text-red-500" onClick={() => setTab("queue")} />
+                <MetricCard title="Total Inquiries" value={totalInquiries.toString()} icon={<IconChat />} color="text-amber-500" />
+                <MetricCard title="Active Agents" value={activeAgents.toString()} icon={<IconTie />} color="text-blue-500" onClick={() => { setTab("agents"); setSelectedAgentId(null); }} />
+                <MetricCard title="Live Properties" value={(liveHomes.length + liveHostels.length).toString()} icon={<IconNeighborhood />} color="text-emerald-500" onClick={() => setTab("properties")} />
+                <MetricCard title="Pending Approvals" value={(pendingHomes.length + pendingHostels.length + pendingKyc.length).toString()} icon={<IconWarning />} color="text-red-500" onClick={() => setTab("queue")} />
               </div>
 
               {/* Inquiries */}
@@ -267,11 +268,11 @@ export default function AdminDashboardPage() {
                           <div className="mt-4 flex flex-col md:flex-row gap-2 justify-end">
                             {b.user?.phone && (
                               <a href={`tel:${b.user.phone}`} className="inline-flex items-center justify-center gap-1 text-xs font-bold text-gray-700 bg-white border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-                                📞 Call
+                                <IconPhone /> Call
                               </a>
                             )}
                             <Link href={`/chat?seeker_id=${b.user_id}`} className="inline-flex items-center justify-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-colors">
-                              💬 Chat
+                              <IconChat /> Chat
                             </Link>
                             {b.property?.lat && b.property?.lng && (
                               <a
@@ -280,16 +281,16 @@ export default function AdminDashboardPage() {
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center justify-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors"
                               >
-                                📍 Map
+                                <IconPin /> Map
                               </a>
                             )}
                             {b.status === "pending" && (
                               <>
                                 <button onClick={() => resolveBooking(b.id, "accepted")} className="inline-flex items-center justify-center text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors">
-                                  ✓ Accept
+                                  <IconCheck /> Accept
                                 </button>
                                 <button onClick={() => resolveBooking(b.id, "rejected")} className="inline-flex items-center justify-center text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors">
-                                  ✕ Reject
+                                  <IconClose /> Reject
                                 </button>
                               </>
                             )}
@@ -315,7 +316,7 @@ export default function AdminDashboardPage() {
 
                 {pendingHomes.length === 0 && pendingHostels.length === 0 ? (
                   <div className="text-center py-12 text-gray-400">
-                    <span className="text-5xl opacity-50 mb-4 block">🧹</span>
+                    <span className="text-5xl opacity-50 mb-4 block"><IconBroom className="w-12 h-12" /></span>
                     <p className="font-bold text-gray-600">Queue is empty!</p>
                     <p className="text-sm mt-1">All agent submissions have been reviewed.</p>
                   </div>
@@ -338,7 +339,7 @@ export default function AdminDashboardPage() {
                           <div className="mt-4 flex gap-2">
                             <button onClick={() => approveProperty(p.id, p.type)} className="flex-1 bg-emerald-500 text-white text-xs font-bold py-2 rounded-xl hover:bg-emerald-600 transition-colors">Approve</button>
                             <button onClick={() => rejectProperty(p.id, p.type)} className="flex-1 bg-white border border-gray-200 text-amber-600 text-xs font-bold py-2 rounded-xl hover:bg-amber-50 transition-colors">Reject</button>
-                            <button onClick={() => deleteProperty(p.id, p.type)} className="bg-white border border-gray-200 text-red-600 text-xs font-bold py-2 px-3 rounded-xl hover:bg-red-50 transition-colors">🗑️</button>
+                            <button onClick={() => deleteProperty(p.id, p.type)} className="bg-white border border-gray-200 text-red-600 text-xs font-bold py-2 px-3 rounded-xl hover:bg-red-50 transition-colors"><IconTrash /></button>
                           </div>
                         </div>
                       </div>
@@ -352,12 +353,12 @@ export default function AdminDashboardPage() {
           {tab === "audit" && (
             <div className="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
               <h2 className="text-lg font-extrabold text-gray-900 mb-6 flex items-center gap-2">
-                <span className="text-2xl">🪪</span> KYC Audit View
+                <IconIdCard /> KYC Audit View
               </h2>
 
               {pendingKyc.length === 0 ? (
                  <div className="text-center py-12 text-gray-400">
-                  <span className="text-5xl opacity-50 mb-4 block">✔️</span>
+                  <span className="text-5xl opacity-50 mb-4 block"><IconCheckCircle className="w-12 h-12" /></span>
                   <p className="font-bold text-gray-600">No pending KYC submissions</p>
                 </div>
               ) : (
@@ -403,11 +404,11 @@ export default function AdminDashboardPage() {
           {tab === "leads" && (
             <div className="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
               <h2 className="text-lg font-extrabold text-gray-900 mb-6 flex items-center gap-2">
-                <span className="text-2xl">🎯</span> Seeker Property Submissions
+                <IconTarget /> Seeker Property Submissions
               </h2>
               {leads.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
-                  <span className="text-5xl opacity-50 mb-4 block">📭</span>
+                  <span className="text-5xl opacity-50 mb-4 block"><IconMailbox className="w-12 h-12" /></span>
                   <p className="font-bold text-gray-600">No leads from seekers.</p>
                 </div>
               ) : (
@@ -467,7 +468,7 @@ export default function AdminDashboardPage() {
           {tab === "properties" && (
             <div className="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
               <h2 className="text-lg font-extrabold text-gray-900 mb-6 flex items-center gap-2">
-                <span className="text-2xl">🏢</span> Live Properties
+                <IconBuilding /> Live Properties
               </h2>
 
               <div className="grid md:grid-cols-2 gap-8">
@@ -495,7 +496,7 @@ export default function AdminDashboardPage() {
                               style={h.is_verified ? { background: "#06C167" } : undefined}
                               title={h.is_verified ? "Remove verified" : "Mark as verified"}
                             >
-                              ✓ {h.is_verified ? "Verified" : "Verify"}
+                              <IconCheck /> {h.is_verified ? "Verified" : "Verify"}
                             </button>
                             <button onClick={() => deleteProperty(h.id, "home")} className="text-gray-400 hover:text-red-500 transition-colors" title="Delete">
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -535,7 +536,7 @@ export default function AdminDashboardPage() {
                               style={h.is_verified ? { background: "#06C167" } : undefined}
                               title={h.is_verified ? "Remove verified" : "Mark as verified"}
                             >
-                              ✓ {h.is_verified ? "Verified" : "Verify"}
+                              <IconCheck /> {h.is_verified ? "Verified" : "Verify"}
                             </button>
                             <button onClick={() => deleteProperty(h.id, "hostel")} className="text-gray-400 hover:text-red-500 transition-colors" title="Delete">
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -558,7 +559,7 @@ export default function AdminDashboardPage() {
           {tab === "featured" && (
             <div className="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
               <h2 className="text-lg font-extrabold text-gray-900 mb-2 flex items-center gap-2">
-                <span className="text-2xl" style={{ color: "#D4AF37" }}>✦</span> Featured / Sponsored
+                <IconStar /> Featured / Sponsored
               </h2>
               <p className="text-xs text-gray-500 mb-6">Toggle up to 10 properties as "Featured Today". These appear in a large carousel at the top of the browse pages.</p>
 
@@ -586,7 +587,7 @@ export default function AdminDashboardPage() {
                         className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isFeatured ? "text-white" : "text-gray-600 border border-gray-200 bg-white hover:bg-gray-50"}`}
                         style={isFeatured ? { background: "#D4AF37" } : undefined}
                       >
-                        {isFeatured ? "✦ Featured" : "Feature"}
+                        {isFeatured ? <><IconStar /> Featured</> : "Feature"}
                       </button>
                     </div>
                   );
@@ -617,7 +618,7 @@ export default function AdminDashboardPage() {
                         className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isFeatured ? "text-white" : "text-gray-600 border border-gray-200 bg-white hover:bg-gray-50"}`}
                         style={isFeatured ? { background: "#D4AF37" } : undefined}
                       >
-                        {isFeatured ? "✦ Featured" : "Feature"}
+                        {isFeatured ? <><IconStar /> Featured</> : "Feature"}
                       </button>
                     </div>
                   );
@@ -671,11 +672,11 @@ export default function AdminDashboardPage() {
               ) : (
                 <div className="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
                   <h2 className="text-lg font-extrabold text-gray-900 mb-6 flex items-center gap-2">
-                    <span className="text-2xl">👔</span> Active Agents Directory
+                    <IconTie /> Active Agents Directory
                   </h2>
                   {activeAgentProfiles.length === 0 ? (
                     <div className="text-center py-12 text-gray-400">
-                      <span className="text-5xl opacity-50 mb-4 block">🤷</span>
+                      <span className="text-5xl opacity-50 mb-4 block"><IconShrug className="w-12 h-12" /></span>
                       <p className="font-bold text-gray-600">No active agents yet</p>
                       <p className="text-sm mt-1">Agents will appear here once they post listings.</p>
                     </div>
@@ -703,13 +704,13 @@ export default function AdminDashboardPage() {
                             <div className="w-full space-y-2">
                               {agent.email && (
                                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  <span>📧</span>
+                                  <IconMail />
                                   <span className="truncate">{agent.email}</span>
                                 </div>
                               )}
                               {agent.phone && (
                                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  <span>📞</span>
+                                  <IconPhone />
                                   <a href={`tel:${agent.phone}`} className="text-blue-600 font-medium hover:underline" onClick={e => e.stopPropagation()}>{agent.phone}</a>
                                 </div>
                               )}
@@ -750,7 +751,7 @@ export default function AdminDashboardPage() {
   );
 }
 
-function TabButton({ active, onClick, icon, label, count, disabled }: { active: boolean, onClick: () => void, icon: string, label: string, count?: number, disabled?: boolean }) {
+function TabButton({ active, onClick, icon, label, count, disabled }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string, count?: number, disabled?: boolean }) {
   return (
     <button
       onClick={disabled ? undefined : onClick}
@@ -777,7 +778,7 @@ function TabButton({ active, onClick, icon, label, count, disabled }: { active: 
   );
 }
 
-function MetricCard({ title, value, icon, color, onClick }: { title: string, value: string, icon: string, color: string, onClick?: () => void }) {
+function MetricCard({ title, value, icon, color, onClick }: { title: string, value: string, icon: React.ReactNode, color: string, onClick?: () => void }) {
   return (
     <div
       className={`bg-white border border-gray-100 rounded-3xl p-5 shadow-sm transition-all ${onClick ? 'cursor-pointer hover:shadow-md hover:border-gray-200 active:scale-[0.97]' : ''}`}

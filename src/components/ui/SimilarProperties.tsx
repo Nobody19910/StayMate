@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getHomes, getHostels } from "@/lib/api";
 import type { Property, Hostel } from "@/lib/types";
+import { IconStar } from "@/components/ui/Icons";
 
 interface SimilarHomesProps {
   currentId: string;
@@ -46,7 +47,7 @@ export function SimilarHomes({ currentId, city, propertyType, priceRange }: Simi
               <div className="relative h-28 w-full">
                 <Image src={h.images[0]} alt={h.title} fill className="object-cover" unoptimized />
                 {h.isSponsored && (
-                  <span className="absolute top-1.5 left-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded shimmer-gold text-[#1A1A1A]">✦ Sponsored</span>
+                  <span className="absolute top-1.5 left-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded shimmer-gold text-[#1A1A1A] flex items-center gap-0.5"><IconStar className="w-2.5 h-2.5" /> Sponsored</span>
                 )}
               </div>
               <div className="px-2.5 py-2">
@@ -103,7 +104,7 @@ export function SimilarHostels({ currentHostelId, city, priceMin, priceMax }: Si
               <div className="relative h-28 w-full">
                 <Image src={h.images[0]} alt={h.name} fill className="object-cover" unoptimized />
                 {h.isSponsored && (
-                  <span className="absolute top-1.5 left-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded shimmer-gold text-[#1A1A1A]">✦ Sponsored</span>
+                  <span className="absolute top-1.5 left-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded shimmer-gold text-[#1A1A1A] flex items-center gap-0.5"><IconStar className="w-2.5 h-2.5" /> Sponsored</span>
                 )}
               </div>
               <div className="px-2.5 py-2">

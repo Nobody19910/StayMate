@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import AdminInbox from "@/components/admin/AdminInbox";
+import { IconChat, IconSchool, IconHome, IconStar, IconClose, IconCheckCircle, IconCreditCard } from "@/components/ui/Icons";
 import { usePaystackScript, openPaystackPopup } from "@/lib/paystack";
 
 const POLL_MS = 3000; // poll every 3 s — fast enough to feel live
@@ -47,7 +48,7 @@ export default function SeekerChatPage() {
     return (
       <div className="min-h-screen flex flex-col items-center pt-24 px-4 text-center" style={{ background: "var(--background)" }}>
         <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6" style={{ background: "var(--uber-black)" }}>
-          <span className="text-3xl">💬</span>
+          <IconChat className="w-8 h-8" />
         </div>
         <h1 className="text-2xl font-bold mb-2" style={{ color: "var(--uber-text)" }}>Support Chat</h1>
         <p className="text-sm max-w-xs mb-8" style={{ color: "var(--uber-muted)" }}>
@@ -314,7 +315,7 @@ function ChatView({ user }: { user: any }) {
               // eslint-disable-next-line @next/next/no-img-element
               ? <img src={conversation!.property_image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
               : <div className="w-12 h-12 rounded-lg bg-black/5 flex items-center justify-center shrink-0 text-xl">
-                {conversation!.property_type === "room" ? "🏫" : "🏠"}
+                {conversation!.property_type === "room" ? <IconSchool /> : <IconHome />}
               </div>}
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--uber-muted)" }}>
@@ -333,7 +334,7 @@ function ChatView({ user }: { user: any }) {
       {hasProperty && (
         <div className="px-4 py-2.5 flex items-center gap-2"
           style={{ background: "color-mix(in srgb, #D4AF37 15%, var(--uber-surface))", borderBottom: "0.5px solid rgba(212,175,55,0.3)" }}>
-          <span style={{ color: "#D4AF37" }}>✦</span>
+          <span style={{ color: "#D4AF37" }}><IconStar /></span>
           <p className="text-xs font-medium" style={{ color: "var(--uber-text)" }}>
             Coordination & Viewing Fee: <span className="font-bold" style={{ color: "#D4AF37" }}>GH₵ 200</span>
           </p>
@@ -346,7 +347,7 @@ function ChatView({ user }: { user: any }) {
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
             className="bg-red-50 px-4 py-2 flex items-start gap-2 overflow-hidden">
             <p className="text-xs text-red-600 flex-1 break-all">{error}</p>
-            <button onClick={() => setError(null)} className="text-red-400 text-xs">✕</button>
+            <button onClick={() => setError(null)} className="text-red-400 text-xs"><IconClose /></button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -383,13 +384,13 @@ function ChatView({ user }: { user: any }) {
               {isAccepted ? (
                 <div className="w-full px-3 py-3 rounded-2xl max-w-lg" style={{ background: "color-mix(in srgb, #D4AF37 15%, var(--uber-surface))", border: "0.5px solid rgba(212,175,55,0.3)" }}>
                   <div className="flex gap-3">
-                    <span className="text-lg shrink-0">✅</span>
+                    <span className="text-lg shrink-0"><IconCheckCircle /></span>
                     <div className="flex-1">
                       <p className="text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>{msg.content}</p>
                       <button onClick={handlePayFee} disabled={payingFee}
                         className="inline-flex items-center gap-1.5 text-black text-xs font-bold px-4 py-2.5 rounded-xl active:scale-95 transition-all disabled:opacity-60"
                         style={{ background: "#D4AF37" }}>
-                        {payingFee ? <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <>💳 Pay GH₵ 200 Fee</>}
+                        {payingFee ? <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><IconCreditCard /> Pay GH₵ 200 Fee</>}
                       </button>
                     </div>
                   </div>
@@ -397,14 +398,14 @@ function ChatView({ user }: { user: any }) {
               ) : isAcceptedMsg ? (
                 <div className="w-full px-3 py-3 rounded-2xl max-w-lg" style={{ background: "color-mix(in srgb, #06C167 12%, var(--uber-surface))", border: "0.5px solid rgba(6,193,103,0.3)" }}>
                   <div className="flex gap-3">
-                    <span className="text-lg shrink-0">✅</span>
+                    <span className="text-lg shrink-0"><IconCheckCircle /></span>
                     <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>{msg.content}</p>
                   </div>
                 </div>
               ) : isDeclined ? (
                 <div className="w-full px-3 py-3 rounded-2xl max-w-lg" style={{ background: "#FEE2E2", border: "0.5px solid rgba(239,68,68,0.3)" }}>
                   <div className="flex gap-3">
-                    <span className="text-lg shrink-0">❌</span>
+                    <span className="text-lg shrink-0"><IconClose /></span>
                     <p className="text-sm font-medium text-red-700">{msg.content}</p>
                   </div>
                 </div>
@@ -441,14 +442,14 @@ function ChatView({ user }: { user: any }) {
             <button onClick={handlePayFee} disabled={payingFee}
               className="shrink-0 flex items-center gap-1.5 text-black text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all disabled:opacity-60"
               style={{ background: "#D4AF37" }}>
-              {payingFee ? <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <>✦ Pay GH₵ 200</>}
+              {payingFee ? <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><IconStar /> Pay GH₵ 200</>}
             </button>
           </div>
         </div>
       )}
       {(booking?.status === "fee_paid" || booking?.status === "paid") && (
         <div className="px-4 py-2 flex items-center gap-2" style={{ borderTop: "0.5px solid rgba(6,193,103,0.3)", background: "color-mix(in srgb, #06C167 12%, var(--uber-surface))" }}>
-          <span>✅</span>
+          <IconCheckCircle />
           <p className="text-xs font-semibold" style={{ color: "var(--uber-text)" }}>Fee paid — your spot is confirmed.</p>
         </div>
       )}

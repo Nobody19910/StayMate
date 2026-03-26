@@ -8,20 +8,21 @@ import { getHostelById } from "@/lib/api";
 import type { Hostel, Room, RoomAmenity } from "@/lib/types";
 import DistanceBadge from "@/components/ui/DistanceBadge";
 import ImageGallery from "@/components/ui/ImageGallery";
+import { IconWifi, IconSnowflake, IconShower, IconFire, IconBasket, IconChair, IconDoor, IconMountain, IconUtensils, IconLock, IconCamera, IconBolt } from "@/components/ui/Icons";
 
-const AMENITY_LABELS: Record<RoomAmenity, { label: string; emoji: string }> = {
-  wifi: { label: "WiFi", emoji: "📶" },
-  ac: { label: "A/C", emoji: "❄️" },
-  "attached-bath": { label: "En-suite", emoji: "🚿" },
-  "hot-water": { label: "Hot Water", emoji: "🔥" },
-  laundry: { label: "Laundry", emoji: "🧺" },
-  "study-desk": { label: "Study Desk", emoji: "🪑" },
-  wardrobe: { label: "Wardrobe", emoji: "🚪" },
-  balcony: { label: "Balcony", emoji: "🏞️" },
-  "meal-included": { label: "Meals", emoji: "🍽️" },
-  security: { label: "Security", emoji: "🔒" },
-  cctv: { label: "CCTV", emoji: "📷" },
-  generator: { label: "Generator", emoji: "⚡" },
+const AMENITY_LABELS: Record<RoomAmenity, { label: string; emoji: React.ReactNode }> = {
+  wifi: { label: "WiFi", emoji: <IconWifi /> },
+  ac: { label: "A/C", emoji: <IconSnowflake /> },
+  "attached-bath": { label: "En-suite", emoji: <IconShower /> },
+  "hot-water": { label: "Hot Water", emoji: <IconFire /> },
+  laundry: { label: "Laundry", emoji: <IconBasket /> },
+  "study-desk": { label: "Study Desk", emoji: <IconChair /> },
+  wardrobe: { label: "Wardrobe", emoji: <IconDoor /> },
+  balcony: { label: "Balcony", emoji: <IconMountain /> },
+  "meal-included": { label: "Meals", emoji: <IconUtensils /> },
+  security: { label: "Security", emoji: <IconLock /> },
+  cctv: { label: "CCTV", emoji: <IconCamera /> },
+  generator: { label: "Generator", emoji: <IconBolt /> },
 };
 
 const ROOM_TYPE_LABELS: Record<string, string> = {

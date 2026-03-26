@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { IconClose } from "@/components/ui/Icons";
 
 const STORAGE_KEY = "staymate-recent-searches";
 const MAX_RECENT = 8;
@@ -136,7 +137,7 @@ export default function SearchAutocomplete({ value, onChange, onSubmit, placehol
                     className="text-xs px-1 rounded"
                     style={{ color: "var(--uber-muted)" }}
                   >
-                    ✕
+                    <IconClose className="w-3 h-3" />
                   </span>
                 </button>
               ))}

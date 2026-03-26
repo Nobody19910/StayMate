@@ -10,12 +10,13 @@ import {
   clearNotifications,
   type AppNotification,
 } from "@/lib/notification-store";
+import { IconClipboard, IconCreditCard, IconChat, IconBell, IconClose } from "@/components/ui/Icons";
 
-const TYPE_ICONS: Record<AppNotification["type"], string> = {
-  booking: "📋",
-  payment: "💳",
-  message: "💬",
-  system: "🔔",
+const TYPE_ICONS: Record<AppNotification["type"], React.ReactNode> = {
+  booking: <IconClipboard />,
+  payment: <IconCreditCard />,
+  message: <IconChat />,
+  system: <IconBell />,
 };
 
 function timeAgo(dateStr: string): string {
@@ -117,7 +118,7 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
                 Clear
               </button>
             )}
-            <button onClick={onClose} className="text-sm font-bold" style={{ color: "var(--uber-muted)" }}>✕</button>
+            <button onClick={onClose} className="text-sm font-bold" style={{ color: "var(--uber-muted)" }}><IconClose /></button>
           </div>
         </div>
 
@@ -125,7 +126,7 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
         <div className="flex-1 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12" style={{ color: "var(--uber-muted)" }}>
-              <span className="text-3xl mb-2">🔔</span>
+              <span className="text-3xl mb-2"><IconBell className="w-8 h-8" /></span>
               <p className="text-sm">No notifications yet</p>
             </div>
           ) : (

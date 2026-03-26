@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { IconStar } from "@/components/ui/Icons";
 
 interface FeaturedItem {
   id: string;
@@ -74,7 +75,7 @@ export default function FeaturedCarousel({ items }: FeaturedCarouselProps) {
     <div className="px-4 pb-4">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: "var(--uber-muted)" }}>
-          <span style={{ color: "#D4AF37" }}>✦</span> Featured Today
+          <span style={{ color: "#D4AF37" }}><IconStar className="w-3.5 h-3.5 inline-block" /></span> Featured Today
         </h2>
         {total > 1 && (
           <span className="text-[10px] font-bold" style={{ color: "var(--uber-muted)" }}>
@@ -105,7 +106,7 @@ export default function FeaturedCarousel({ items }: FeaturedCarouselProps) {
             className="absolute top-3 left-3 text-[10px] font-bold px-2 py-0.5 rounded-md"
             style={{ background: "rgba(212,175,55,0.9)", color: "#fff" }}
           >
-            ✦ Sponsored
+            <IconStar className="w-3 h-3 inline-block" /> Sponsored
           </div>
 
           {/* Info overlay */}

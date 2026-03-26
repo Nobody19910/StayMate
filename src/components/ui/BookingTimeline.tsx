@@ -1,13 +1,15 @@
 "use client";
 
-const STATUS_CONFIG: Record<string, { color: string; icon: string; label: string }> = {
+import { IconCheck, IconClose, IconCreditCard, IconCalendar, IconHome } from "@/components/ui/Icons";
+
+const STATUS_CONFIG: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
   pending: { color: "#6B6B6B", icon: "⏳", label: "Pending Review" },
-  accepted: { color: "#06C167", icon: "✓", label: "Accepted" },
-  rejected: { color: "#FF4444", icon: "✕", label: "Rejected" },
-  fee_paid: { color: "#D4AF37", icon: "💳", label: "Fee Paid" },
-  paid: { color: "#D4AF37", icon: "💳", label: "Fee Paid" },
-  viewing_scheduled: { color: "#4A90D9", icon: "📅", label: "Viewing Scheduled" },
-  completed: { color: "#06C167", icon: "🏠", label: "Completed" },
+  accepted: { color: "#06C167", icon: <IconCheck className="w-3.5 h-3.5" />, label: "Accepted" },
+  rejected: { color: "#FF4444", icon: <IconClose className="w-3.5 h-3.5" />, label: "Rejected" },
+  fee_paid: { color: "#D4AF37", icon: <IconCreditCard className="w-3.5 h-3.5" />, label: "Fee Paid" },
+  paid: { color: "#D4AF37", icon: <IconCreditCard className="w-3.5 h-3.5" />, label: "Fee Paid" },
+  viewing_scheduled: { color: "#4A90D9", icon: <IconCalendar className="w-3.5 h-3.5" />, label: "Viewing Scheduled" },
+  completed: { color: "#06C167", icon: <IconHome className="w-3.5 h-3.5" />, label: "Completed" },
 };
 
 const TIMELINE_STEPS = ["pending", "accepted", "fee_paid", "viewing_scheduled", "completed"];
@@ -38,7 +40,7 @@ export default function BookingTimeline({ bookings, onSelect, onPay, payingId }:
   if (bookings.length === 0) {
     return (
       <div className="rounded-2xl p-6 text-center" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
-        <span className="text-4xl mb-2 block">🏠</span>
+        <span className="text-4xl mb-2 block"><IconHome className="w-10 h-10" /></span>
         <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>No Inquiries Found</p>
         <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>Book a viewing or inquire about a property to see it here.</p>
       </div>
@@ -118,13 +120,13 @@ export default function BookingTimeline({ bookings, onSelect, onPay, payingId }:
                 >
                   {payingId === booking.id ? (
                     <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : <>💳 Pay GH₵ 200 Fee</>}
+                  ) : <><IconCreditCard className="w-3.5 h-3.5" /> Pay GH₵ 200 Fee</>}
                 </button>
               )}
 
               {booking.viewing_date && (
                 <p className="text-[10px] mt-1.5" style={{ color: "var(--uber-muted)" }}>
-                  📅 Viewing: {new Date(booking.viewing_date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
+                  <IconCalendar className="w-3 h-3 inline-block" /> Viewing: {new Date(booking.viewing_date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
                 </p>
               )}
             </div>

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import AdminLocationButton from "@/components/ui/AdminLocationButton";
+import { IconSchool, IconHome, IconCreditCard, IconChat } from "@/components/ui/Icons";
 
 const UBER_GREEN = "#06C167";
 
@@ -378,7 +379,7 @@ export default function AdminInbox() {
                   <p className="text-[10px] font-medium truncate mt-0.5" style={{ color: "var(--uber-muted)" }}>{conv.seeker?.phone || "No phone"}</p>
                   {conv.property_title && (
                     <div className="flex items-center gap-1.5 mt-1.5 rounded-lg px-2 py-1 overflow-hidden" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
-                      <span className="text-[11px] shrink-0">{conv.property_type === "room" ? "🏫" : "🏠"}</span>
+                      <span className="text-[11px] shrink-0">{conv.property_type === "room" ? <IconSchool /> : <IconHome />}</span>
                       <p className="text-[10px] font-semibold truncate" style={{ color: "var(--uber-text)" }}>{conv.property_title}</p>
                     </div>
                   )}
@@ -418,7 +419,7 @@ export default function AdminInbox() {
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
                     style={{ color: "var(--uber-text)" }}>
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-lg" style={{ background: "var(--uber-surface)" }}>
-                      {selectedConv.property_type === "room" ? "🏫" : "🏠"}
+                      {selectedConv.property_type === "room" ? <IconSchool className="w-5 h-5" /> : <IconHome className="w-5 h-5" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--uber-muted)" }}>
@@ -516,7 +517,7 @@ export default function AdminInbox() {
               if (booking.status === "fee_paid" || booking.status === "paid") return (
                 <div className="px-3 pt-2 pb-1" style={{ background: "var(--uber-white)", borderTop: "0.5px solid var(--uber-border)" }}>
                   <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }}>
-                    <span>💳</span>
+                    <span><IconCreditCard /></span>
                     <p className="text-[10px] font-bold flex-1" style={{ color: "var(--uber-text)" }}>Fee paid</p>
                     {propertyData && (
                       <button onClick={releaseAgentContact} disabled={releasingContact}
@@ -555,7 +556,7 @@ export default function AdminInbox() {
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 p-8 text-center" style={{ background: "var(--uber-surface)" }}>
-            <span className="text-4xl opacity-30">💬</span>
+            <span className="text-4xl opacity-30"><IconChat className="w-10 h-10" /></span>
             <p className="font-bold text-sm" style={{ color: "var(--uber-text)" }}>Select a conversation</p>
             <p className="text-xs max-w-[180px]" style={{ color: "var(--uber-muted)" }}>Choose a seeker from the left to read and reply.</p>
           </div>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import type { UserRole } from "@/lib/auth-context";
+import { IconMail } from "@/components/ui/Icons";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -119,8 +120,8 @@ export default function SignupPage() {
       >
         {step === "confirm" ? (
           <div className="flex flex-col items-center text-center pt-8">
-            <div className="w-16 h-16 rounded-full bg-[#06C167]/10 flex items-center justify-center mb-4 text-3xl">
-              📧
+            <div className="w-16 h-16 rounded-full bg-[#06C167]/10 flex items-center justify-center mb-4">
+              <IconMail className="w-8 h-8" />
             </div>
             <h2
               className="text-xl font-extrabold mb-2"

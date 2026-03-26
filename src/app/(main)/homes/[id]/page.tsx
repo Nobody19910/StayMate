@@ -13,6 +13,7 @@ import PropertyMap from "@/components/ui/PropertyMap";
 import DistanceBadge from "@/components/ui/DistanceBadge";
 import ImageGallery from "@/components/ui/ImageGallery";
 import SponsorModal from "@/components/ui/SponsorModal";
+import { IconCheck, IconStar, IconBed, IconShower, IconRuler } from "@/components/ui/Icons";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -241,12 +242,12 @@ export default function HomeDetailPage({ params }: Props) {
               </p>
               {property.isVerified && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: "#06C167", color: "#fff" }}>
-                  ✓ Verified by StayMate
+                  <IconCheck className="w-3 h-3 inline-block" /> Verified by StayMate
                 </span>
               )}
               {property.isSponsored && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded shimmer-gold text-[#1A1A1A]">
-                  ✦ Sponsored
+                  <IconStar className="w-3 h-3 inline-block" /> Sponsored
                 </span>
               )}
             </div>
@@ -271,13 +272,13 @@ export default function HomeDetailPage({ params }: Props) {
         {/* Specs */}
         <div className="flex items-center gap-4 mt-3 pt-3 text-sm" style={{ color: "var(--uber-muted)", borderTop: "0.5px solid var(--uber-border)" }}>
           <span className="flex items-center gap-1">
-            <span className="text-base">🛏</span> {property.beds} {property.beds === 1 ? "bed" : "beds"}
+            <IconBed className="w-4 h-4 inline-block" /> {property.beds} {property.beds === 1 ? "bed" : "beds"}
           </span>
           <span className="flex items-center gap-1">
-            <span className="text-base">🚿</span> {property.baths} {property.baths === 1 ? "bath" : "baths"}
+            <IconShower className="w-4 h-4 inline-block" /> {property.baths} {property.baths === 1 ? "bath" : "baths"}
           </span>
           <span className="flex items-center gap-1">
-            <span className="text-base">📐</span> {property.sqft.toLocaleString()} sqft
+            <IconRuler className="w-4 h-4 inline-block" /> {property.sqft.toLocaleString()} sqft
           </span>
         </div>
       </div>
@@ -318,7 +319,7 @@ export default function HomeDetailPage({ params }: Props) {
         {user && property.ownerId === user.id && profile?.role !== "admin" && (
           property.isSponsored ? (
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "rgba(212,175,55,0.08)", border: "0.5px solid rgba(212,175,55,0.3)" }}>
-              <span style={{ color: "#D4AF37" }}>✦</span>
+              <span style={{ color: "#D4AF37" }}><IconStar className="w-3.5 h-3.5 inline-block" /></span>
               <p className="text-xs font-bold" style={{ color: "var(--uber-text)" }}>
                 Sponsored until {new Date(property.sponsoredUntil || "").toLocaleDateString()}
               </p>
@@ -329,7 +330,7 @@ export default function HomeDetailPage({ params }: Props) {
               className="w-full font-bold text-sm py-3 rounded-2xl active:scale-95 transition-transform flex items-center justify-center gap-2"
               style={{ background: "#D4AF37", color: "#fff" }}
             >
-              <span>✦</span> Boost This Listing
+              <IconStar className="w-4 h-4 inline-block" /> Boost This Listing
             </button>
           )
         )}

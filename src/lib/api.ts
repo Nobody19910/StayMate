@@ -378,7 +378,10 @@ export async function sponsorProperty(
   userId: string
 ): Promise<void> {
   const sponsored_until = new Date(Date.now() + durationDays * 86400000).toISOString();
-  const priority_score = tier === "featured" ? 200 : tier === "standard" ? 150 : 100;
+  const PRIORITY: Record<string, number> = {
+    premium: 250, featured: 200, growth: 175, standard: 150, starter: 120, basic: 100,
+  };
+  const priority_score = PRIORITY[tier] ?? 100;
 
   await supabase
     .from(table)
@@ -397,7 +400,7 @@ export async function sponsorProperty(
     property_id: id,
     property_type: table === "homes" ? "home" : "hostel",
     tier,
-    amount: tier === "featured" ? 7000 : tier === "standard" ? 5000 : 1500,
+    amount: { premium: 9000, featured: 7000, growth: 5500, standard: 5000, starter: 2000, basic: 1500 }[tier] ?? 1500,
     duration_days: durationDays,
     payment_reference: paymentRef,
   });
