@@ -14,6 +14,7 @@ import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
 import { preloadImages } from "@/lib/image-cache";
+import { cachedFetch, invalidateCache } from "@/lib/local-cache";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -30,12 +31,8 @@ const DEFAULT_LNG = -0.1870;
 type ListingFilter = "all" | "rent" | "sale";
 const PAGE_SIZE = 20;
 
-// Simple in-memory cache keyed by filter params
-const homesCache = new Map<string, { data: Property[]; count: number; ts: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
 function getCacheKey(filter: ListingFilter, filters: FilterState, searchQuery: string): string {
-  return JSON.stringify({ filter, searchQuery, ...filters });
+  return "homes_" + JSON.stringify({ filter, searchQuery, ...filters });
 }
 
 function LocationBanner({ onAllow }: { onAllow: () => void }) {
@@ -72,7 +69,7 @@ export default function HomesPage() {
   // Pull-to-refresh: bust cache and re-fetch
   const handleRefresh = useCallback(async () => {
     const cacheKey = getCacheKey(filter, filters, searchQuery);
-    homesCache.delete(cacheKey);
+    await invalidateCache(cacheKey);
     const data = await searchHomes({
       query: searchQuery.trim() || undefined,
       forSale: filter === "sale" ? true : filter === "rent" ? false : null,
@@ -86,7 +83,6 @@ export default function HomesPage() {
     });
     setHomes(data);
     setTotalCount(data.length);
-    homesCache.set(cacheKey, { data, count: data.length, ts: Date.now() });
     preloadImages(data.map((h: Property) => h.images?.[0]).filter(Boolean));
   }, [filter, filters, searchQuery]);
 
@@ -124,19 +120,11 @@ export default function HomesPage() {
     return () => { el.removeEventListener("scroll", onScroll); cancelAnimationFrame(rafId); };
   }, []);
 
-  // Fetch first page whenever filters change
+  // Fetch first page whenever filters change (persistent stale-while-revalidate cache)
   useEffect(() => {
+    let cancelled = false;
     const cacheKey = getCacheKey(filter, filters, searchQuery);
-    const cached = homesCache.get(cacheKey);
-    if (cached && Date.now() - cached.ts < CACHE_TTL) {
-      setHomes(cached.data);
-      setTotalCount(cached.count);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    searchHomes({
+    const fetcher = () => searchHomes({
       query: searchQuery.trim() || undefined,
       forSale: filter === "sale" ? true : filter === "rent" ? false : null,
       propertyTypes: filters.propertyTypes.length > 0 ? filters.propertyTypes : undefined,
@@ -146,14 +134,29 @@ export default function HomesPage() {
       condition: filters.condition ?? undefined,
       furnishing: filters.furnishing ?? undefined,
       timePosted: filters.timePosted,
+    });
+
+    setLoading(true);
+    cachedFetch<Property[]>(cacheKey, fetcher, {
+      onRevalidated: (fresh) => {
+        if (!cancelled) {
+          setHomes(fresh);
+          setTotalCount(fresh.length);
+          preloadImages(fresh.map((h: Property) => h.images?.[0]).filter(Boolean));
+        }
+      },
     })
-      .then(data => {
-        setHomes(data);
-        setTotalCount(data.length);
-        homesCache.set(cacheKey, { data, count: data.length, ts: Date.now() });
-        setLoading(false);
+      .then(({ data }) => {
+        if (!cancelled) {
+          setHomes(data);
+          setTotalCount(data.length);
+          setLoading(false);
+          preloadImages(data.map((h: Property) => h.images?.[0]).filter(Boolean));
+        }
       })
-      .catch(() => setLoading(false));
+      .catch(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
   }, [filter, filters, searchQuery]);
 
   // Load more (no-op — API returns all results at once)

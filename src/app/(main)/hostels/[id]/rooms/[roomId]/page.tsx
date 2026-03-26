@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { getHostelById } from "@/lib/api";
+import { cachedFetch } from "@/lib/local-cache";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import type { Hostel, Room, RoomAmenity } from "@/lib/types";
@@ -59,10 +60,10 @@ export default function RoomDetailPage({ params }: Props) {
 
   useEffect(() => {
     if (!resolvedParams) return;
-    getHostelById(resolvedParams.id).then((h) => {
+    cachedFetch(`hostel_${resolvedParams.id}`, () => getHostelById(resolvedParams.id)).then(({ data: h }) => {
       if (!h) return;
       setHostel(h);
-      const r = h.rooms.find((r) => r.id === resolvedParams.roomId);
+      const r = h.rooms.find((r: any) => r.id === resolvedParams.roomId);
       setRoom(r ?? null);
     });
   }, [resolvedParams]);

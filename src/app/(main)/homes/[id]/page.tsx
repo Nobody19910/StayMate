@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getHomeById } from "@/lib/api";
+import { cachedFetch } from "@/lib/local-cache";
 import { addSaved, removeSaved, isSaved } from "@/lib/saved-store";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
@@ -41,7 +42,7 @@ export default function HomeDetailPage({ params }: Props) {
   const [editError, setEditError] = useState("");
   useEffect(() => {
     params.then(({ id }) => {
-      getHomeById(id).then((p) => {
+      cachedFetch<Property | null>(`home_${id}`, () => getHomeById(id)).then(({ data: p }) => {
         if (!p) { setNotFoundFlag(true); return; }
         setProperty(p);
         setSaved(isSaved(p.id));

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getSavedByType, removeSaved } from "@/lib/saved-store";
 import { getHomes, getHostels } from "@/lib/api";
+import { cachedFetch } from "@/lib/local-cache";
 import type { Property, Hostel } from "@/lib/types";
 import { IconHome, IconSchool, IconCheck } from "@/components/ui/Icons";
 
@@ -25,8 +26,11 @@ export default function SavedPage() {
   useEffect(() => {
     const homeIds = new Set(getSavedByType("home").map((e) => e.id));
     const hostelIds = new Set(getSavedByType("hostel").map((e) => e.id));
-    Promise.all([getHomes(), getHostels({ from: 0, to: 999 })]).then(([homes, hostelsResult]) => {
-      setSavedHomes(homes.filter((h) => homeIds.has(h.id)));
+    Promise.all([
+      cachedFetch<Property[]>("homes_all", () => getHomes()),
+      cachedFetch<Hostel[]>("hostels_all", () => getHostels()),
+    ]).then(([homesResult, hostelsResult]) => {
+      setSavedHomes(homesResult.data.filter((h) => homeIds.has(h.id)));
       setSavedHostels(hostelsResult.data.filter((h) => hostelIds.has(h.id)));
       setIsLoading(false);
     }).catch(() => setIsLoading(false));

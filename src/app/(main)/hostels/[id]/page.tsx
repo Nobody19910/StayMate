@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getHostelById } from "@/lib/api";
+import { cachedFetch } from "@/lib/local-cache";
 import type { Hostel, Room, RoomAmenity } from "@/lib/types";
 import DistanceBadge from "@/components/ui/DistanceBadge";
 import ImageGallery from "@/components/ui/ImageGallery";
@@ -41,7 +42,7 @@ export default function HostelRoomPickerPage() {
 
   useEffect(() => {
     if (!id) return;
-    getHostelById(id).then((data) => {
+    cachedFetch<Hostel | null>(`hostel_${id}`, () => getHostelById(id)).then(({ data }) => {
       setHostel(data);
       setLoading(false);
     }).catch(() => setLoading(false));

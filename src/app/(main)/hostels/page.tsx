@@ -14,6 +14,7 @@ import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
 import { IconPin, IconSchool, IconStar, IconCheck } from "@/components/ui/Icons";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import { preloadImages } from "@/lib/image-cache";
+import { cachedFetch, invalidateCache } from "@/lib/local-cache";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -29,12 +30,8 @@ const DEFAULT_LAT = 5.6037;
 const DEFAULT_LNG = -0.1870;
 const PAGE_SIZE = 20;
 
-// Simple in-memory cache
-const hostelsCache = new Map<string, { data: Hostel[]; count: number; ts: number }>();
-const CACHE_TTL = 5 * 60 * 1000;
-
 function getCacheKey(filters: FilterState, searchQuery: string): string {
-  return JSON.stringify({ searchQuery, ...filters });
+  return "hostels_" + JSON.stringify({ searchQuery, ...filters });
 }
 
 function LocationBanner({ onAllow }: { onAllow: () => void }) {
@@ -70,11 +67,10 @@ export default function HostelsPage() {
   // Pull-to-refresh: bust cache and re-fetch
   const handleRefresh = useCallback(async () => {
     const cacheKey = getCacheKey(filters, searchQuery);
-    hostelsCache.delete(cacheKey);
+    await invalidateCache(cacheKey);
     const data = await getHostels();
     setHostels(data);
     setTotalCount(data.length);
-    hostelsCache.set(cacheKey, { data, count: data.length, ts: Date.now() });
     preloadImages(data.map((h: Hostel) => h.images?.[0]).filter(Boolean));
   }, [filters, searchQuery]);
 
@@ -112,26 +108,32 @@ export default function HostelsPage() {
     return () => { el.removeEventListener("scroll", onScroll); cancelAnimationFrame(rafId); };
   }, []);
 
-  // Fetch first page on mount
+  // Fetch first page on mount (persistent stale-while-revalidate cache)
   useEffect(() => {
+    let cancelled = false;
     const cacheKey = getCacheKey(filters, searchQuery);
-    const cached = hostelsCache.get(cacheKey);
-    if (cached && Date.now() - cached.ts < CACHE_TTL) {
-      setHostels(cached.data);
-      setTotalCount(cached.count);
-      setLoading(false);
-      return;
-    }
 
     setLoading(true);
-    getHostels()
-      .then(data => {
-        setHostels(data);
-        setTotalCount(data.length);
-        hostelsCache.set(cacheKey, { data, count: data.length, ts: Date.now() });
-        setLoading(false);
+    cachedFetch<Hostel[]>(cacheKey, () => getHostels(), {
+      onRevalidated: (fresh) => {
+        if (!cancelled) {
+          setHostels(fresh);
+          setTotalCount(fresh.length);
+          preloadImages(fresh.map((h: Hostel) => h.images?.[0]).filter(Boolean));
+        }
+      },
+    })
+      .then(({ data }) => {
+        if (!cancelled) {
+          setHostels(data);
+          setTotalCount(data.length);
+          setLoading(false);
+          preloadImages(data.map((h: Hostel) => h.images?.[0]).filter(Boolean));
+        }
       })
-      .catch(() => setLoading(false));
+      .catch(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
   }, []);
 
   // Load more (no-op since API returns all; kept for infinite scroll sentinel compat)
