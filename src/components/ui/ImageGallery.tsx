@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 interface ImageGalleryProps {
   images: string[];
@@ -55,12 +56,12 @@ export default function ImageGallery({ images, alt, heightClass = "h-72", childr
         onClick={() => { if (total > 0) setFullscreen(true); }}
       >
         {total > 0 && (
-          <Image
+          <OptimizedImage
             src={validImages[currentIndex]}
             alt={`${alt} ${currentIndex + 1}`}
-            fill
-            className="object-cover"
-            unoptimized
+            width={800}
+            priority
+            className="absolute inset-0 w-full h-full"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent" />

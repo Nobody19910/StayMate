@@ -4,14 +4,11 @@ import { useState, useRef, useEffect, memo } from "react";
 
 /**
  * Supabase Storage image transform URL builder.
- * Appends ?width=N&quality=Q to Supabase storage public URLs.
- * Falls back to original URL for non-Supabase images.
+ * Appends width/quality params for server-side resizing.
  */
 function getOptimizedUrl(src: string, width: number, quality = 75): string {
   if (!src) return "";
-  // Supabase storage public URLs contain /storage/v1/object/public/
   if (src.includes("supabase.co/storage/v1/object/public/")) {
-    // Use Supabase image transform endpoint
     const transformUrl = src.replace(
       "/storage/v1/object/public/",
       "/storage/v1/render/image/public/"
@@ -19,7 +16,6 @@ function getOptimizedUrl(src: string, width: number, quality = 75): string {
     const sep = transformUrl.includes("?") ? "&" : "?";
     return `${transformUrl}${sep}width=${width}&quality=${quality}`;
   }
-  // Unsplash — use their built-in resize
   if (src.includes("images.unsplash.com")) {
     const sep = src.includes("?") ? "&" : "?";
     return `${src}${sep}w=${width}&q=${quality}&auto=format`;
@@ -27,21 +23,29 @@ function getOptimizedUrl(src: string, width: number, quality = 75): string {
   return src;
 }
 
+/* ── In-memory cache so revisited images paint instantly ── */
+const loadedCache = new Set<string>();
+
 interface OptimizedImageProps {
   src: string;
   alt: string;
-  width?: number;  // desired display width in CSS px (used for transform sizing)
+  width?: number;
   quality?: number;
   className?: string;
   style?: React.CSSProperties;
+  /** If true, skip lazy/IO and load immediately (e.g. above-the-fold) */
+  priority?: boolean;
 }
 
 /**
- * Lazy-loaded image with:
- * - Supabase/Unsplash resize transforms (smaller downloads)
- * - IntersectionObserver lazy loading (no offscreen paints)
- * - Fade-in on load (perceived smoothness)
- * - CSS contain for layout stability
+ * Progressive blur-up image:
+ * 1. Immediately show a tiny (32px wide, quality 20) blurred placeholder
+ * 2. Lazy-load the full-res version (width × quality)
+ * 3. Crossfade from blur → sharp
+ * 4. Cache URLs in memory so repeat views are instant (0ms swap)
+ *
+ * Combined with the PWA service worker, images are also cached on disk
+ * after first download — subsequent app loads serve from SW cache.
  */
 const OptimizedImage = memo(function OptimizedImage({
   src,
@@ -50,13 +54,22 @@ const OptimizedImage = memo(function OptimizedImage({
   quality = 75,
   className = "",
   style,
+  priority = false,
 }: OptimizedImageProps) {
-  const [loaded, setLoaded] = useState(false);
-  const [inView, setInView] = useState(false);
-  const imgRef = useRef<HTMLDivElement>(null);
+  const fullSrc = getOptimizedUrl(src, width, quality);
+  const thumbSrc = getOptimizedUrl(src, 32, 20);
 
+  // If we've already loaded this URL in this session, skip the blur phase
+  const alreadyCached = loadedCache.has(fullSrc);
+
+  const [fullLoaded, setFullLoaded] = useState(alreadyCached);
+  const [inView, setInView] = useState(priority || alreadyCached);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // IntersectionObserver for lazy loading (skip if priority or cached)
   useEffect(() => {
-    const el = imgRef.current;
+    if (inView) return;
+    const el = containerRef.current;
     if (!el) return;
 
     const observer = new IntersectionObserver(
@@ -66,27 +79,50 @@ const OptimizedImage = memo(function OptimizedImage({
           observer.disconnect();
         }
       },
-      { rootMargin: "200px" } // start loading 200px before visible
+      { rootMargin: "300px" } // start loading 300px before visible
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [inView]);
 
-  const optimizedSrc = getOptimizedUrl(src, width, quality);
+  function handleFullLoad() {
+    loadedCache.add(fullSrc);
+    setFullLoaded(true);
+  }
 
   return (
-    <div ref={imgRef} className={className} style={style}>
+    <div ref={containerRef} className={className} style={style}>
+      {/* Layer 1: Tiny blurred placeholder — loads almost instantly */}
+      {inView && !alreadyCached && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={thumbSrc}
+          alt=""
+          aria-hidden
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{
+            filter: "blur(12px)",
+            transform: "scale(1.05)", // hide blur edge artifacts
+            opacity: fullLoaded ? 0 : 1,
+            transition: "opacity 0.3s ease-out",
+          }}
+        />
+      )}
+
+      {/* Layer 2: Full resolution image — crossfades in on load */}
       {inView && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={optimizedSrc}
+          src={fullSrc}
           alt={alt}
           decoding="async"
-          onLoad={() => setLoaded(true)}
+          loading={priority ? "eager" : "lazy"}
+          onLoad={handleFullLoad}
           className="absolute inset-0 w-full h-full object-cover"
           style={{
-            opacity: loaded ? 1 : 0,
-            transition: "opacity 0.25s ease-in",
+            opacity: fullLoaded ? 1 : 0,
+            transition: alreadyCached ? "none" : "opacity 0.3s ease-in",
           }}
         />
       )}

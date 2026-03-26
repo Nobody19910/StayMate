@@ -28,6 +28,43 @@ self.addEventListener("push", (event) => {
   );
 });
 
+// ── Image cache (cache-first for Supabase storage images) ──
+const IMG_CACHE = "staymate-images-v1";
+const MAX_IMG_ENTRIES = 300;
+
+self.addEventListener("fetch", (event) => {
+  const url = event.request.url;
+  // Only cache Supabase storage image requests (both /object/ and /render/)
+  if (
+    event.request.method === "GET" &&
+    url.includes("supabase.co/storage/v1/") &&
+    (url.includes("/object/public/") || url.includes("/render/image/public/"))
+  ) {
+    event.respondWith(
+      caches.open(IMG_CACHE).then((cache) =>
+        cache.match(event.request).then((cached) => {
+          if (cached) return cached;
+          return fetch(event.request).then((response) => {
+            if (response.ok) {
+              cache.put(event.request, response.clone());
+              // Evict old entries if cache is too large
+              cache.keys().then((keys) => {
+                if (keys.length > MAX_IMG_ENTRIES) {
+                  for (let i = 0; i < keys.length - MAX_IMG_ENTRIES; i++) {
+                    cache.delete(keys[i]);
+                  }
+                }
+              });
+            }
+            return response;
+          });
+        })
+      )
+    );
+    return;
+  }
+});
+
 // Tap on notification → open app
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();

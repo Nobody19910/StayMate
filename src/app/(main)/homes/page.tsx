@@ -9,6 +9,7 @@ import { addSaved, removeSaved, isSaved } from "@/lib/saved-store";
 import type { Property } from "@/lib/types";
 import FeaturedCarousel from "@/components/ui/FeaturedCarousel";
 import { IconHome, IconStar, IconCheck } from "@/components/ui/Icons";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
@@ -400,13 +401,11 @@ const HomeGridCard = memo(function HomeGridCard({ property }: { property: Proper
         style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", contain: "layout style paint" }}
       >
         <div className="relative aspect-square w-full shrink-0" style={{ background: "var(--uber-surface2)" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <OptimizedImage
             src={property.images[0] || ""}
             alt={property.title || ""}
-            loading="lazy"
-            decoding="async"
-            className="absolute inset-0 w-full h-full object-cover"
+            width={400}
+            className="absolute inset-0 w-full h-full"
           />
           <span className="absolute top-2 left-2 text-[9px] font-bold uppercase bg-[#1A1A1A]/80 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">
             {property.forSale ? "For Sale" : "Rent"}

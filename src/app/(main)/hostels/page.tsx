@@ -12,6 +12,7 @@ import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
 import { IconPin, IconSchool, IconStar, IconCheck } from "@/components/ui/Icons";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -367,13 +368,11 @@ const HostelGridCard = memo(function HostelGridCard({ hostel }: { hostel: Hostel
     <Link href={`/hostels/${hostel.id}`}>
       <div className="rounded-2xl overflow-hidden cursor-pointer h-full flex flex-col" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", contain: "layout style paint" }}>
         <div className="relative aspect-square w-full shrink-0" style={{ background: "var(--uber-surface2)" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <OptimizedImage
             src={hostel.images[0] || ""}
             alt={hostel.name || ""}
-            loading="lazy"
-            decoding="async"
-            className="absolute inset-0 w-full h-full object-cover"
+            width={400}
+            className="absolute inset-0 w-full h-full"
           />
           <span className="absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm text-white"
             style={{ background: hostel.availableRooms > 0 ? "#06C167" : "#000000" }}>

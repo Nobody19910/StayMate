@@ -8,6 +8,7 @@ import Link from "next/link";
 import { toggleSponsored, toggleVerified, getActiveAgents } from "@/lib/api";
 import AdminLocationButton from "@/components/ui/AdminLocationButton";
 import { IconChart, IconBuilding, IconTie, IconIdCard, IconStar, IconTarget, IconChat, IconNeighborhood, IconWarning, IconPhone, IconPin, IconCheck, IconClose, IconBroom, IconTrash, IconCheckCircle, IconMailbox, IconShrug, IconMail } from "@/components/ui/Icons";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -227,7 +228,7 @@ export default function AdminDashboardPage() {
                       <div key={b.id} className="flex flex-col md:flex-row md:items-start justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors gap-4">
                         {b.property?.images?.[0] && (
                           <div className="w-full md:w-24 h-20 md:h-24 rounded-xl overflow-hidden shrink-0 bg-gray-200">
-                            <img src={b.property.images[0]} alt="" className="w-full h-full object-cover" />
+                            <OptimizedImage src={b.property.images[0]} alt="" width={200} className="w-full h-full" />
                           </div>
                         )}
                         <div className="min-w-0 pr-4 flex-1">
@@ -251,7 +252,7 @@ export default function AdminDashboardPage() {
                             return (
                               <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
                                 {inquiryImg && (
-                                  <img src={inquiryImg} alt="Property" className="w-full h-28 object-cover" />
+                                  <OptimizedImage src={inquiryImg} alt="Property" width={400} className="w-full h-28" />
                                 )}
                                 <div className="p-3 text-sm text-gray-700 whitespace-pre-wrap">
                                   &ldquo;{displayMsg}&rdquo;
@@ -328,7 +329,7 @@ export default function AdminDashboardPage() {
                           {p.type === 'home' ? 'Home/Apt' : 'Hostel'}
                         </span>
                         <div className="h-32 bg-gray-200 relative">
-                          {p.images?.[0] && <img src={p.images[0]} alt="" className="w-full h-full object-cover" />}
+                          {p.images?.[0] && <OptimizedImage src={p.images[0]} alt="" width={200} className="w-full h-full" />}
                         </div>
                         <div className="p-4 flex-1 flex flex-col justify-between">
                           <div>
@@ -572,7 +573,7 @@ export default function AdminDashboardPage() {
                   return (
                     <div key={h.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
                       <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-gray-200 relative">
-                        {h.images?.[0] && <img src={h.images[0]} alt="" className="w-full h-full object-cover" />}
+                        {h.images?.[0] && <OptimizedImage src={h.images[0]} alt="" width={200} className="w-full h-full" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-gray-900 line-clamp-1">{h.title}</p>
@@ -603,7 +604,7 @@ export default function AdminDashboardPage() {
                   return (
                     <div key={h.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
                       <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-gray-200 relative">
-                        {h.images?.[0] && <img src={h.images[0]} alt="" className="w-full h-full object-cover" />}
+                        {h.images?.[0] && <OptimizedImage src={h.images[0]} alt="" width={200} className="w-full h-full" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-gray-900 line-clamp-1">{h.name}</p>
@@ -645,7 +646,7 @@ export default function AdminDashboardPage() {
                       {agentHomes.map(h => (
                         <Link key={h.id} href={`/homes/${h.id}`} className="border border-gray-100 rounded-2xl overflow-hidden hover:shadow-md transition-shadow flex flex-col">
                           <div className="h-28 bg-gray-200 relative">
-                            {h.images?.[0] && <img src={h.images[0]} alt="" className="w-full h-full object-cover" />}
+                            {h.images?.[0] && <OptimizedImage src={h.images[0]} alt="" width={200} className="w-full h-full" />}
                             <span className="absolute top-2 left-2 bg-emerald-500 text-white text-[9px] font-bold uppercase px-2 py-0.5 rounded">{h.status}</span>
                           </div>
                           <div className="p-3">
@@ -657,7 +658,7 @@ export default function AdminDashboardPage() {
                       {agentHostels.map(h => (
                         <Link key={h.id} href={`/hostels/${h.id}`} className="border border-gray-100 rounded-2xl overflow-hidden hover:shadow-md transition-shadow flex flex-col">
                           <div className="h-28 bg-gray-200 relative">
-                            {h.images?.[0] && <img src={h.images[0]} alt="" className="w-full h-full object-cover" />}
+                            {h.images?.[0] && <OptimizedImage src={h.images[0]} alt="" width={200} className="w-full h-full" />}
                             <span className="absolute top-2 left-2 bg-blue-500 text-white text-[9px] font-bold uppercase px-2 py-0.5 rounded">{h.status}</span>
                           </div>
                           <div className="p-3">
