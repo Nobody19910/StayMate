@@ -13,6 +13,7 @@ import OptimizedImage from "@/components/ui/OptimizedImage";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
+import { preloadImages } from "@/lib/image-cache";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -86,6 +87,7 @@ export default function HomesPage() {
     setHomes(data);
     setTotalCount(data.length);
     homesCache.set(cacheKey, { data, count: data.length, ts: Date.now() });
+    preloadImages(data.map((h: Property) => h.images?.[0]).filter(Boolean));
   }, [filter, filters, searchQuery]);
 
   const { refreshing, pullDistance, handlers: pullHandlers } = usePullToRefresh({ onRefresh: handleRefresh });

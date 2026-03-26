@@ -13,6 +13,7 @@ import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
 import { IconPin, IconSchool, IconStar, IconCheck } from "@/components/ui/Icons";
 import OptimizedImage from "@/components/ui/OptimizedImage";
+import { preloadImages } from "@/lib/image-cache";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -74,6 +75,7 @@ export default function HostelsPage() {
     setHostels(data);
     setTotalCount(data.length);
     hostelsCache.set(cacheKey, { data, count: data.length, ts: Date.now() });
+    preloadImages(data.map((h: Hostel) => h.images?.[0]).filter(Boolean));
   }, [filters, searchQuery]);
 
   const { refreshing, pullDistance, handlers: pullHandlers } = usePullToRefresh({ onRefresh: handleRefresh });

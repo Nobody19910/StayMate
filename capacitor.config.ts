@@ -15,6 +15,9 @@ const config: CapacitorConfig = {
       showSpinner: false,
       backgroundColor: '#000000',
     },
+    CapacitorHttp: {
+      enabled: true, // Use native HTTP for faster image downloads
+    },
   },
   ios: {
     scheme: 'StayMate',

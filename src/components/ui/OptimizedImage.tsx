@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect, memo } from "react";
+import { getCachedImageUrl } from "@/lib/image-cache";
+import { Capacitor } from "@capacitor/core";
+
+const isNative = Capacitor.isNativePlatform();
 
 /**
  * Supabase Storage image transform URL builder.
- * Appends width/quality params for server-side resizing.
  */
 function getOptimizedUrl(src: string, width: number, quality = 75): string {
   if (!src) return "";
@@ -38,14 +41,16 @@ interface OptimizedImageProps {
 }
 
 /**
- * Progressive blur-up image:
- * 1. Immediately show a tiny (32px wide, quality 20) blurred placeholder
- * 2. Lazy-load the full-res version (width × quality)
- * 3. Crossfade from blur → sharp
- * 4. Cache URLs in memory so repeat views are instant (0ms swap)
+ * Progressive blur-up image with native Capacitor filesystem caching.
  *
- * Combined with the PWA service worker, images are also cached on disk
- * after first download — subsequent app loads serve from SW cache.
+ * On native (Capacitor):
+ * 1. Show tiny blurred placeholder
+ * 2. Check native filesystem cache for full image → instant if cached
+ * 3. If not cached, download + save to app cache dir (no permission needed)
+ * 4. Crossfade from blur → sharp
+ *
+ * On web (browser):
+ * 1. Same blur-up, but uses SW cache instead of filesystem
  */
 const OptimizedImage = memo(function OptimizedImage({
   src,
@@ -59,14 +64,14 @@ const OptimizedImage = memo(function OptimizedImage({
   const fullSrc = getOptimizedUrl(src, width, quality);
   const thumbSrc = getOptimizedUrl(src, 32, 20);
 
-  // If we've already loaded this URL in this session, skip the blur phase
   const alreadyCached = loadedCache.has(fullSrc);
 
+  const [resolvedSrc, setResolvedSrc] = useState(alreadyCached ? fullSrc : "");
   const [fullLoaded, setFullLoaded] = useState(alreadyCached);
   const [inView, setInView] = useState(priority || alreadyCached);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // IntersectionObserver for lazy loading (skip if priority or cached)
+  // IntersectionObserver for lazy loading
   useEffect(() => {
     if (inView) return;
     const el = containerRef.current;
@@ -79,11 +84,24 @@ const OptimizedImage = memo(function OptimizedImage({
           observer.disconnect();
         }
       },
-      { rootMargin: "300px" } // start loading 300px before visible
+      { rootMargin: "300px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
   }, [inView]);
+
+  // Resolve image source — on native, check filesystem cache first
+  useEffect(() => {
+    if (!inView || alreadyCached) return;
+
+    if (isNative) {
+      getCachedImageUrl(fullSrc).then((cached) => {
+        setResolvedSrc(cached);
+      });
+    } else {
+      setResolvedSrc(fullSrc);
+    }
+  }, [inView, fullSrc, alreadyCached]);
 
   function handleFullLoad() {
     loadedCache.add(fullSrc);
@@ -92,7 +110,7 @@ const OptimizedImage = memo(function OptimizedImage({
 
   return (
     <div ref={containerRef} className={className} style={style}>
-      {/* Layer 1: Tiny blurred placeholder — loads almost instantly */}
+      {/* Layer 1: Tiny blurred placeholder */}
       {inView && !alreadyCached && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -103,18 +121,18 @@ const OptimizedImage = memo(function OptimizedImage({
           className="absolute inset-0 w-full h-full object-cover"
           style={{
             filter: "blur(12px)",
-            transform: "scale(1.05)", // hide blur edge artifacts
+            transform: "scale(1.05)",
             opacity: fullLoaded ? 0 : 1,
             transition: "opacity 0.3s ease-out",
           }}
         />
       )}
 
-      {/* Layer 2: Full resolution image — crossfades in on load */}
-      {inView && (
+      {/* Layer 2: Full resolution (from native cache or network) */}
+      {resolvedSrc && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={fullSrc}
+          src={resolvedSrc}
           alt={alt}
           decoding="async"
           loading={priority ? "eager" : "lazy"}
