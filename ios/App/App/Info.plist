@@ -49,5 +49,16 @@
 	<true/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.staymate.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.staymate.app</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

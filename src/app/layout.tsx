@@ -4,6 +4,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import PwaInit from "@/components/ui/PwaInit";
 import ThemeProvider from "@/lib/theme-context";
 import AppShell from "@/components/ui/AppShell";
+import CapacitorOAuthHandler from "@/components/ui/CapacitorOAuthHandler";
 import "./globals.css";
 
 const inter = Inter({
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AppShell>{children}</AppShell>
           </AuthProvider>
           <PwaInit />
+          <CapacitorOAuthHandler />
         </ThemeProvider>
       </body>
     </html>

@@ -21,6 +21,13 @@
   --uber-btn-bg:  #1A1A1A;
   --uber-btn-text: #FFFFFF;
   --uber-card-bg: #FFFFFF;
+  /* Semantic status colors */
+  --uber-error:       #EF4444;
+  --uber-error-bg:    rgba(239, 68, 68, 0.08);
+  --uber-error-border: rgba(239, 68, 68, 0.20);
+  --uber-green-bg:    rgba(6, 193, 103, 0.08);
+  --gold-bg:          rgba(212, 175, 55, 0.08);
+  --gold-border:      rgba(212, 175, 55, 0.30);
 }
 
 /* Dark mode */
@@ -38,6 +45,11 @@ html.dark {
   --uber-btn-bg:  #F0F0F0;
   --uber-btn-text: #111111;
   --uber-card-bg: #1A1A1A;
+  /* Dark mode status colors — same hues, same translucency */
+  --uber-error-bg:    rgba(239, 68, 68, 0.12);
+  --uber-error-border: rgba(239, 68, 68, 0.25);
+  --uber-green-bg:    rgba(6, 193, 103, 0.10);
+  --gold-bg:          rgba(212, 175, 55, 0.10);
 }
 
 @theme inline {

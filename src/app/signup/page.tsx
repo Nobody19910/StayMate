@@ -74,7 +74,7 @@ export default function SignupPage() {
       options: {
         redirectTo: isNative
           ? "com.staymate.app://auth/callback"
-          : `${window.location.origin}/homes`,
+          : `${window.location.origin}/auth/callback`,
         skipBrowserRedirect: true,
       },
     });
@@ -120,7 +120,7 @@ export default function SignupPage() {
       >
         {step === "confirm" ? (
           <div className="flex flex-col items-center text-center pt-8">
-            <div className="w-16 h-16 rounded-full bg-[#06C167]/10 flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-[var(--uber-green-bg)] flex items-center justify-center mb-4">
               <IconMail className="w-8 h-8" />
             </div>
             <h2
@@ -181,7 +181,7 @@ export default function SignupPage() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Kwame"
-                    className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+                    className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--uber-border)]"
                     style={{
                       border: "0.5px solid var(--uber-border)",
                       color: "var(--uber-text)",
@@ -202,7 +202,7 @@ export default function SignupPage() {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Mensah"
-                    className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+                    className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--uber-border)]"
                     style={{
                       border: "0.5px solid var(--uber-border)",
                       color: "var(--uber-text)",
@@ -227,7 +227,7 @@ export default function SignupPage() {
                   value={middleName}
                   onChange={(e) => setMiddleName(e.target.value)}
                   placeholder="Kofi"
-                  className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+                  className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--uber-border)]"
                   style={{
                     border: "0.5px solid var(--uber-border)",
                     color: "var(--uber-text)",
@@ -250,7 +250,7 @@ export default function SignupPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+                  className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--uber-border)]"
                   style={{
                     border: "0.5px solid var(--uber-border)",
                     color: "var(--uber-text)",
@@ -272,7 +272,7 @@ export default function SignupPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+233 20 123 4567"
-                  className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+                  className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--uber-border)]"
                   style={{
                     border: "0.5px solid var(--uber-border)",
                     color: "var(--uber-text)",
@@ -297,7 +297,7 @@ export default function SignupPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min 8 characters"
-                    className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+                    className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--uber-border)]"
                     style={{
                       border: "0.5px solid var(--uber-border)",
                       color: "var(--uber-text)",
@@ -329,16 +329,16 @@ export default function SignupPage() {
                   type="checkbox"
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded text-[#06C167] focus:ring-black/20"
+                  className="mt-0.5 w-4 h-4 rounded text-[var(--uber-green)] focus:ring-[var(--uber-border)]"
                   style={{ borderColor: "var(--uber-border)" }}
                 />
                 <span className="text-xs" style={{ color: "var(--uber-muted)" }}>
                   I agree to the{" "}
-                  <span className="text-[#06C167] font-semibold">
+                  <span className="text-[var(--uber-green)] font-semibold">
                     Terms of Service
                   </span>{" "}
                   and{" "}
-                  <span className="text-[#06C167] font-semibold">
+                  <span className="text-[var(--uber-green)] font-semibold">
                     Privacy Policy
                   </span>
                   , including data collection and processing.
@@ -349,11 +349,11 @@ export default function SignupPage() {
                 <div
                   className="rounded-xl px-3 py-2"
                   style={{
-                    background: "rgba(239,68,68,0.08)",
-                    border: "0.5px solid rgba(239,68,68,0.2)",
+                    background: "var(--uber-error-bg)",
+                    border: "0.5px solid var(--uber-error-border)",
                   }}
                 >
-                  <p className="text-xs font-medium" style={{ color: "#EF4444" }}>
+                  <p className="text-xs font-medium" style={{ color: "var(--uber-error)" }}>
                     {error}
                   </p>
                 </div>

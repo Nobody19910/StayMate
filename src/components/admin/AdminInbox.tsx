@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import AdminLocationButton from "@/components/ui/AdminLocationButton";
 import { IconSchool, IconHome, IconCreditCard, IconChat } from "@/components/ui/Icons";
 
-const UBER_GREEN = "#06C167";
+const UBER_GREEN = "var(--uber-green)";
 
 const MSG_POLL_MS = 3000;   // re-fetch active chat messages every 3 s
 const CONV_POLL_MS = 8000;   // re-fetch conversation list every 8 s
@@ -339,7 +339,7 @@ export default function AdminInbox() {
           <div className="flex items-center justify-between">
             <h2 className="font-extrabold" style={{ color: "var(--uber-text)" }}>Support Inbox</h2>
             {totalUnread > 0 && (
-              <span className="min-w-[20px] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1.5">
+              <span className="min-w-[20px] h-5 text-[10px] font-bold rounded-full flex items-center justify-center px-1.5" style={{ background: "var(--uber-error)", color: "#fff" }}>
                 {totalUnread > 99 ? "99+" : totalUnread}
               </span>
             )}
@@ -367,7 +367,7 @@ export default function AdminInbox() {
                     <p className="text-sm font-bold truncate" style={{ color: "var(--uber-text)" }}>{conv.seeker?.full_name || "Unknown"}</p>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {(unreadCounts[conv.id] ?? 0) > 0 && (
-                        <span className="min-w-[18px] h-[18px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
+                        <span className="min-w-[18px] h-[18px] text-[9px] font-bold rounded-full flex items-center justify-center px-1" style={{ background: "var(--uber-error)", color: "#fff" }}>
                           {(unreadCounts[conv.id] ?? 0) > 99 ? "99+" : unreadCounts[conv.id]}
                         </span>
                       )}
@@ -483,7 +483,7 @@ export default function AdminInbox() {
               if (!booking || booking.status !== "pending") return null;
               return (
                 <div className="px-3 pt-3 pb-1" style={{ background: "var(--uber-white)", borderTop: "0.5px solid rgba(212,175,55,0.3)" }}>
-                  <div className="flex items-center gap-2 rounded-2xl px-3 py-2.5" style={{ background: "#EAFAF1", border: `0.5px solid ${UBER_GREEN}30` }}>
+                  <div className="flex items-center gap-2 rounded-2xl px-3 py-2.5" style={{ background: "var(--uber-green-bg)", border: `0.5px solid ${UBER_GREEN}30` }}>
                     <div className="flex-1 min-w-0">
                       <p className="text-[9px] font-extrabold uppercase tracking-widest" style={{ color: UBER_GREEN }}>Inquiry Pending</p>
                       <p className="text-[10px] font-medium" style={{ color: "var(--uber-muted)" }}>{selectedConv.seeker?.full_name} is waiting</p>
@@ -508,7 +508,7 @@ export default function AdminInbox() {
               if (!booking) return null;
               if (booking.status === "accepted") return (
                 <div className="px-3 pt-2 pb-1" style={{ background: "var(--uber-white)", borderTop: "0.5px solid rgba(212,175,55,0.2)" }}>
-                  <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "#FDF8E7", border: "0.5px solid rgba(212,175,55,0.3)" }}>
+                  <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "var(--gold-bg)", border: "0.5px solid var(--gold-border)" }}>
                     <span>⏳</span>
                     <p className="text-[10px] font-bold" style={{ color: "var(--uber-text)" }}>Accepted — Awaiting GH₵ 200 payment</p>
                   </div>
