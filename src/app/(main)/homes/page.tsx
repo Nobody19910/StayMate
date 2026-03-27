@@ -46,7 +46,7 @@ function LocationBanner({ onAllow }: { onAllow: () => void }) {
         <p className="text-xs font-semibold" style={{ color: "var(--uber-text)" }}>Enable location</p>
         <p className="text-[10px] mt-0.5" style={{ color: "var(--uber-muted)" }}>See properties near you first</p>
       </div>
-      <button onClick={onAllow} className="text-[11px] font-bold px-3 py-1.5 rounded-lg" style={{ background: "var(--uber-green)", color: "#fff" }}>
+      <button onClick={onAllow} className="text-[11px] font-bold px-3 py-1.5 rounded-lg" style={{ background: "var(--uber-green)", color: "#ffffff" }}>
         Allow
       </button>
     </div>
@@ -264,7 +264,7 @@ export default function HomesPage() {
               placeholder="Search city, neighborhood..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl pl-9 pr-3 py-2.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-black/20 transition-all"
+              className="w-full rounded-xl pl-9 pr-3 py-2.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[var(--uber-border)] transition-all"
               style={{ border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-text)" }}
             />
           </div>
@@ -280,7 +280,7 @@ export default function HomesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
             </svg>
             {activeFilterCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "var(--uber-green)", color: "#fff" }}>
+              <span className="absolute -top-1.5 -right-1.5 text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "var(--uber-green)", color: "#ffffff" }}>
                 {activeFilterCount}
               </span>
             )}
@@ -304,7 +304,7 @@ export default function HomesPage() {
             <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
             {radius === 50 ? "50+ km" : `${radius} km`}
             <input type="range" min={1} max={50} value={radius} onChange={(e) => setRadius(parseInt(e.target.value))}
-              className="w-16 accent-black h-1 ml-1" />
+              className="w-16 accent-[var(--uber-green)] h-1 ml-1" />
           </span>
         </div>
       </div>
@@ -403,7 +403,7 @@ const HomeGridCard = memo(function HomeGridCard({ property }: { property: Proper
     <Link href={`/homes/${property.id}`}>
       <div
         className="rounded-2xl overflow-hidden cursor-pointer h-full flex flex-col"
-        style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", contain: "layout style paint" }}
+        style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", contain: "layout style paint", contentVisibility: "auto", containIntrinsicSize: "0 320px" }}
       >
         <div className="relative aspect-square w-full shrink-0" style={{ background: "var(--uber-surface2)" }}>
           <OptimizedImage
@@ -412,29 +412,30 @@ const HomeGridCard = memo(function HomeGridCard({ property }: { property: Proper
             width={400}
             className="absolute inset-0 w-full h-full"
           />
-          <span className="absolute top-2 left-2 text-[9px] font-bold uppercase bg-[#1A1A1A]/80 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">
+          <span className="absolute top-2 left-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded backdrop-blur-sm" style={{ background: "rgba(0,0,0,0.75)", color: "#fff" }}>
             {property.forSale ? "For Sale" : "Rent"}
           </span>
           {property.isSponsored && (
-            <span className="absolute top-2 left-2 mt-5 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shimmer-gold text-[#1A1A1A]">
+            <span className="absolute top-2 left-2 mt-5 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shimmer-gold text-[#111111]">
               <IconStar /> Sponsored
             </span>
           )}
           {property.isVerified && (
-            <span className="absolute bottom-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm" style={{ background: "#06C167", color: "#fff" }}>
+            <span className="absolute bottom-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm" style={{ background: "var(--uber-green)", color: "#ffffff" }}>
               <IconCheck /> Verified
             </span>
           )}
           {property.isNegotiable && (
-            <span className="absolute bottom-2 left-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded backdrop-blur-sm" style={{ background: "var(--uber-green)", color: "#fff" }}>
+            <span className="absolute bottom-2 left-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded backdrop-blur-sm" style={{ background: "var(--uber-green)", color: "#ffffff" }}>
               Negotiable
             </span>
           )}
           <button
             onClick={toggleSave}
-            className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-sm transition-all active:scale-90 ${
-              saved ? "bg-red-500 text-white" : "bg-white/90 text-gray-400"
-            }`}
+            className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-sm transition-all active:scale-90"
+            style={saved
+              ? { background: "var(--uber-error)", color: "#fff" }
+              : { background: "rgba(255,255,255,0.85)", color: "var(--uber-muted)" }}
           >
             <svg className="w-4 h-4" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />

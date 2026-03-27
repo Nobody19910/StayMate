@@ -1,18 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("error")) setError("Sign-in failed. Please try again.");
+  }, [searchParams]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -38,7 +43,7 @@ export default function LoginPage() {
       options: {
         redirectTo: isNative
           ? "com.staymate.app://auth/callback"
-          : `${window.location.origin}/homes`,
+          : `${window.location.origin}/auth/callback`,
       },
     });
   }
@@ -70,7 +75,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+              className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--uber-border)]"
               style={{ border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-text)" }}
             />
           </div>
@@ -84,7 +89,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
+                className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--uber-border)]"
                 style={{ border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-text)" }}
               />
               <button
@@ -103,8 +108,8 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="rounded-xl px-3 py-2" style={{ background: "rgba(239,68,68,0.08)", border: "0.5px solid rgba(239,68,68,0.2)" }}>
-              <p className="text-xs font-medium" style={{ color: "#EF4444" }}>{error}</p>
+            <div className="rounded-xl px-3 py-2" style={{ background: "var(--uber-error-bg)", border: "0.5px solid var(--uber-error-border)" }}>
+              <p className="text-xs font-medium" style={{ color: "var(--uber-error)" }}>{error}</p>
             </div>
           )}
 

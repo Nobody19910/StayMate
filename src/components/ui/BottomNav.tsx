@@ -7,7 +7,7 @@ import { useSavedCount } from "@/lib/useSavedCount";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 
-const UBER_GREEN = "#06C167";
+const UBER_GREEN = "var(--uber-green)";
 
 /** Unread count for SEEKER — polls every 5 s */
 function useSeekerUnread() {
@@ -172,7 +172,7 @@ export default function BottomNav() {
                   </span>
                 )}
                 {href === "/admin" && adminBadge > 0 && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5" style={{ background: "#EF4444" }}>
+                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5" style={{ background: "var(--uber-error)" }}>
                     {adminBadge > 99 ? "99+" : adminBadge}
                   </span>
                 )}

@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 
-const UBER_GREEN = "#06C167";
+const UBER_GREEN = "var(--uber-green)";
 
 function useSeekerUnread() {
   const { user } = useAuth();
@@ -88,13 +88,13 @@ export default function SideNav() {
                 {isSaved && savedCount > 0 && (
                   <span
                     className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-[9px] font-bold rounded-full flex items-center justify-center px-0.5"
-                    style={{ background: UBER_GREEN, color: "#fff" }}
+                    style={{ background: UBER_GREEN, color: "#ffffff" }}
                   >
                     {savedCount > 99 ? "99+" : savedCount}
                   </span>
                 )}
                 {isChat && seekerUnread > 0 && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 bg-red-500 text-white">
+                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-[9px] font-bold rounded-full flex items-center justify-center px-0.5" style={{ background: "var(--uber-error)", color: "#fff" }}>
                     {seekerUnread > 99 ? "99+" : seekerUnread}
                   </span>
                 )}
