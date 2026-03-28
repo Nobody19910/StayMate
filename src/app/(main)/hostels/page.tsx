@@ -11,7 +11,6 @@ import FeaturedCarousel from "@/components/ui/FeaturedCarousel";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import PullToRefreshIndicator from "@/components/ui/PullToRefreshIndicator";
 import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
-import { IconPin, IconSchool, IconStar, IconCheck } from "@/components/ui/Icons";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import { preloadImages } from "@/lib/image-cache";
 import { cachedFetch, invalidateCache } from "@/lib/local-cache";
@@ -20,51 +19,354 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 const DEFAULT_LAT = 5.6037;
 const DEFAULT_LNG = -0.1870;
-const PAGE_SIZE = 20;
 
-function getCacheKey(filters: FilterState, searchQuery: string): string {
-  return "hostels_" + JSON.stringify({ searchQuery, ...filters });
+function getCacheKey(filters: FilterState, q: string) {
+  return "hostels_" + JSON.stringify({ q, ...filters });
 }
 
-function LocationBanner({ onAllow }: { onAllow: () => void }) {
+/* ─── Hero Search ─────────────────────────────────────────────────────────── */
+function HeroSearch({
+  searchQuery, setSearchQuery, radius, setRadius, onFilterClick, activeFilterCount,
+}: {
+  searchQuery: string; setSearchQuery: (v: string) => void;
+  radius: number; setRadius: (v: number) => void;
+  onFilterClick: () => void; activeFilterCount: number;
+}) {
   return (
-    <div className="mx-4 mt-3 px-4 py-3 rounded-xl flex items-center gap-3" style={{ background: "color-mix(in srgb, var(--uber-green) 12%, var(--uber-surface))", border: "0.5px solid var(--uber-border)" }}>
-      <svg className="w-5 h-5 shrink-0" style={{ color: "var(--uber-green)" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-      </svg>
-      <div className="flex-1">
-        <p className="text-xs font-semibold" style={{ color: "var(--uber-text)" }}>Enable location</p>
-        <p className="text-[10px] mt-0.5" style={{ color: "var(--uber-muted)" }}>See hostels near you first</p>
+    <div
+      className="relative w-full overflow-hidden"
+      style={{
+        background: "linear-gradient(135deg, color-mix(in srgb, var(--uber-btn-bg) 90%, var(--uber-green)) 0%, color-mix(in srgb, var(--uber-btn-bg) 70%, var(--uber-green)) 100%)",
+        minHeight: "200px",
+      }}
+    >
+      <div className="absolute inset-0 opacity-5"
+        style={{ backgroundImage: "radial-gradient(circle at 25% 50%, white 1px, transparent 1px), radial-gradient(circle at 75% 25%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+
+      <div className="relative max-w-screen-xl mx-auto px-4 lg:px-6 py-8 lg:py-12">
+        <h1 className="text-2xl lg:text-4xl font-extrabold text-white mb-1 font-serif">
+          Student & Staff Accommodation
+        </h1>
+        <p className="text-sm lg:text-base mb-6 font-medium" style={{ color: "rgba(255,255,255,0.75)" }}>
+          Hostels near campuses · All universities covered
+        </p>
+
+        {/* Search bar */}
+        <div className="flex flex-col sm:flex-row gap-2 max-w-3xl">
+          <div className="relative flex-1">
+            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search campus, city, university…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl pl-9 pr-3 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/40"
+              style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "none" }}
+            />
+          </div>
+          <button className="px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 justify-center shrink-0"
+            style={{ background: "var(--uber-green)", color: "#fff" }}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
+              <circle cx="10" cy="10" r="7" />
+            </svg>
+            Search
+          </button>
+        </div>
+
+        {/* Pills */}
+        <div className="flex items-center gap-2 mt-4 flex-wrap">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+            style={{ background: "rgba(255,255,255,0.18)", color: "#fff", border: "0.5px solid rgba(255,255,255,0.35)" }}>
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3" /><path strokeLinecap="round" d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+            </svg>
+            {radius >= 50 ? "50+ km" : `${radius} km`}
+            <input type="range" min={1} max={50} value={radius}
+              onChange={(e) => setRadius(parseInt(e.target.value))}
+              className="w-20 h-1 accent-white ml-1" />
+          </div>
+          <button onClick={onFilterClick}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+            style={activeFilterCount > 0
+              ? { background: "var(--uber-green)", color: "#fff" }
+              : { background: "rgba(255,255,255,0.18)", color: "#fff", border: "0.5px solid rgba(255,255,255,0.35)" }}>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
+            </svg>
+            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+          </button>
+        </div>
       </div>
-      <button onClick={onAllow} className="text-[11px] font-bold px-3 py-1.5 rounded-lg" style={{ background: "var(--uber-green)", color: "#fff" }}>
-        Allow
-      </button>
     </div>
   );
 }
 
+/* ─── Filter Sidebar ─────────────────────────────────────────────────────── */
+function FilterSidebar({ radius, setRadius, filters, setFilters, onOpenModal }: {
+  radius: number; setRadius: (v: number) => void;
+  filters: FilterState; setFilters: (v: FilterState) => void;
+  onOpenModal: () => void;
+}) {
+  const amenityOptions = ["WiFi", "Study Room", "Generator", "Water", "Security", "AC", "Laundry", "Cafeteria"];
+
+  return (
+    <aside className="w-72 shrink-0 self-start sticky top-4 rounded-2xl overflow-hidden hidden lg:block"
+      style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", boxShadow: "var(--shadow-sm)" }}>
+      <div className="px-5 py-4" style={{ borderBottom: "0.5px solid var(--uber-border)" }}>
+        <h2 className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Filter results</h2>
+      </div>
+
+      <div className="px-5 py-4 space-y-6">
+
+        {/* Budget */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--uber-muted)" }}>Budget per semester (GH₵)</h3>
+          <div className="flex gap-2 items-center">
+            <input type="number" placeholder="Min" value={filters.priceMin || ""}
+              onChange={(e) => setFilters({ ...filters, priceMin: parseInt(e.target.value) || 0 })}
+              className="w-full rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none"
+              style={{ background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)", color: "var(--uber-text)" }} />
+            <span className="text-xs" style={{ color: "var(--uber-muted)" }}>–</span>
+            <input type="number" placeholder="Max" value={filters.priceMax < 25000 ? filters.priceMax : ""}
+              onChange={(e) => setFilters({ ...filters, priceMax: parseInt(e.target.value) || 25000 })}
+              className="w-full rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none"
+              style={{ background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)", color: "var(--uber-text)" }} />
+          </div>
+        </div>
+
+        {/* Distance */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--uber-muted)" }}>
+            Distance from you: <span style={{ color: "var(--uber-text)" }}>{radius >= 50 ? "50+ km" : `${radius} km`}</span>
+          </h3>
+          <input type="range" min={1} max={50} value={radius} onChange={(e) => setRadius(parseInt(e.target.value))}
+            className="w-full h-1.5 rounded-full appearance-none cursor-pointer" style={{ accentColor: "var(--uber-green)" }} />
+          <div className="flex justify-between mt-1">
+            <span className="text-[10px]" style={{ color: "var(--uber-muted)" }}>1 km</span>
+            <span className="text-[10px]" style={{ color: "var(--uber-muted)" }}>50+ km</span>
+          </div>
+        </div>
+
+        {/* Amenities */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--uber-muted)" }}>Amenities</h3>
+          <div className="flex flex-wrap gap-1.5">
+            {amenityOptions.map((a) => {
+              const on = filters.amenities.includes(a);
+              return (
+                <button key={a} onClick={() => {
+                  const next = on ? filters.amenities.filter((x) => x !== a) : [...filters.amenities, a];
+                  setFilters({ ...filters, amenities: next });
+                }}
+                  className="px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all"
+                  style={on
+                    ? { background: "var(--uber-green)", color: "#fff" }
+                    : { background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)", color: "var(--uber-muted)" }}>
+                  {a}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <button onClick={onOpenModal}
+          className="w-full py-2.5 rounded-xl text-sm font-bold"
+          style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>
+          All filters
+        </button>
+
+        {(filters.amenities.length > 0 || filters.priceMin > 0) && (
+          <button onClick={() => setFilters({ ...DEFAULT_FILTERS, priceMax: 25000 })}
+            className="w-full py-2 text-xs font-semibold" style={{ color: "var(--uber-muted)" }}>
+            Reset all filters
+          </button>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+/* ─── Skeleton ───────────────────────────────────────────────────────────── */
+function ListSkeleton() {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="rounded-2xl overflow-hidden flex animate-pulse"
+          style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", minHeight: "160px" }}>
+          <div className="w-52 shrink-0" style={{ background: "var(--uber-surface2)" }} />
+          <div className="flex-1 p-4 space-y-3">
+            <div className="h-4 rounded w-2/3" style={{ background: "var(--uber-surface2)" }} />
+            <div className="h-3 rounded w-1/3" style={{ background: "var(--uber-surface2)" }} />
+            <div className="h-3 rounded w-1/2" style={{ background: "var(--uber-surface2)" }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Hostel List Card ────────────────────────────────────────────────────── */
+const HostelListCard = memo(function HostelListCard({ hostel }: { hostel: Hostel }) {
+  const [saved, setSaved] = useState(() => isSaved(hostel.id));
+
+  function toggleSave(e: React.MouseEvent) {
+    e.preventDefault();
+    if (saved) { removeSaved(hostel.id); setSaved(false); }
+    else { addSaved(hostel.id, "hostel"); setSaved(true); }
+  }
+
+  const priceMin = hostel.priceRange?.min;
+  const priceMax = hostel.priceRange?.max;
+  const priceLabel = priceMin != null
+    ? (priceMax != null && priceMax !== priceMin
+      ? `GH₵${priceMin.toLocaleString()} – GH₵${priceMax.toLocaleString()}`
+      : `GH₵${priceMin.toLocaleString()}`)
+    : "Price on request";
+
+  return (
+    <Link href={`/hostels/${hostel.id}`}>
+      <div className="rounded-2xl overflow-hidden flex transition-all cursor-pointer group"
+        style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", boxShadow: "var(--shadow-sm)" }}>
+
+        {/* Image */}
+        <div className="relative shrink-0 w-48 sm:w-56 md:w-64" style={{ minHeight: "160px", background: "var(--uber-surface2)" }}>
+          <OptimizedImage
+            src={hostel.images[0] || ""}
+            alt={hostel.name}
+            width={400}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          <button onClick={toggleSave}
+            className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all active:scale-90 ${saved ? "bg-red-500 text-white" : "bg-white/90 text-gray-400"}`}>
+            <svg className="w-4 h-4" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </button>
+          {hostel.isSponsored && (
+            <span className="absolute top-2.5 left-2.5 text-[9px] font-bold px-1.5 py-0.5 rounded shimmer-gold text-[#1A1A1A]">
+              ✦ Sponsored
+            </span>
+          )}
+        </div>
+
+        {/* Details */}
+        <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+          <div>
+            {/* Tags */}
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded"
+                style={{ background: "color-mix(in srgb, var(--uber-green) 12%, transparent)", color: "var(--uber-green)" }}>
+                Student Hostel
+              </span>
+              {hostel.isVerified && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-0.5"
+                  style={{ background: "color-mix(in srgb, var(--uber-green) 10%, transparent)", color: "var(--uber-green)" }}>
+                  ✓ Verified
+                </span>
+              )}
+            </div>
+
+            {/* Name */}
+            <h3 className="text-base font-bold leading-snug group-hover:underline line-clamp-2 mb-1"
+              style={{ color: "var(--uber-text)" }}>
+              {hostel.name}
+            </h3>
+
+            {/* Location */}
+            <div className="flex items-center gap-1 mb-2">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: "var(--uber-muted)" }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+              </svg>
+              <span className="text-xs font-medium" style={{ color: "var(--uber-muted)" }}>
+                {hostel.address || hostel.city}
+              </span>
+            </div>
+
+            {/* Nearby universities */}
+            {hostel.nearbyUniversities?.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {hostel.nearbyUniversities.slice(0, 3).map((u) => (
+                  <span key={u} className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium"
+                    style={{ background: "var(--uber-surface)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" }}>
+                    🎓 {u}
+                  </span>
+                ))}
+                {hostel.nearbyUniversities.length > 3 && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                    style={{ background: "var(--uber-surface)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" }}>
+                    +{hostel.nearbyUniversities.length - 3} more
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Amenities preview */}
+            {hostel.amenities?.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {hostel.amenities.slice(0, 5).map((a) => (
+                  <span key={a} className="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                    style={{ background: "var(--uber-surface2)", color: "var(--uber-muted)" }}>{a}</span>
+                ))}
+                {hostel.amenities.length > 5 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                    style={{ background: "var(--uber-surface2)", color: "var(--uber-muted)" }}>+{hostel.amenities.length - 5}</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Price + CTA */}
+          <div className="flex items-end justify-between mt-3 pt-3" style={{ borderTop: "0.5px solid var(--uber-border)" }}>
+            <div>
+              <p className="text-[10px] font-medium mb-0.5" style={{ color: "var(--uber-muted)" }}>Rooms from</p>
+              <p className="text-lg font-extrabold leading-none" style={{ color: "var(--uber-text)" }}>{priceLabel}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: "var(--uber-muted)" }}>per semester</p>
+              <p className="text-[10px] mt-0.5 font-semibold" style={{ color: "var(--info-text)" }}>
+                GH₵200 coordination fee applies
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              {hostel.totalRooms != null && (
+                <p className="text-[10px] font-medium" style={{ color: "var(--uber-muted)" }}>
+                  {hostel.totalRooms} room{hostel.totalRooms !== 1 ? "s" : ""} available
+                </p>
+              )}
+              <span className="px-4 py-2 rounded-xl text-xs font-bold"
+                style={{ background: "var(--uber-green)", color: "#fff" }}>
+                See rooms →
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+});
+
+/* ─── Main Page ──────────────────────────────────────────────────────────── */
 export default function HostelsPage() {
   const [hostels, setHostels] = useState<Hostel[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [radius, setRadius] = useState<number>(50);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ ...DEFAULT_FILTERS, priceMax: 25000 });
-  const { loc: userLoc, denied: locDenied } = useUserLocation();
+  const [sortBy, setSortBy] = useState<"nearest" | "price_asc" | "price_desc">("nearest");
+  const { loc: userLoc } = useUserLocation();
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Pull-to-refresh: bust cache and re-fetch
   const handleRefresh = useCallback(async () => {
     const cacheKey = getCacheKey(filters, searchQuery);
     await invalidateCache(cacheKey);
@@ -75,81 +377,20 @@ export default function HostelsPage() {
   }, [filters, searchQuery]);
 
   const { refreshing, pullDistance, handlers: pullHandlers } = usePullToRefresh({ onRefresh: handleRefresh });
-
-  // Jiji-style: refetch when tab regains focus or user navigates back
   useVisibilityRefresh(handleRefresh);
 
-  // Sticky header that slides off-screen on scroll down (passive listener for perf)
-  const headerRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    let lastY = 0;
-    let hidden = false;
-    let rafId = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        const y = el.scrollTop;
-        const delta = y - lastY;
-        if (delta > 8 && !hidden) {
-          hidden = true;
-          if (headerRef.current) headerRef.current.style.transform = "translateY(-100%)";
-        } else if (delta < -8 && hidden) {
-          hidden = false;
-          if (headerRef.current) headerRef.current.style.transform = "translateY(0)";
-        }
-        lastY = y;
-      });
-    };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => { el.removeEventListener("scroll", onScroll); cancelAnimationFrame(rafId); };
-  }, []);
-
-  // Fetch first page on mount (persistent stale-while-revalidate cache)
   useEffect(() => {
     let cancelled = false;
-    const cacheKey = getCacheKey(filters, searchQuery);
-
     setLoading(true);
-    cachedFetch<Hostel[]>(cacheKey, () => getHostels(), {
+    cachedFetch<Hostel[]>(getCacheKey(filters, searchQuery), () => getHostels(), {
       onRevalidated: (fresh) => {
-        if (!cancelled) {
-          setHostels(fresh);
-          setTotalCount(fresh.length);
-          preloadImages(fresh.map((h: Hostel) => h.images?.[0]).filter(Boolean));
-        }
+        if (!cancelled) { setHostels(fresh); setTotalCount(fresh.length); preloadImages(fresh.map((h: Hostel) => h.images?.[0]).filter(Boolean)); }
       },
-    })
-      .then(({ data }) => {
-        if (!cancelled) {
-          setHostels(data);
-          setTotalCount(data.length);
-          setLoading(false);
-          preloadImages(data.map((h: Hostel) => h.images?.[0]).filter(Boolean));
-        }
-      })
-      .catch(() => { if (!cancelled) setLoading(false); });
-
+    }).then(({ data }) => {
+      if (!cancelled) { setHostels(data); setTotalCount(data.length); setLoading(false); preloadImages(data.map((h: Hostel) => h.images?.[0]).filter(Boolean)); }
+    }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
-
-  // Load more (no-op since API returns all; kept for infinite scroll sentinel compat)
-  const loadMore = useCallback(() => {}, []);
-
-  // IntersectionObserver for infinite scroll
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) loadMore(); },
-      { rootMargin: "400px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [loadMore]);
 
   const filteredHostels = useMemo(() => {
     let list = hostels;
@@ -158,8 +399,8 @@ export default function HostelsPage() {
       list = list.filter(h =>
         h.name.toLowerCase().includes(q) ||
         h.city.toLowerCase().includes(q) ||
-        h.address?.toLowerCase().includes(q) ||
-        h.nearbyUniversities.some((u) => u.toLowerCase().includes(q))
+        (h.address ?? "").toLowerCase().includes(q) ||
+        h.nearbyUniversities?.some((u) => u.toLowerCase().includes(q))
       );
     }
     if (radius < 50) {
@@ -178,7 +419,6 @@ export default function HostelsPage() {
     if (filters.amenities.length > 0) {
       list = list.filter((h) => filters.amenities.every((a) => h.amenities?.includes(a)));
     }
-    // Filter by districts/regions (multi-select)
     if (filters.districts.length > 0) {
       list = list.filter(h => {
         const city = h.city.toLowerCase();
@@ -195,17 +435,17 @@ export default function HostelsPage() {
       });
     }
 
-    // Separate sponsored (basic/standard) and regular, sort by distance
     const sponsored = list.filter(h => h.isSponsored && h.sponsorTier !== "featured");
     const regular = list.filter(h => !h.isSponsored || h.sponsorTier === "featured");
 
     regular.sort((a, b) => {
+      if (sortBy === "price_asc") return (a.priceRange?.min ?? 0) - (b.priceRange?.min ?? 0);
+      if (sortBy === "price_desc") return (b.priceRange?.min ?? 0) - (a.priceRange?.min ?? 0);
       const dA = getDistance(userLoc.lat, userLoc.lng, (a as any).lat ?? DEFAULT_LAT, (a as any).lng ?? DEFAULT_LNG);
       const dB = getDistance(userLoc.lat, userLoc.lng, (b as any).lat ?? DEFAULT_LAT, (b as any).lng ?? DEFAULT_LNG);
       return dA - dB;
     });
 
-    // Order: 2 nearest → all sponsored → rest randomized
     const nearest = regular.slice(0, 2);
     const rest = regular.slice(2);
     let seed = rest.length;
@@ -214,116 +454,122 @@ export default function HostelsPage() {
       const j = Math.floor(seededRandom() * (i + 1));
       [rest[i], rest[j]] = [rest[j], rest[i]];
     }
-
     return [...nearest, ...sponsored, ...rest];
-  }, [hostels, searchQuery, radius, filters, userLoc]);
+  }, [hostels, searchQuery, radius, filters, userLoc, sortBy]);
+
+  const activeFilterCount =
+    filters.amenities.length +
+    (filters.priceMin > 0 ? 1 : 0) +
+    (filters.priceMax < 25000 ? 1 : 0) +
+    filters.regions.length +
+    filters.districts.length;
+
+  const featuredItems = hostels
+    .filter(h => h.isSponsored && h.sponsorTier === "featured")
+    .slice(0, 10)
+    .map(h => ({
+      id: h.id, title: h.name, image: h.images?.[0] || "",
+      city: h.city, priceLabel: h.priceRange ? `GH₵${h.priceRange.min.toLocaleString()}+` : "", type: "hostel" as const,
+    }));
 
   return (
-    <div ref={scrollRef} className="min-h-screen overflow-y-auto" style={{ background: "var(--background)" }} {...pullHandlers}>
-
+    <div className="min-h-screen" style={{ background: "var(--background)" }} {...pullHandlers}>
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
 
-      {/* Sticky header — slides fully off-screen on scroll down */}
-      <div
-        ref={headerRef}
-        className="sticky top-0 z-20 shadow-sm"
-        style={{ transition: "transform 0.25s ease", willChange: "transform", borderBottom: "0.5px solid var(--uber-border)", background: "var(--uber-surface)" }}
-      >
-        {/* Title */}
-        <div className="px-4 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top, 20px) + 12px)" }}>
-          <h1 className="text-xl font-extrabold" style={{ color: "var(--uber-text)" }}>Hostels</h1>
-          <p className="text-[10px] font-medium uppercase tracking-wider mt-0.5" style={{ color: "var(--uber-muted)" }}>Student View</p>
-        </div>
+      <HeroSearch
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        radius={radius}
+        setRadius={setRadius}
+        onFilterClick={() => setFilterOpen(true)}
+        activeFilterCount={activeFilterCount}
+      />
 
-        {/* Search + filter button */}
-        <div className="px-4 pb-3 flex gap-2">
-          <div className="relative flex-1">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--uber-muted)" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" /><circle cx="10" cy="10" r="7" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search campus, city..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl pl-9 pr-3 py-2.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-black/20 transition-all"
-              style={{ border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-text)" }}
-            />
+      {!loading && featuredItems.length > 0 && (
+        <div style={{ background: "var(--uber-surface)" }}>
+          <div className="max-w-screen-xl mx-auto px-4 lg:px-6 py-4">
+            <p className="text-sm font-bold mb-3" style={{ color: "var(--uber-text)" }}>✦ Featured hostels</p>
+            <FeaturedCarousel items={featuredItems} />
           </div>
-          <button
-            onClick={() => setFilterOpen(true)}
-            className="relative flex items-center justify-center p-2.5 rounded-xl transition-colors shrink-0"
-            style={filters.amenities.length > 0
-              ? { background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }
-              : { border: "0.5px solid var(--uber-border)", background: "var(--uber-surface)", color: "var(--uber-muted)" }
-            }
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
-            </svg>
-            {filters.amenities.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "var(--uber-green)", color: "#fff" }}>
-                {filters.amenities.length}
-              </span>
-            )}
-          </button>
         </div>
+      )}
 
-        {/* Radius pill */}
-        <div className="px-4 pb-3 flex gap-2 overflow-x-auto hide-scrollbar">
-          <span className="px-3 py-1.5 rounded-full text-[11px] font-bold shrink-0 flex items-center gap-1" style={{ background: "var(--uber-surface2)", color: "var(--uber-muted)" }}>
-            <IconPin /> {radius === 50 ? "50+ km" : `${radius} km`}
-            <input type="range" min={1} max={50} value={radius} onChange={(e) => setRadius(parseInt(e.target.value))}
-              className="w-16 accent-black h-1 ml-1" />
-          </span>
-        </div>
-      </div>
+      <div className="max-w-screen-xl mx-auto px-4 lg:px-6 py-6">
+        <div className="flex gap-6 items-start">
 
-      {/* Location prompt */}
-      {locDenied && <LocationBanner onAllow={() => {
-        navigator.geolocation.getCurrentPosition(() => window.location.reload(), () => {
-          window.alert("Please enable location access in your browser settings to see nearby hostels.");
-        });
-      }} />}
+          {/* Sidebar */}
+          <FilterSidebar
+            radius={radius}
+            setRadius={setRadius}
+            filters={filters}
+            setFilters={setFilters}
+            onOpenModal={() => setFilterOpen(true)}
+          />
 
-      {/* Featured carousel */}
-      {!loading && (() => {
-        const featured = hostels.filter(h => h.isSponsored && h.sponsorTier === "featured").slice(0, 10).map(h => ({
-          id: h.id, title: h.name, image: h.images?.[0] || "", city: h.city, priceLabel: h.priceRangeLabel, type: "hostel" as const,
-        }));
-        return featured.length > 0 ? <FeaturedCarousel items={featured} /> : null;
-      })()}
+          {/* Results */}
+          <div className="flex-1 min-w-0">
+            {/* Results bar */}
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div>
+                {!loading && (
+                  <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>
+                    {filteredHostels.length.toLocaleString()} hostel{filteredHostels.length !== 1 ? "s" : ""} found
+                    {searchQuery && <span style={{ color: "var(--uber-muted)" }}> for &ldquo;{searchQuery}&rdquo;</span>}
+                  </p>
+                )}
+                <p className="text-xs mt-0.5" style={{ color: "var(--uber-muted)" }}>Prices shown per semester in GH₵</p>
+              </div>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold focus:outline-none"
+                style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", color: "var(--uber-text)" }}>
+                <option value="nearest">Sort: Nearest first</option>
+                <option value="price_asc">Sort: Price (low → high)</option>
+                <option value="price_desc">Sort: Price (high → low)</option>
+              </select>
+            </div>
 
-      {/* Listings grid — fills rest of screen */}
-      <div className="px-4 pt-4 pb-24">
-        {loading ? (
-          <GridSkeleton />
-        ) : filteredHostels.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20" style={{ color: "var(--uber-muted)" }}>
-            <p className="mb-4"><IconSchool className="w-12 h-12" /></p>
-            <p className="text-base font-semibold" style={{ color: "var(--uber-muted)" }}>No hostels match</p>
-            <p className="text-xs mt-1 text-center">Try adjusting your filters or radius.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-            {filteredHostels.map((hostel) => (
-              <HostelGridCard key={hostel.id} hostel={hostel} />
-            ))}
-          </div>
-        )}
+            {/* Mobile pills */}
+            <div className="lg:hidden flex gap-2 overflow-x-auto hide-scrollbar mb-4 pb-1">
+              <button onClick={() => setFilterOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0"
+                style={activeFilterCount > 0
+                  ? { background: "var(--uber-green)", color: "#fff" }
+                  : { background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", color: "var(--uber-muted)" }}>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
+                </svg>
+                Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+              </button>
+            </div>
 
-        {/* Infinite scroll sentinel */}
-        {!loading && hostels.length < totalCount && (
-          <div ref={sentinelRef} className="flex justify-center py-6">
-            {loadingMore && (
-              <div className="flex gap-1.5">
-                <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--uber-muted)", animationDelay: "0ms" }} />
-                <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--uber-muted)", animationDelay: "150ms" }} />
-                <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--uber-muted)", animationDelay: "300ms" }} />
+            {/* List */}
+            {loading ? (
+              <ListSkeleton />
+            ) : filteredHostels.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 rounded-2xl"
+                style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
+                <svg className="w-14 h-14 mb-4" style={{ color: "var(--uber-surface2)" }} fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                </svg>
+                <p className="text-base font-bold" style={{ color: "var(--uber-text)" }}>No hostels match your search</p>
+                <p className="text-sm mt-1" style={{ color: "var(--uber-muted)" }}>Try adjusting your filters or search area.</p>
+                <button onClick={() => setFilters({ ...DEFAULT_FILTERS, priceMax: 25000 })}
+                  className="mt-4 px-5 py-2 rounded-xl text-sm font-bold"
+                  style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>
+                  Clear all filters
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredHostels.map((hostel) => (
+                  <HostelListCard key={hostel.id} hostel={hostel} />
+                ))}
               </div>
             )}
+
+            <div ref={sentinelRef} />
           </div>
-        )}
+        </div>
       </div>
 
       <FilterModal
@@ -332,93 +578,6 @@ export default function HostelsPage() {
         filters={filters}
         onChange={setFilters}
       />
-
     </div>
   );
 }
-
-function GridSkeleton() {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="rounded-2xl overflow-hidden animate-pulse" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
-          <div className="aspect-square w-full" style={{ background: "var(--uber-surface2)" }} />
-          <div className="p-2.5 space-y-2.5 mt-1">
-            <div className="h-3 rounded-full w-1/3" style={{ background: "var(--uber-surface2)" }} />
-            <div className="h-2.5 rounded-full w-2/3 mt-1" style={{ background: "var(--uber-surface2)" }} />
-            <div className="h-2 rounded-full w-1/2" style={{ background: "var(--uber-surface2)" }} />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const HostelGridCard = memo(function HostelGridCard({ hostel }: { hostel: Hostel }) {
-  const [saved, setSaved] = useState(() => isSaved(hostel.id));
-
-  function toggleSave(e: React.MouseEvent) {
-    e.preventDefault();
-    if (saved) {
-      removeSaved(hostel.id);
-      setSaved(false);
-    } else {
-      addSaved(hostel.id, "hostel");
-      setSaved(true);
-    }
-  }
-
-  return (
-    <Link href={`/hostels/${hostel.id}`}>
-      <div className="rounded-2xl overflow-hidden cursor-pointer h-full flex flex-col" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", contain: "layout style paint" }}>
-        <div className="relative aspect-square w-full shrink-0" style={{ background: "var(--uber-surface2)" }}>
-          <OptimizedImage
-            src={hostel.images[0] || ""}
-            alt={hostel.name || ""}
-            width={400}
-            className="absolute inset-0 w-full h-full"
-          />
-          <span className="absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm text-white"
-            style={{ background: hostel.availableRooms > 0 ? "#06C167" : "#000000" }}>
-            {hostel.availableRooms > 0 ? `${hostel.availableRooms} free` : "Full"}
-          </span>
-          {hostel.isSponsored && (
-            <span className="absolute top-2 left-2 mt-6 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shimmer-gold text-[#1A1A1A]">
-              <IconStar /> Sponsored
-            </span>
-          )}
-          {hostel.isVerified && (
-            <span className="absolute bottom-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm" style={{ background: "#06C167", color: "#fff" }}>
-              <IconCheck /> Verified
-            </span>
-          )}
-          <button
-            onClick={toggleSave}
-            className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-sm transition-all active:scale-90 ${
-              saved ? "bg-red-500 text-white" : "bg-white/90 text-gray-400"
-            }`}
-          >
-            <svg className="w-4 h-4" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          </button>
-        </div>
-        <div className="p-2.5 flex-1 flex flex-col justify-between">
-          <div>
-            <p className="text-sm font-bold leading-tight" style={{ color: "var(--uber-text)" }}>{hostel.priceRangeLabel}</p>
-            <p className="text-xs font-semibold mt-0.5 line-clamp-2 leading-snug" style={{ color: "var(--uber-text)" }}>{hostel.name}</p>
-          </div>
-          <div>
-            <p className="text-[10px] truncate mt-1" style={{ color: "var(--uber-muted)" }}>{hostel.city}</p>
-            {hostel.isAgent && hostel.agentName && (
-              <p className="text-[9px] font-semibold mt-0.5 truncate" style={{ color: "var(--uber-green)" }}>
-                By {hostel.agentName}
-              </p>
-            )}
-            <p className="text-[10px] mt-0.5 font-medium" style={{ color: "var(--uber-muted)" }}>{hostel.totalRooms} rooms total</p>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-});
