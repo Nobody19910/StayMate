@@ -21,10 +21,13 @@ export default function AdminDashboardPage() {
   const [kyc, setKyc] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [tab, setTab] = useState<"pipeline" | "dashboard" | "properties" | "queue" | "audit" | "leads" | "agents" | "featured" | "applications">("pipeline");
+  const [tab, setTab] = useState<"pipeline" | "dashboard" | "properties" | "queue" | "audit" | "leads" | "agents" | "featured" | "applications" | "users">("pipeline");
   const [applications, setApplications] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [userSearch, setUserSearch] = useState("");
   const [subscribedAgents, setSubscribedAgents] = useState<any[]>([]);
 
 
@@ -300,6 +303,7 @@ export default function AdminDashboardPage() {
             <TabButton active={tab === "featured"} onClick={() => setTab("featured")} icon={<IconStar />} label="Featured" count={homes.filter(h => h.is_sponsored).length + hostels.filter(h => h.is_sponsored).length} />
             <TabButton active={tab === "leads"} onClick={() => setTab("leads")} icon={<IconTarget />} label="Seeker Leads" count={leads.filter(l => l.status === "pending").length} />
             <TabButton active={tab === "agents"} onClick={() => { setTab("agents"); setSelectedAgentId(null); }} icon={<IconTie />} label="Agents" count={activeAgents} />
+            <TabButton active={tab === "users"} onClick={() => { setTab("users"); setSelectedUserId(null); setUserSearch(""); }} icon={<IconPhone />} label="Users" count={agents.length} />
           </nav>
 
           <div className="mt-auto px-4 py-4" style={{ borderTop: "1px solid #e9edf2" }}>
@@ -317,8 +321,9 @@ export default function AdminDashboardPage() {
             { t: "featured", icon: <IconStar />, label: "Featured" },
             { t: "applications", icon: <IconCheckCircle />, label: "Apply", count: pendingApplications.length },
             { t: "leads", icon: <IconTarget />, label: "Leads", count: leads.filter((l: any) => l.status === "pending").length },
+            { t: "users", icon: <IconPhone />, label: "Users", count: agents.length },
           ].map(({ t, icon, label, count }) => (
-            <button key={t} onClick={() => { setTab(t as typeof tab); if (t === "agents") setSelectedAgentId(null); }}
+            <button key={t} onClick={() => { setTab(t as typeof tab); if (t === "agents") setSelectedAgentId(null); if (t === "users") { setSelectedUserId(null); setUserSearch(""); } }}
               className="flex flex-col items-center gap-0.5 px-4 py-2.5 shrink-0 text-[10px] font-bold transition-colors"
               style={{ color: (tab === t || (t === "pipeline" && isPipeline)) ? "#06c167" : "#64748b", minWidth: 56 }}>
               <span className="text-lg leading-none relative">
@@ -947,42 +952,138 @@ export default function AdminDashboardPage() {
             )}
 
             {/* ── APPLICATIONS TAB ── */}
-            {tab === "applications" && (
+            {tab === "applications" && (() => {
+              const selectedApp = applications.find(a => a.id === selectedAppId) ?? null;
+              return (
               <div className="space-y-5">
                 <div className="rounded-xl overflow-hidden" style={{ background: "#ffffff", border: "1px solid #e9edf2", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
                   <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #e9edf2" }}>
                     <div className="flex items-center gap-2">
-                      <IconCheckCircle />
-                      <h2 className="font-bold text-sm" style={{ color: "#0f172a" }}>Concierge Agent Applications</h2>
+                      {selectedApp ? (
+                        <button onClick={() => setSelectedAppId(null)} className="flex items-center gap-1.5 text-sm font-bold hover:opacity-70 transition-opacity" style={{ color: "#0f172a" }}>
+                          <span>←</span> Applications
+                        </button>
+                      ) : (
+                        <>
+                          <IconCheckCircle />
+                          <h2 className="font-bold text-sm" style={{ color: "#0f172a" }}>Concierge Agent Applications</h2>
+                        </>
+                      )}
                     </div>
-                    {pendingApplications.length > 0 && (
+                    {!selectedApp && pendingApplications.length > 0 && (
                       <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>
                         {pendingApplications.length} pending
                       </span>
                     )}
                   </div>
-                  <div className="p-5">
-                    {applications.length === 0 ? (
-                      <div className="text-center py-12">
-                        <p className="font-bold text-sm mb-1" style={{ color: "#0f172a" }}>No applications yet</p>
-                        <p className="text-xs" style={{ color: "#64748b" }}>Applications submitted via the /apply page will appear here.</p>
+
+                  {/* Detail view */}
+                  {selectedApp ? (
+                    <div>
+                      {/* Applicant header */}
+                      <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #e9edf2" }}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-extrabold shrink-0" style={{ background: "#f1f5f9", color: "#0f172a" }}>
+                            {(selectedApp.full_name || "?").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold" style={{ color: "#0f172a" }}>{selectedApp.full_name}</p>
+                            <p className="text-[11px]" style={{ color: "#64748b" }}>{selectedApp.phone}{selectedApp.email ? ` · ${selectedApp.email}` : ""}</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-full"
+                          style={selectedApp.status === "approved"
+                            ? { background: "rgba(6,193,103,0.1)", color: "#06c167" }
+                            : selectedApp.status === "rejected"
+                            ? { background: "rgba(239,68,68,0.08)", color: "#ef4444" }
+                            : { background: "rgba(217,119,6,0.1)", color: "#d97706" }}>
+                          {selectedApp.status}
+                        </span>
                       </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {applications.map(app => (
-                          <div key={app.id} className="rounded-xl overflow-hidden" style={{ border: "1px solid #e9edf2", background: "#fafbfc" }}>
-                            {/* Header row */}
-                            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid #e9edf2", background: "#ffffff" }}>
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0" style={{ background: "#f1f5f9", color: "#0f172a" }}>
-                                  {(app.full_name || "?").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
-                                </div>
-                                <div>
-                                  <p className="text-sm font-bold" style={{ color: "#0f172a" }}>{app.full_name}</p>
-                                  <p className="text-[11px]" style={{ color: "#64748b" }}>{app.phone}{app.email ? ` · ${app.email}` : ""}</p>
-                                </div>
+
+                      {/* ID info */}
+                      <div className="px-5 py-3 flex gap-2 flex-wrap" style={{ borderBottom: "1px solid #e9edf2" }}>
+                        <span className="text-[11px] font-semibold px-2 py-1 rounded" style={{ background: "#f8fafc", border: "1px solid #e9edf2", color: "#0f172a" }}>
+                          {selectedApp.id_type}
+                        </span>
+                        <span className="text-[11px] font-mono font-semibold px-2 py-1 rounded" style={{ background: "#f8fafc", border: "1px solid #e9edf2", color: "#0f172a" }}>
+                          {selectedApp.id_number}
+                        </span>
+                        {selectedApp.user?.full_name && selectedApp.user.full_name.toLowerCase() !== selectedApp.full_name.toLowerCase() && (
+                          <span className="text-[10px] font-bold px-2 py-1 rounded" style={{ background: "rgba(217,119,6,0.1)", color: "#d97706" }}>
+                            ⚠ Name mismatch with profile
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Photos */}
+                      <div className="grid grid-cols-2 gap-3 p-5">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#94a3b8" }}>ID Document</p>
+                          {selectedApp.id_photo_url ? (
+                            <a href={selectedApp.id_photo_url} target="_blank" rel="noopener noreferrer">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={selectedApp.id_photo_url} alt="ID" className="w-full rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity" style={{ aspectRatio: "16/9" }} />
+                            </a>
+                          ) : (
+                            <div className="w-full rounded-xl flex items-center justify-center text-xs font-semibold" style={{ aspectRatio: "16/9", background: "#f1f5f9", color: "#94a3b8" }}>No photo</div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#94a3b8" }}>Selfie</p>
+                          {selectedApp.selfie_url ? (
+                            <a href={selectedApp.selfie_url} target="_blank" rel="noopener noreferrer">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={selectedApp.selfie_url} alt="Selfie" className="w-full rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity" style={{ aspectRatio: "3/4" }} />
+                            </a>
+                          ) : (
+                            <div className="w-full rounded-xl flex items-center justify-center text-xs font-semibold" style={{ aspectRatio: "3/4", background: "#f1f5f9", color: "#94a3b8" }}>No photo</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      {selectedApp.status === "pending" && (
+                        <div className="flex gap-2 px-5 pb-5">
+                          <button
+                            onClick={() => { resolveApplication(selectedApp.id, selectedApp.user_id, true); setSelectedAppId(null); }}
+                            className="flex-1 py-2.5 rounded-xl font-bold text-sm transition-opacity hover:opacity-90"
+                            style={{ background: "#06c167", color: "#fff" }}>
+                            Approve &amp; Activate Agent
+                          </button>
+                          <button
+                            onClick={() => { resolveApplication(selectedApp.id, selectedApp.user_id, false); setSelectedAppId(null); }}
+                            className="py-2.5 px-4 rounded-xl font-bold text-sm"
+                            style={{ background: "#f1f5f9", color: "#64748b" }}>
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* List view */
+                    <div>
+                      {applications.length === 0 ? (
+                        <div className="text-center py-12">
+                          <p className="font-bold text-sm mb-1" style={{ color: "#0f172a" }}>No applications yet</p>
+                          <p className="text-xs" style={{ color: "#64748b" }}>Applications submitted via the /apply page will appear here.</p>
+                        </div>
+                      ) : (
+                        <div>
+                          {applications.map((app, i) => (
+                            <button
+                              key={app.id}
+                              onClick={() => setSelectedAppId(app.id)}
+                              className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-slate-50 transition-colors"
+                              style={{ borderBottom: i < applications.length - 1 ? "1px solid #e9edf2" : "none" }}>
+                              <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0" style={{ background: "#f1f5f9", color: "#0f172a" }}>
+                                {(app.full_name || "?").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
                               </div>
-                              <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-full"
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold truncate" style={{ color: "#0f172a" }}>{app.full_name}</p>
+                                <p className="text-[11px] truncate" style={{ color: "#64748b" }}>{app.id_type} · {app.phone}</p>
+                              </div>
+                              <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-full shrink-0"
                                 style={app.status === "approved"
                                   ? { background: "rgba(6,193,103,0.1)", color: "#06c167" }
                                   : app.status === "rejected"
@@ -990,74 +1091,169 @@ export default function AdminDashboardPage() {
                                   : { background: "rgba(217,119,6,0.1)", color: "#d97706" }}>
                                 {app.status}
                               </span>
-                            </div>
+                              <span style={{ color: "#94a3b8" }}>›</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              );
+            })()}
 
-                            {/* ID info */}
-                            <div className="px-4 py-3 flex gap-2 flex-wrap" style={{ borderBottom: "1px solid #e9edf2" }}>
-                              <span className="text-[11px] font-semibold px-2 py-1 rounded" style={{ background: "#ffffff", border: "1px solid #e9edf2", color: "#0f172a" }}>
-                                {app.id_type}
-                              </span>
-                              <span className="text-[11px] font-mono font-semibold px-2 py-1 rounded" style={{ background: "#ffffff", border: "1px solid #e9edf2", color: "#0f172a" }}>
-                                {app.id_number}
-                              </span>
-                              {app.user?.full_name && app.user.full_name.toLowerCase() !== app.full_name.toLowerCase() && (
-                                <span className="text-[10px] font-bold px-2 py-1 rounded" style={{ background: "rgba(217,119,6,0.1)", color: "#d97706" }}>
-                                  ⚠ Name mismatch with profile
-                                </span>
-                              )}
-                            </div>
+            {tab === "users" && (() => {
+              const selectedUser = agents.find(u => u.id === selectedUserId) ?? null;
+              const userHomes = selectedUserId ? homes.filter(h => h.owner_id === selectedUserId) : [];
+              const userHostels = selectedUserId ? hostels.filter(h => h.manager_id === selectedUserId) : [];
+              const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
+                admin: { bg: "rgba(99,102,241,0.1)", color: "#6366f1" },
+                agent: { bg: "rgba(217,119,6,0.1)", color: "#d97706" },
+                owner: { bg: "rgba(6,193,103,0.1)", color: "#06c167" },
+                manager: { bg: "rgba(6,193,103,0.1)", color: "#06c167" },
+                seeker: { bg: "#f1f5f9", color: "#64748b" },
+              };
+              const filteredUsers = agents.filter(u => {
+                if (!userSearch) return true;
+                const q = userSearch.toLowerCase();
+                return (u.full_name || u.fullName || "").toLowerCase().includes(q) ||
+                  (u.phone || "").includes(q) ||
+                  (u.email || "").toLowerCase().includes(q);
+              });
+              return (
+                <div className="space-y-5">
+                  <div className="rounded-xl overflow-hidden" style={{ background: "#ffffff", border: "1px solid #e9edf2", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+                    <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #e9edf2" }}>
+                      {selectedUser ? (
+                        <button onClick={() => setSelectedUserId(null)} className="flex items-center gap-1.5 text-sm font-bold hover:opacity-70 transition-opacity" style={{ color: "#0f172a" }}>
+                          <span>←</span> Users
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <IconPhone />
+                          <h2 className="font-bold text-sm" style={{ color: "#0f172a" }}>All Users</h2>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#f1f5f9", color: "#64748b" }}>{agents.length}</span>
+                        </div>
+                      )}
+                    </div>
 
-                            {/* Photos side by side */}
-                            <div className="grid grid-cols-2 gap-3 p-4">
-                              <div>
-                                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#94a3b8" }}>ID Document</p>
-                                {app.id_photo_url ? (
-                                  <a href={app.id_photo_url} target="_blank" rel="noopener noreferrer">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={app.id_photo_url} alt="ID" className="w-full rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity" style={{ aspectRatio: "16/9" }} />
-                                  </a>
-                                ) : (
-                                  <div className="w-full rounded-lg flex items-center justify-center text-xs font-semibold" style={{ aspectRatio: "16/9", background: "#f1f5f9", color: "#94a3b8" }}>No photo</div>
-                                )}
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#94a3b8" }}>Selfie</p>
-                                {app.selfie_url ? (
-                                  <a href={app.selfie_url} target="_blank" rel="noopener noreferrer">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={app.selfie_url} alt="Selfie" className="w-full rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity" style={{ aspectRatio: "3/4" }} />
-                                  </a>
-                                ) : (
-                                  <div className="w-full rounded-lg flex items-center justify-center text-xs font-semibold" style={{ aspectRatio: "3/4", background: "#f1f5f9", color: "#94a3b8" }}>No photo</div>
-                                )}
-                              </div>
+                    {selectedUser ? (
+                      /* User detail */
+                      <div>
+                        {/* User header */}
+                        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #e9edf2" }}>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-extrabold shrink-0" style={{ background: "#f1f5f9", color: "#0f172a" }}>
+                              {((selectedUser.full_name || selectedUser.fullName || "?")).split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
                             </div>
-
-                            {/* Actions */}
-                            {app.status === "pending" && (
-                              <div className="flex gap-2 px-4 pb-4">
-                                <button
-                                  onClick={() => resolveApplication(app.id, app.user_id, true)}
-                                  className="flex-1 py-2.5 rounded-xl font-bold text-sm transition-opacity hover:opacity-90"
-                                  style={{ background: "#06c167", color: "#fff" }}>
-                                  Approve &amp; Activate Agent
-                                </button>
-                                <button
-                                  onClick={() => resolveApplication(app.id, app.user_id, false)}
-                                  className="py-2.5 px-4 rounded-xl font-bold text-sm"
-                                  style={{ background: "#f1f5f9", color: "#64748b" }}>
-                                  Reject
-                                </button>
-                              </div>
-                            )}
+                            <div>
+                              <p className="text-sm font-bold" style={{ color: "#0f172a" }}>{selectedUser.full_name || selectedUser.fullName || "—"}</p>
+                              <p className="text-[11px]" style={{ color: "#64748b" }}>{selectedUser.phone || "No phone"}</p>
+                            </div>
                           </div>
-                        ))}
+                          <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-full"
+                            style={ROLE_COLORS[selectedUser.role] ?? ROLE_COLORS.seeker}>
+                            {selectedUser.role}
+                          </span>
+                        </div>
+
+                        {/* Post listing button */}
+                        <div className="px-5 py-4" style={{ borderBottom: "1px solid #e9edf2" }}>
+                          <Link href={`/post?for_user=${selectedUser.id}`}
+                            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-bold text-sm transition-opacity hover:opacity-90"
+                            style={{ background: "#06c167", color: "#fff" }}>
+                            <span>+</span> Post listing for {(selectedUser.full_name || selectedUser.fullName || "user").split(" ")[0]}
+                          </Link>
+                        </div>
+
+                        {/* Listings */}
+                        <div className="px-5 py-4">
+                          <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: "#94a3b8" }}>
+                            Their Listings ({userHomes.length + userHostels.length})
+                          </p>
+                          {userHomes.length === 0 && userHostels.length === 0 ? (
+                            <p className="text-xs py-4 text-center" style={{ color: "#94a3b8" }}>No listings yet</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {[...userHomes, ...userHostels.map(h => ({ ...h, _kind: "hostel" }))].map((item: any) => {
+                                const isHostel = !!item._kind;
+                                const title = isHostel ? item.name : item.title;
+                                const img = item.images?.[0];
+                                const href = isHostel ? `/hostels/${item.id}` : `/homes/${item.id}`;
+                                return (
+                                  <Link key={item.id} href={href} target="_blank"
+                                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors"
+                                    style={{ border: "1px solid #e9edf2" }}>
+                                    <div className="relative w-12 h-10 rounded-lg overflow-hidden shrink-0" style={{ background: "#f1f5f9" }}>
+                                      {img && <OptimizedImage src={img} alt="" width={80} className="w-full h-full" />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-bold truncate" style={{ color: "#0f172a" }}>{title}</p>
+                                      <p className="text-[10px]" style={{ color: "#64748b" }}>{item.city} · {isHostel ? "Hostel" : item.property_type || "Home"}</p>
+                                    </div>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                                      style={item.status === "approved"
+                                        ? { background: "rgba(6,193,103,0.1)", color: "#06c167" }
+                                        : { background: "rgba(217,119,6,0.1)", color: "#d97706" }}>
+                                      {item.status === "approved" ? "Live" : "Pending"}
+                                    </span>
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      /* User list */
+                      <div>
+                        {/* Search */}
+                        <div className="px-4 py-3" style={{ borderBottom: "1px solid #e9edf2" }}>
+                          <input
+                            value={userSearch}
+                            onChange={e => setUserSearch(e.target.value)}
+                            placeholder="Search by name or phone…"
+                            className="w-full text-sm px-3 py-2 rounded-lg outline-none"
+                            style={{ background: "#f8fafc", border: "1px solid #e9edf2", color: "#0f172a" }}
+                          />
+                        </div>
+                        {filteredUsers.length === 0 ? (
+                          <div className="text-center py-10">
+                            <p className="text-xs font-semibold" style={{ color: "#94a3b8" }}>No users found</p>
+                          </div>
+                        ) : (
+                          <div>
+                            {filteredUsers.map((u, i) => {
+                              const name = u.full_name || u.fullName || "Unknown";
+                              const listingCount = homes.filter(h => h.owner_id === u.id).length + hostels.filter(h => h.manager_id === u.id).length;
+                              return (
+                                <button key={u.id} onClick={() => setSelectedUserId(u.id)}
+                                  className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-slate-50 transition-colors"
+                                  style={{ borderBottom: i < filteredUsers.length - 1 ? "1px solid #e9edf2" : "none" }}>
+                                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0" style={{ background: "#f1f5f9", color: "#0f172a" }}>
+                                    {name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-bold truncate" style={{ color: "#0f172a" }}>{name}</p>
+                                    <p className="text-[11px] truncate" style={{ color: "#64748b" }}>{u.phone || "No phone"}{listingCount > 0 ? ` · ${listingCount} listing${listingCount > 1 ? "s" : ""}` : ""}</p>
+                                  </div>
+                                  <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-full shrink-0"
+                                    style={ROLE_COLORS[u.role] ?? ROLE_COLORS.seeker}>
+                                    {u.role}
+                                  </span>
+                                  <span style={{ color: "#94a3b8" }}>›</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
           </div>
         </main>
@@ -1227,9 +1423,10 @@ function BookingKanbanCard({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-16 h-12 rounded-lg overflow-hidden shrink-0 relative" style={{ background: "#e9edf2" }}>
-          {b.property?.images?.[0] && (
-            <OptimizedImage src={b.property.images[0]} alt="" width={100} className="w-full h-full" />
-          )}
+          {(() => {
+            const imgSrc = b.property?.images?.[0] || b.message?.match(/\[INQUIRY_IMAGE:([^\]]+)\]/)?.[1];
+            return imgSrc ? <OptimizedImage src={imgSrc} alt="" width={100} className="w-full h-full" /> : null;
+          })()}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">

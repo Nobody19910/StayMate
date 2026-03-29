@@ -309,7 +309,10 @@ function OwnerKanbanCard({ booking: b, accentColor, onAccept, onReject, onDelete
         className="flex items-start gap-2 p-3 pb-2 hover:bg-slate-50 transition-colors" style={{ display: "flex" }}
         onClick={(e) => e.stopPropagation()}>
         <div className="relative w-12 h-9 rounded-lg overflow-hidden shrink-0" style={{ background: "#e9edf2" }}>
-          {b.property?.images?.[0] && <OptimizedImage src={b.property.images[0]} alt="" width={80} className="w-full h-full" />}
+          {(() => {
+            const imgSrc = b.property?.images?.[0] || b.message?.match(/\[INQUIRY_IMAGE:([^\]]+)\]/)?.[1];
+            return imgSrc ? <OptimizedImage src={imgSrc} alt="" width={80} className="w-full h-full" /> : null;
+          })()}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-bold line-clamp-1 leading-tight" style={{ color: "#0f172a" }}>{b.property?.title || b.property?.name || "—"}</p>

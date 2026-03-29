@@ -169,6 +169,10 @@ function makeRoomDraft(): RoomDraft {
 export default function PostPage() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
+  // Admin can post on behalf of another user via ?for_user=<id>
+  const forUserId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("for_user") : null;
+  const isAdminProxy = !!forUserId && profile?.role === "admin";
+  const effectiveUserId = isAdminProxy ? forUserId : (user?.id ?? null);
 
   const [stepIndex, setStepIndex] = useState(0);
   const [kind, setKind] = useState<ListingKind>(null);
@@ -243,6 +247,8 @@ export default function PostPage() {
   // Check listing count and agent status
   useEffect(() => {
     if (!user) return;
+    // Admins posting on behalf of users skip the free limit gate
+    if (isAdminProxy) { setListingCountLoaded(true); setIsActiveAgent(true); return; }
     async function checkListings() {
       const [{ count: homeCount }, { count: hostelCount }] = await Promise.all([
         supabase.from("homes").select("id", { count: "exact", head: true }).eq("owner_id", user!.id),
@@ -257,7 +263,7 @@ export default function PostPage() {
       setListingCountLoaded(true);
     }
     checkListings();
-  }, [user]);
+  }, [user, isAdminProxy]);
 
   // Pre-fill phone from profile
   useEffect(() => {
@@ -488,7 +494,7 @@ export default function PostPage() {
           images: imageUrls,
           amenities: homeInfo.amenities,
           owner_phone: homeInfo.ownerPhone || profile?.phone || null,
-          owner_id: user.id,
+          owner_id: effectiveUserId ?? user.id,
           lat: parseFloat(homeInfo.lat) || 0,
           lng: parseFloat(homeInfo.lng) || 0,
           condition: homeInfo.condition,
@@ -547,7 +553,7 @@ export default function PostPage() {
               : `GH₵${minPrice.toLocaleString()} – GH₵${maxPrice.toLocaleString()}/yr`,
           amenities: Array.from(new Set(hostelInfo.rooms.flatMap((r) => r.amenities))),
           manager_phone: hostelInfo.managerPhone || profile?.phone || null,
-          manager_id: user.id,
+          manager_id: effectiveUserId ?? user.id,
           lat: parseFloat(hostelInfo.lat) || 0,
           lng: parseFloat(hostelInfo.lng) || 0,
           video_url: videoUrl,
