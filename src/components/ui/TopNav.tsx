@@ -209,35 +209,6 @@ export default function TopNav() {
             </div>
           </div>
 
-          {/* ── Tab strip (visible always below the main bar) ── */}
-          <div
-            className="hidden lg:flex items-center gap-0 -mx-1 overflow-x-auto hide-scrollbar"
-            style={{ borderTop: "0.5px solid var(--uber-border)" }}
-          >
-            {[
-              { href: "/homes",   label: "🏠 Homes" },
-              { href: "/hostels", label: "🏢 Hostels" },
-              { href: "/post",    label: "✚ List Property" },
-              { href: "/chat",    label: "💬 Messages" },
-              { href: "/saved",   label: "♡ Saved" },
-              ...(isAdmin ? [{ href: "/admin", label: "⚙ Admin" }] : []),
-            ].map(({ href, label }) => {
-              const active = pathname.startsWith(href);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className="px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap transition-all shrink-0"
-                  style={{
-                    color: active ? "var(--uber-green)" : "var(--uber-muted)",
-                    borderBottom: active ? "2px solid var(--uber-green)" : "2px solid transparent",
-                  }}
-                >
-                  {label}
-                </Link>
-              );
-            })}
-          </div>
         </div>
 
         {/* ── Mobile dropdown menu ── */}
