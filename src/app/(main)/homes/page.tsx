@@ -307,7 +307,7 @@ function FilterSidebar({
 /* ─── Skeleton ───────────────────────────────────────────────────────────────── */
 function ListSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i} className="rounded-2xl overflow-hidden flex animate-pulse"
           style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", minHeight: "160px" }}>
@@ -739,7 +739,7 @@ export default function HomesPage() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {filteredHomes.map((property) => (
                   <HomeListCard key={property.id} property={property} />
                 ))}

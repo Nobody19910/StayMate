@@ -199,7 +199,7 @@ function FilterSidebar({ radius, setRadius, filters, setFilters, onOpenModal }: 
 /* ─── Skeleton ───────────────────────────────────────────────────────────── */
 function ListSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="rounded-2xl overflow-hidden flex animate-pulse"
           style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", minHeight: "160px" }}>
@@ -560,7 +560,7 @@ export default function HostelsPage() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {filteredHostels.map((hostel) => (
                   <HostelListCard key={hostel.id} hostel={hostel} />
                 ))}
