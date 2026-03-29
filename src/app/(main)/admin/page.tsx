@@ -67,10 +67,12 @@ export default function AdminDashboardPage() {
       const allHostels = hostelsRes.data || [];
 
       // Manually join profiles + property to bookings
+      // property_ref is the actual text ID (homes.id / hostels.id); property_id is a UUID placeholder
       const mappedBookings = (bookingsRes.data || []).map((b) => {
+        const ref = b.property_ref || b.property_id;
         const property = b.property_type === "home"
-          ? allHomes.find((h: any) => h.id === b.property_id)
-          : allHostels.find((h: any) => h.id === b.property_id);
+          ? allHomes.find((h: any) => h.id === ref || String(h.id) === String(ref))
+          : allHostels.find((h: any) => h.id === ref || String(h.id) === String(ref));
         return {
           ...b,
           user: allProfiles.find(p => p.id === b.user_id) || null,
@@ -1202,7 +1204,7 @@ function BookingKanbanCard({
     >
       {/* Top: image + info — click opens property detail */}
       <Link
-        href={b.property_type === "home" ? `/homes/${b.property_id}` : `/hostels/${b.property_id}`}
+        href={b.property_type === "home" ? `/homes/${b.property_ref || b.property?.id}` : `/hostels/${b.property_ref || b.property?.id}`}
         target="_blank"
         className="flex items-start gap-2.5 p-3 pb-2 hover:bg-slate-50 transition-colors"
         style={{ display: "flex" }}

@@ -95,6 +95,10 @@ export default function HomeDetailPage({ params }: Props) {
     const { error: bErr } = await supabase.from("bookings").insert({
       user_id: user.id, property_type: "home",
       property_id: "00000000-0000-0000-0000-000000000001",
+      property_ref: property.id,
+      owner_id: property.owner_id ?? null,
+      seeker_name: (user as any).user_metadata?.full_name ?? user.email ?? "",
+      seeker_email: user.email ?? "",
       status: "pending",
       viewing_date: viewingDate ? new Date(viewingDate).toISOString() : null,
       message: messageContent,

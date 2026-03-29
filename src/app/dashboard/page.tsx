@@ -56,12 +56,15 @@ export default function OwnerDashboardPage() {
         ...(hostels || []).map((h: any) => ({ ...h, _type: "hostel" })),
       ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-      const enriched = (bkgs || []).map((b: any) => ({
-        ...b,
-        property: b.property_type === "home"
-          ? combined.find((p) => p.id === b.property_id && p._type === "home")
-          : combined.find((p) => p.id === b.property_id && p._type === "hostel"),
-      }));
+      const enriched = (bkgs || []).map((b: any) => {
+        const ref = b.property_ref || b.property_id;
+        return {
+          ...b,
+          property: b.property_type === "home"
+            ? combined.find((p) => p._type === "home" && (p.id === ref || String(p.id) === String(ref)))
+            : combined.find((p) => p._type === "hostel" && (p.id === ref || String(p.id) === String(ref))),
+        };
+      });
 
       setProperties(combined);
       setBookings(enriched);
@@ -289,7 +292,7 @@ function OwnerKanbanCard({ booking: b, accentColor, onAccept, onReject, onDelete
 }) {
   return (
     <div className="rounded-xl overflow-hidden" style={{ background: "#fff", border: "1px solid #e9edf2", borderLeft: `3px solid ${accentColor}`, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-      <Link href={b.property_type === "home" ? `/homes/${b.property_id}` : `/hostels/${b.property_id}`} target="_blank"
+      <Link href={b.property_type === "home" ? `/homes/${b.property_ref || b.property?.id}` : `/hostels/${b.property_ref || b.property?.id}`} target="_blank"
         className="flex items-start gap-2 p-3 pb-2 hover:bg-slate-50 transition-colors" style={{ display: "flex" }}
         onClick={(e) => e.stopPropagation()}>
         <div className="w-12 h-9 rounded-lg overflow-hidden shrink-0" style={{ background: "#e9edf2" }}>

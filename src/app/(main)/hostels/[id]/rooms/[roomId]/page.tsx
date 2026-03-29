@@ -87,6 +87,10 @@ export default function RoomDetailPage({ params }: Props) {
     const { error: bErr } = await supabase.from("bookings").insert({
       user_id: user.id, property_type: "hostel",
       property_id: "00000000-0000-0000-0000-000000000002",
+      property_ref: hostel.id,
+      owner_id: (hostel as any).manager_id ?? null,
+      seeker_name: (user as any).user_metadata?.full_name ?? user.email ?? "",
+      seeker_email: user.email ?? "",
       status: "pending",
       viewing_date: viewingDate ? new Date(viewingDate).toISOString() : null,
       message: messageContent,
