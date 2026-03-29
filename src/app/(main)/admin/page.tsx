@@ -180,23 +180,23 @@ export default function AdminDashboardPage() {
   const adminInitials = (profile?.full_name || "SA").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#f2f4f7" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--uber-surface)" }}>
 
       {/* ── Top Header Bar ── */}
-      <header className="shrink-0 flex items-center justify-between px-6" style={{ background: "#1a1a2e", height: 56, position: "sticky", top: 0, zIndex: 100 }}>
+      <header className="shrink-0 flex items-center justify-between px-6" style={{ background: "var(--uber-btn-bg)", height: 56, position: "sticky", top: 0, zIndex: 100 }}>
         <div className="flex items-center gap-3">
-          <span className="text-white font-bold text-xl" style={{ fontFamily: "Georgia, serif", letterSpacing: "-0.5px" }}>StayMate</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#003580", color: "#7eb8f5" }}>Super Admin</span>
+          <span className="font-extrabold text-xl font-serif" style={{ color: "var(--uber-btn-text)", letterSpacing: "-0.5px" }}>StayMate</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "var(--uber-green)", color: "#fff" }}>Super Admin</span>
         </div>
         <div className="flex items-center gap-3">
           <Link
             href="/post"
-            className="hidden md:flex items-center gap-1.5 text-white text-sm font-bold px-4 py-1.5 rounded transition-opacity hover:opacity-90"
-            style={{ background: "#38a169" }}
+            className="hidden md:flex items-center gap-1.5 text-sm font-bold px-4 py-1.5 rounded transition-opacity hover:opacity-90"
+            style={{ background: "var(--uber-green)", color: "#fff" }}
           >
             <span className="text-base leading-none">+</span> Upload Listing
           </Link>
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-extrabold shrink-0" style={{ background: "#003580" }}>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0" style={{ background: "var(--uber-green)", color: "#fff" }}>
             {adminInitials}
           </div>
         </div>
@@ -204,10 +204,10 @@ export default function AdminDashboardPage() {
 
       <div className="flex flex-1 min-h-0">
 
-        {/* ── Left Sidebar ── */}
-        <aside className="hidden md:flex flex-col shrink-0 bg-white border-r" style={{ width: 224, borderColor: "#e8eaf0", position: "sticky", top: 56, height: "calc(100vh - 56px)", overflowY: "auto" }}>
+        {/* ── Left Sidebar (desktop) ── */}
+        <aside className="hidden md:flex flex-col shrink-0" style={{ width: 224, background: "var(--uber-white)", borderRight: "0.5px solid var(--uber-border)", position: "sticky", top: 56, height: "calc(100vh - 56px)", overflowY: "auto" }}>
           <div className="px-4 pt-5 pb-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#6b7280" }}>Navigation</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--uber-muted)" }}>Navigation</p>
           </div>
           <nav className="flex flex-col px-2 gap-0.5 flex-1">
             <TabButton active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon={<IconChart />} label="Dashboard" />
@@ -218,40 +218,49 @@ export default function AdminDashboardPage() {
             <TabButton active={tab === "featured"} onClick={() => setTab("featured")} icon={<IconStar />} label="Featured" count={homes.filter(h => h.is_sponsored).length + hostels.filter(h => h.is_sponsored).length} />
             <TabButton active={tab === "leads"} onClick={() => setTab("leads")} icon={<IconTarget />} label="Seeker Leads" count={leads.filter(l => l.status === "pending").length} />
           </nav>
-          <div className="mt-auto px-4 py-4 border-t" style={{ borderColor: "#e8eaf0" }}>
-            <p className="text-[10px] font-semibold" style={{ color: "#9ca3af" }}>StayMate Platform</p>
+          <div className="mt-auto px-4 py-4" style={{ borderTop: "0.5px solid var(--uber-border)" }}>
+            <p className="text-[10px] font-semibold" style={{ color: "var(--uber-muted)" }}>StayMate Platform</p>
           </div>
         </aside>
 
-        {/* ── Mobile Top Nav ── */}
-        <div className="md:hidden flex gap-1 px-3 py-2 bg-white border-b overflow-x-auto HideScrollbar w-full" style={{ borderColor: "#e8eaf0", position: "sticky", top: 56, zIndex: 90 }}>
-          <TabButton active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon={<IconChart />} label="Dashboard" />
-          <TabButton active={tab === "properties"} onClick={() => setTab("properties")} icon={<IconBuilding />} label="Properties" count={liveHomes.length + liveHostels.length} />
-          <TabButton active={tab === "agents"} onClick={() => { setTab("agents"); setSelectedAgentId(null); }} icon={<IconTie />} label="Agents" count={activeAgents} />
-          <TabButton active={tab === "queue"} onClick={() => setTab("queue")} icon="⏳" label="Queue" count={pendingHomes.length + pendingHostels.length} />
-          <TabButton active={false} onClick={() => {}} icon={<IconIdCard />} label="KYC" disabled />
-          <TabButton active={tab === "featured"} onClick={() => setTab("featured")} icon={<IconStar />} label="Featured" count={homes.filter(h => h.is_sponsored).length + hostels.filter(h => h.is_sponsored).length} />
-          <TabButton active={tab === "leads"} onClick={() => setTab("leads")} icon={<IconTarget />} label="Leads" count={leads.filter(l => l.status === "pending").length} />
-        </div>
+        {/* ── Bottom Nav (mobile) ── */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex overflow-x-auto HideScrollbar" style={{ background: "var(--uber-white)", borderTop: "0.5px solid var(--uber-border)" }}>
+          {[
+            { t: "dashboard", icon: <IconChart />, label: "Home" },
+            { t: "properties", icon: <IconBuilding />, label: "Live", count: liveHomes.length + liveHostels.length },
+            { t: "agents", icon: <IconTie />, label: "Agents", count: activeAgents },
+            { t: "queue", icon: "⏳", label: "Queue", count: pendingHomes.length + pendingHostels.length },
+            { t: "featured", icon: <IconStar />, label: "Featured" },
+            { t: "leads", icon: <IconTarget />, label: "Leads", count: leads.filter((l: any) => l.status === "pending").length },
+          ].map(({ t, icon, label, count }) => (
+            <button key={t} onClick={() => { setTab(t as typeof tab); if (t === "agents") setSelectedAgentId(null); }}
+              className="flex flex-col items-center gap-0.5 px-4 py-2.5 shrink-0 text-[10px] font-bold transition-colors"
+              style={{ color: tab === t ? "var(--uber-green)" : "var(--uber-muted)", minWidth: 56 }}>
+              <span className="text-lg leading-none relative">
+                {icon}
+                {count !== undefined && count > 0 && (
+                  <span className="absolute -top-1 -right-2 w-4 h-4 rounded-full text-[8px] font-extrabold flex items-center justify-center" style={{ background: "var(--uber-green)", color: "#fff" }}>{count}</span>
+                )}
+              </span>
+              {label}
+            </button>
+          ))}
+        </nav>
 
         {/* ── Main Content ── */}
-        <main className="flex-1 overflow-y-auto" style={{ background: "#f2f4f7" }}>
-          <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 space-y-5 pb-20 md:pb-8">
+        <main className="flex-1 overflow-y-auto" style={{ background: "var(--uber-surface)" }}>
+          <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 space-y-5 pb-24 md:pb-8">
 
             {/* Needs Attention Banner */}
             {attentionCount > 0 && (
-              <div className="flex items-center justify-between px-4 py-3 rounded-lg border-l-4" style={{ background: "#fffbeb", borderLeftColor: "#d69e2e", border: "1px solid #f6e05e", borderLeftWidth: 4 }}>
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: "#fffbeb", border: "0.5px solid #f6e05e", borderLeft: "4px solid #d69e2e" }}>
                 <div className="flex items-center gap-2">
                   <IconWarning />
                   <span className="text-sm font-semibold" style={{ color: "#92400e" }}>
                     {attentionCount} item{attentionCount !== 1 ? "s" : ""} need{attentionCount === 1 ? "s" : ""} your attention
                   </span>
                 </div>
-                <button
-                  onClick={() => setTab("queue")}
-                  className="text-sm font-bold underline underline-offset-2 transition-opacity hover:opacity-70"
-                  style={{ color: "#d69e2e" }}
-                >
+                <button onClick={() => setTab("queue")} className="text-sm font-bold underline underline-offset-2" style={{ color: "#d69e2e" }}>
                   Review Queue →
                 </button>
               </div>
@@ -269,91 +278,53 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Recent Inquiries Panel */}
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ border: "1px solid #e8eaf0" }}>
-                  <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "#e8eaf0" }}>
-                    <h3 className="font-bold text-sm" style={{ color: "#1a1a2e" }}>Recent Inquiries</h3>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "#eef2ff", color: "#003580" }}>{bookings.length} total</span>
+                <div className="rounded-xl overflow-hidden" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", boxShadow: "0 2px 16px rgba(0,0,0,0.05)" }}>
+                  <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: "0.5px solid var(--uber-border)" }}>
+                    <h3 className="font-bold text-sm" style={{ color: "var(--uber-text)" }}>Recent Inquiries</h3>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--uber-surface)", color: "var(--uber-muted)" }}>{bookings.length} total</span>
                   </div>
-                  <div className="divide-y" style={{ borderColor: "#f3f4f6" }}>
+                  <div className="overflow-y-auto" style={{ maxHeight: 380 }}>
                     {bookings.length === 0 ? (
-                      <p className="text-sm text-center py-10" style={{ color: "#9ca3af" }}>No inquiries received yet.</p>
+                      <p className="text-sm text-center py-10" style={{ color: "var(--uber-muted)" }}>No inquiries received yet.</p>
                     ) : (
                       bookings.map((b) => (
-                        <div key={b.id} className="flex flex-col md:flex-row md:items-start justify-between px-5 py-4 gap-4 hover:bg-gray-50 transition-colors">
-                          {b.property?.images?.[0] && (
-                            <div className="w-full md:w-20 h-16 md:h-16 rounded-lg overflow-hidden shrink-0 bg-gray-200">
-                              <OptimizedImage src={b.property.images[0]} alt="" width={200} className="w-full h-full" />
-                            </div>
-                          )}
-                          <div className="min-w-0 pr-4 flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${b.property_type === 'home' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>
-                                {b.property_type}
-                              </span>
-                              <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${b.status === 'accepted' ? 'bg-green-50 text-green-700' : b.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700'}`}>
-                                {b.status}
-                              </span>
-                            </div>
-                            <p className="text-xs mb-1" style={{ color: "#6b7280" }}>
-                              <span className="font-semibold" style={{ color: "#1a1a2e" }}>{b.user?.full_name || 'Unknown User'}</span>
-                              {b.user?.phone && ` • ${b.user.phone}`}
-                              {b.user?.email && ` • ${b.user.email}`}
-                            </p>
-                            {b.message && (() => {
-                              const imgMatch = b.message.match(/^\[INQUIRY_IMAGE:(.*?)\]\n/);
-                              const inquiryImg = imgMatch?.[1] || null;
-                              const displayMsg = inquiryImg ? b.message.replace(/^\[INQUIRY_IMAGE:.*?\]\n/, "") : b.message;
-                              return (
-                                <div className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: "#e8eaf0" }}>
-                                  {inquiryImg && (
-                                    <OptimizedImage src={inquiryImg} alt="Property" width={400} className="w-full h-24" />
-                                  )}
-                                  <div className="px-3 py-2 text-xs whitespace-pre-wrap" style={{ color: "#4b5563" }}>
-                                    &ldquo;{displayMsg}&rdquo;
-                                  </div>
-                                </div>
-                              );
-                            })()}
+                        <div key={b.id} className="flex items-center gap-3 px-5 py-3 hover:bg-opacity-50 transition-colors" style={{ borderBottom: "0.5px solid var(--uber-border)" }}>
+                          {/* Property thumb */}
+                          <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0" style={{ background: "var(--uber-surface2)" }}>
+                            {b.property?.images?.[0] && <OptimizedImage src={b.property.images[0]} alt="" width={100} className="w-full h-full" />}
                           </div>
-                          <div className="shrink-0 text-right">
-                            <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: "#9ca3af" }}>Pref. Date</p>
-                            <p className="text-sm font-bold" style={{ color: "#1a1a2e" }}>
-                              {b.viewing_date ? new Date(b.viewing_date).toLocaleDateString() : "Anytime"}
-                            </p>
-                            <div className="mt-3 flex flex-col md:flex-row gap-1.5 justify-end">
-                              {b.user?.phone && (
-                                <a href={`tel:${b.user.phone}`} className="inline-flex items-center justify-center gap-1 text-xs font-semibold px-3 py-1.5 rounded border transition-colors hover:bg-gray-50" style={{ color: "#4b5563", borderColor: "#d1d5db" }}>
-                                  <IconPhone /> Call
-                                </a>
-                              )}
-                              <Link href={`/chat?seeker_id=${b.user_id}`} className="inline-flex items-center justify-center gap-1 text-xs font-semibold px-3 py-1.5 rounded border transition-colors" style={{ color: "#38a169", borderColor: "#bbf7d0", background: "#f0fdf4" }}>
-                                <IconChat /> Chat
-                              </Link>
-                              {b.property?.lat && b.property?.lng && (
-                                <a
-                                  href={`https://maps.google.com/?q=${b.property.lat},${b.property.lng}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center justify-center gap-1 text-xs font-semibold px-3 py-1.5 rounded border transition-colors"
-                                  style={{ color: "#0071c2", borderColor: "#bfdbfe", background: "#eff6ff" }}
-                                >
-                                  <IconPin /> Map
-                                </a>
-                              )}
-                              {b.status === "pending" && (
-                                <>
-                                  <button onClick={() => resolveBooking(b.id, "accepted")} className="inline-flex items-center justify-center text-xs font-bold px-3 py-1.5 rounded border transition-colors" style={{ color: "#38a169", borderColor: "#bbf7d0", background: "#f0fdf4" }}>
-                                    <IconCheck /> Accept
-                                  </button>
-                                  <button onClick={() => resolveBooking(b.id, "rejected")} className="inline-flex items-center justify-center text-xs font-bold px-3 py-1.5 rounded border transition-colors" style={{ color: "#d69e2e", borderColor: "#fde68a", background: "#fffbeb" }}>
-                                    <IconClose /> Reject
-                                  </button>
-                                </>
-                              )}
-                              <button onClick={() => deleteBooking(b.id)} className="inline-flex items-center justify-center text-xs font-bold px-3 py-1.5 rounded border transition-colors" style={{ color: "#e53e3e", borderColor: "#fecaca", background: "#fff5f5" }}>
-                                Delete
-                              </button>
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                              <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background: b.property_type === 'home' ? "rgba(6,193,103,0.1)" : "rgba(59,130,246,0.1)", color: b.property_type === 'home' ? "var(--uber-green)" : "#3b82f6" }}>{b.property_type}</span>
+                              <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background: b.status === 'accepted' ? "rgba(6,193,103,0.1)" : b.status === 'rejected' ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)", color: b.status === 'accepted' ? "var(--uber-green)" : b.status === 'rejected' ? "#ef4444" : "#f59e0b" }}>{b.status}</span>
                             </div>
+                            <p className="text-xs font-semibold truncate" style={{ color: "var(--uber-text)" }}>{b.user?.full_name || "Unknown"}</p>
+                            <p className="text-[11px] truncate" style={{ color: "var(--uber-muted)" }}>{b.property?.title || b.property_type}</p>
+                          </div>
+                          {/* Date */}
+                          <div className="shrink-0 text-right hidden sm:block">
+                            <p className="text-[10px]" style={{ color: "var(--uber-muted)" }}>{b.viewing_date ? new Date(b.viewing_date).toLocaleDateString() : "Anytime"}</p>
+                          </div>
+                          {/* Actions */}
+                          <div className="shrink-0 flex items-center gap-1">
+                            {b.user?.phone && (
+                              <a href={`tel:${b.user.phone}`} className="inline-flex items-center gap-0.5 text-[11px] font-semibold px-2 py-1 rounded" style={{ color: "var(--uber-muted)", background: "var(--uber-surface)" }}>
+                                <IconPhone />
+                              </a>
+                            )}
+                            <Link href={`/chat?seeker_id=${b.user_id}`} className="inline-flex items-center gap-0.5 text-[11px] font-semibold px-2 py-1 rounded" style={{ color: "var(--uber-green)", background: "rgba(6,193,103,0.08)" }}>
+                              <IconChat />
+                            </Link>
+                            {b.status === "pending" && (
+                              <>
+                                <button onClick={() => resolveBooking(b.id, "accepted")} className="text-[11px] font-bold px-2.5 py-1 rounded" style={{ background: "var(--uber-green)", color: "#fff" }}>✓</button>
+                                <button onClick={() => resolveBooking(b.id, "rejected")} className="text-[11px] font-bold px-2.5 py-1 rounded" style={{ background: "var(--uber-surface2)", color: "var(--uber-muted)" }}>✕</button>
+                              </>
+                            )}
+                            <button onClick={() => deleteBooking(b.id)} className="text-[11px] font-bold px-2 py-1 rounded" style={{ color: "#ef4444", background: "rgba(239,68,68,0.06)" }}>
+                              <IconTrash />
+                            </button>
                           </div>
                         </div>
                       ))
