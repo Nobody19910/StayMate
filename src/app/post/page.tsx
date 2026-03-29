@@ -107,6 +107,16 @@ interface HomeInfo {
   serviceCharge: string;
   isNegotiable: boolean;
   landSize: string;
+  // Property rules
+  moveIn: string;
+  petsAllowed: "yes" | "no" | "ask";
+  smokingAllowed: "yes" | "no";
+  sublettingAllowed: "yes" | "no";
+  // Nearby
+  nearbyShops: string;
+  nearbyRestaurants: string;
+  nearbyTransport: string;
+  nearbyHospital: string;
 }
 
 interface RoomDraft {
@@ -135,7 +145,7 @@ interface HostelInfo {
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
-const HOME_STEPS = ["Category", "Property Type", "Name", "Description", "Location", "Bedrooms & Bathrooms", "Property Details", "Price", "Contact", "Facilities", "Photos", "Review"] as const;
+const HOME_STEPS = ["Category", "Property Type", "Name", "Description", "Location", "Bedrooms & Bathrooms", "Property Details", "Price", "Contact", "Facilities", "Rules & Nearby", "Photos", "Review"] as const;
 const HOSTEL_STEPS = ["Category", "Name", "Description", "Location", "Rooms", "Photos", "Review"] as const;
 
 type HomeStep = typeof HOME_STEPS[number];
@@ -184,6 +194,14 @@ export default function PostPage() {
     serviceCharge: "",
     isNegotiable: false,
     landSize: "",
+    moveIn: "Flexible — by arrangement",
+    petsAllowed: "ask",
+    smokingAllowed: "no",
+    sublettingAllowed: "no",
+    nearbyShops: "",
+    nearbyRestaurants: "",
+    nearbyTransport: "",
+    nearbyHospital: "",
   });
 
   const [hostelInfo, setHostelInfo] = useState<HostelInfo>({
@@ -479,6 +497,18 @@ export default function PostPage() {
           is_negotiable: homeInfo.isNegotiable,
           land_size: homeInfo.propertyType === "house" ? (parseFloat(homeInfo.landSize) || null) : null,
           video_url: videoUrl,
+          rules: {
+            move_in: homeInfo.moveIn,
+            pets: homeInfo.petsAllowed,
+            smoking: homeInfo.smokingAllowed,
+            subletting: homeInfo.sublettingAllowed,
+          },
+          nearby: {
+            shops: homeInfo.nearbyShops,
+            restaurants: homeInfo.nearbyRestaurants,
+            transport: homeInfo.nearbyTransport,
+            hospital: homeInfo.nearbyHospital,
+          },
           status: profile?.role === "admin" ? "approved" : "pending_admin",
         });
         if (error) throw error;
@@ -673,6 +703,11 @@ export default function PostPage() {
       "Fiber Wi-Fi, Generator and Security are top 3 most-searched amenities in Ghana.",
       "Only select what is actually available — accuracy builds trust.",
     ],
+    "Rules & Nearby": [
+      "Properties with clear rules get fewer disputes and better reviews.",
+      "Nearby landmarks help seekers understand the location before visiting.",
+      "Leave nearby fields blank if you're unsure — they are optional.",
+    ],
     "Rooms": [
       "Add each distinct room type you offer (e.g. Single, Double, En-suite).",
       "Prices are yearly since most students book per academic year.",
@@ -705,6 +740,7 @@ export default function PostPage() {
     "Contact": "How should seekers reach you?",
     "Pricing": "Pricing & contact details",
     "Facilities": "What facilities are available?",
+    "Rules & Nearby": "Property rules & neighbourhood",
     "Rooms": "Add your room types",
     "Photos": "Show it off with great photos",
     "Review": "Review & publish",
@@ -724,6 +760,7 @@ export default function PostPage() {
     "Contact": "Your number is only shared after an inquiry is accepted.",
     "Pricing": "Set your asking price and preferred contact details.",
     "Facilities": "Select all the facilities and amenities your property offers.",
+    "Rules & Nearby": "Set house rules and list what's close by — helps seekers decide faster.",
     "Rooms": "Add each type of room available in your hostel.",
     "Photos": "High-quality photos significantly increase inquiries.",
     "Review": "Check everything looks correct before submitting for review.",
@@ -1456,6 +1493,103 @@ export default function PostPage() {
                       <p className="text-xs text-amber-700 font-medium">Fill in name and price for all rooms to continue</p>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* ── Rules & Nearby ── */}
+              {currentStep === "Rules & Nearby" && kind === "home" && (
+                <div className="space-y-6">
+                  {/* Property Rules */}
+                  <div>
+                    <p className="text-sm font-bold mb-3" style={{ color: "var(--uber-text)" }}>Property rules</p>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>Move-in arrangement</label>
+                        <input
+                          type="text"
+                          value={homeInfo.moveIn}
+                          onChange={(e) => setHomeInfo((s) => ({ ...s, moveIn: e.target.value }))}
+                          placeholder="e.g. Flexible — by arrangement"
+                          className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none"
+                          style={{ border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-text)" }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold mb-2" style={{ color: "var(--uber-text)" }}>Pets allowed?</label>
+                        <div className="flex gap-2">
+                          {([["yes", "Yes"], ["no", "No"], ["ask", "Ask owner"]] as const).map(([v, l]) => (
+                            <button key={v} type="button"
+                              onClick={() => setHomeInfo((s) => ({ ...s, petsAllowed: v }))}
+                              className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                              style={homeInfo.petsAllowed === v
+                                ? { background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }
+                                : { background: "var(--uber-surface)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}>
+                              {l}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold mb-2" style={{ color: "var(--uber-text)" }}>Smoking indoors?</label>
+                        <div className="flex gap-2">
+                          {([["yes", "Permitted"], ["no", "Not permitted"]] as const).map(([v, l]) => (
+                            <button key={v} type="button"
+                              onClick={() => setHomeInfo((s) => ({ ...s, smokingAllowed: v }))}
+                              className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                              style={homeInfo.smokingAllowed === v
+                                ? { background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }
+                                : { background: "var(--uber-surface)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}>
+                              {l}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold mb-2" style={{ color: "var(--uber-text)" }}>Subletting permitted?</label>
+                        <div className="flex gap-2">
+                          {([["yes", "Permitted"], ["no", "Not permitted"]] as const).map(([v, l]) => (
+                            <button key={v} type="button"
+                              onClick={() => setHomeInfo((s) => ({ ...s, sublettingAllowed: v }))}
+                              className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                              style={homeInfo.sublettingAllowed === v
+                                ? { background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }
+                                : { background: "var(--uber-surface)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}>
+                              {l}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* What's Nearby */}
+                  <div>
+                    <p className="text-sm font-bold mb-1" style={{ color: "var(--uber-text)" }}>What&apos;s nearby</p>
+                    <p className="text-xs mb-3" style={{ color: "var(--uber-muted)" }}>Leave blank if you&apos;re not sure — these are optional.</p>
+                    <div className="space-y-3">
+                      {([
+                        ["nearbyShops",       "🏪", "Shops & Supermarkets", "e.g. Accra Mall, within 5 mins walk"],
+                        ["nearbyRestaurants", "🍽️", "Restaurants & Eateries", "e.g. Within 1 km"],
+                        ["nearbyTransport",   "🚌", "Public Transport",       "e.g. Trotro stop 2 mins away"],
+                        ["nearbyHospital",    "🏥", "Hospital / Clinic",      "e.g. Korle Bu Teaching Hospital, 10 mins"],
+                      ] as [keyof HomeInfo, string, string, string][]).map(([field, icon, label, ph]) => (
+                        <div key={field} className="flex items-center gap-3">
+                          <span className="text-lg shrink-0">{icon}</span>
+                          <div className="flex-1">
+                            <label className="block text-[11px] font-semibold mb-1" style={{ color: "var(--uber-muted)" }}>{label}</label>
+                            <input
+                              type="text"
+                              value={String(homeInfo[field] ?? "")}
+                              onChange={(e) => setHomeInfo((s) => ({ ...s, [field]: e.target.value }))}
+                              placeholder={ph}
+                              className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                              style={{ border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-text)" }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 

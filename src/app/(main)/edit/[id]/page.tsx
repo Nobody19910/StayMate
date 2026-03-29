@@ -100,6 +100,14 @@ export default function EditListingPage() {
   const [serviceCharge, setServiceCharge] = useState("");
   const [negotiable, setNegotiable] = useState(false);
   const [contactPhone, setContactPhone] = useState("");
+  const [moveIn, setMoveIn] = useState("Flexible — by arrangement");
+  const [petsAllowed, setPetsAllowed] = useState("ask");
+  const [smokingAllowed, setSmokingAllowed] = useState("no");
+  const [sublettingAllowed, setSublettingAllowed] = useState("no");
+  const [nearbyShops, setNearbyShops] = useState("");
+  const [nearbyRestaurants, setNearbyRestaurants] = useState("");
+  const [nearbyTransport, setNearbyTransport] = useState("");
+  const [nearbyHospital, setNearbyHospital] = useState("");
 
   // Hostel fields
   const [hostelName, setHostelName] = useState("");
@@ -130,6 +138,16 @@ export default function EditListingPage() {
           setNegotiable(!!data.is_negotiable);
           setContactPhone(data.owner_phone ?? "");
           setCity(data.city ?? "");
+          const r = data.rules ?? {};
+          setMoveIn(r.move_in || "Flexible — by arrangement");
+          setPetsAllowed(r.pets || "ask");
+          setSmokingAllowed(r.smoking || "no");
+          setSublettingAllowed(r.subletting || "no");
+          const nb = data.nearby ?? {};
+          setNearbyShops(nb.shops || "");
+          setNearbyRestaurants(nb.restaurants || "");
+          setNearbyTransport(nb.transport || "");
+          setNearbyHospital(nb.hospital || "");
         }
       } else {
         const { data } = await supabase.from("hostels").select("*").eq("id", id).single();
@@ -179,6 +197,8 @@ export default function EditListingPage() {
           service_charge: scNum,
           is_negotiable: negotiable,
           owner_phone: contactPhone || null,
+          rules: { move_in: moveIn, pets: petsAllowed, smoking: smokingAllowed, subletting: sublettingAllowed },
+          nearby: { shops: nearbyShops, restaurants: nearbyRestaurants, transport: nearbyTransport, hospital: nearbyHospital },
         }).eq("id", id);
 
         if (updateError) throw updateError;
@@ -408,6 +428,68 @@ export default function EditListingPage() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Rules & Nearby — homes only */}
+        {type === "home" && (
+          <>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--uber-muted)" }}>Property Rules</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>Move-in arrangement</label>
+                  <input type="text" value={moveIn} onChange={e => setMoveIn(e.target.value)} className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none" style={{ border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-text)" }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-2" style={{ color: "var(--uber-text)" }}>Pets allowed?</label>
+                  <div className="flex gap-2">
+                    {([["yes", "Yes"], ["no", "No"], ["ask", "Ask owner"]] as [string, string][]).map(([v, l]) => (
+                      <button key={v} type="button" onClick={() => setPetsAllowed(v)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                        style={petsAllowed === v ? { background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" } : { background: "var(--uber-surface)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}>{l}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-2" style={{ color: "var(--uber-text)" }}>Smoking indoors?</label>
+                  <div className="flex gap-2">
+                    {([["yes", "Permitted"], ["no", "Not permitted"]] as [string, string][]).map(([v, l]) => (
+                      <button key={v} type="button" onClick={() => setSmokingAllowed(v)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                        style={smokingAllowed === v ? { background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" } : { background: "var(--uber-surface)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}>{l}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-2" style={{ color: "var(--uber-text)" }}>Subletting permitted?</label>
+                  <div className="flex gap-2">
+                    {([["yes", "Permitted"], ["no", "Not permitted"]] as [string, string][]).map(([v, l]) => (
+                      <button key={v} type="button" onClick={() => setSublettingAllowed(v)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                        style={sublettingAllowed === v ? { background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" } : { background: "var(--uber-surface)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}>{l}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--uber-muted)" }}>What&apos;s Nearby <span className="normal-case font-normal">(optional)</span></p>
+              <div className="space-y-3">
+                {([
+                  ["🏪", "Shops & Supermarkets", nearbyShops, setNearbyShops, "e.g. Accra Mall, 5 mins walk"],
+                  ["🍽️", "Restaurants & Eateries", nearbyRestaurants, setNearbyRestaurants, "e.g. Within 1 km"],
+                  ["🚌", "Public Transport", nearbyTransport, setNearbyTransport, "e.g. Trotro stop 2 mins away"],
+                  ["🏥", "Hospital / Clinic", nearbyHospital, setNearbyHospital, "e.g. Korle Bu Teaching Hospital, 10 mins"],
+                ] as [string, string, string, (v: string) => void, string][]).map(([icon, label, val, setter, ph]) => (
+                  <div key={label} className="flex items-center gap-3">
+                    <span className="text-lg shrink-0">{icon}</span>
+                    <div className="flex-1">
+                      <label className="block text-[11px] font-semibold mb-1" style={{ color: "var(--uber-muted)" }}>{label}</label>
+                      <input type="text" value={val} onChange={e => setter(e.target.value)} placeholder={ph} className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                        style={{ border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-text)" }} />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </>

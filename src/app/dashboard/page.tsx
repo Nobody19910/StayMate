@@ -56,14 +56,27 @@ export default function OwnerDashboardPage() {
         ...(hostels || []).map((h: any) => ({ ...h, _type: "hostel" })),
       ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+      const titleFromMsg = (msg: string) => {
+        const m = msg?.match(/\[Inquiry for:\s*([^\]]+)\]/);
+        return m ? m[1].trim() : null;
+      };
       const enriched = (bkgs || []).map((b: any) => {
-        const ref = b.property_ref || b.property_id;
-        return {
-          ...b,
-          property: b.property_type === "home"
-            ? combined.find((p) => p._type === "home" && (p.id === ref || String(p.id) === String(ref)))
-            : combined.find((p) => p._type === "hostel" && (p.id === ref || String(p.id) === String(ref))),
-        };
+        let property = null;
+        if (b.property_ref) {
+          property = combined.find((p) =>
+            p.id === b.property_ref && p._type === (b.property_type === "home" ? "home" : "hostel")
+          );
+        }
+        if (!property) {
+          const title = titleFromMsg(b.message || "");
+          if (title) {
+            property = combined.find((p) =>
+              p._type === (b.property_type === "home" ? "home" : "hostel") &&
+              (p.title || p.name) && title.includes(p.title || p.name)
+            );
+          }
+        }
+        return { ...b, property };
       });
 
       setProperties(combined);

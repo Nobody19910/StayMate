@@ -67,12 +67,28 @@ export default function AdminDashboardPage() {
       const allHostels = hostelsRes.data || [];
 
       // Manually join profiles + property to bookings
-      // property_ref is the actual text ID (homes.id / hostels.id); property_id is a UUID placeholder
+      // property_ref is the actual text ID; older rows have placeholder UUID so we fall back to title match
+      const titleFromMsg = (msg: string) => {
+        const m = msg?.match(/\[Inquiry for:\s*([^\]]+)\]/);
+        return m ? m[1].trim() : null;
+      };
       const mappedBookings = (bookingsRes.data || []).map((b) => {
-        const ref = b.property_ref || b.property_id;
-        const property = b.property_type === "home"
-          ? allHomes.find((h: any) => h.id === ref || String(h.id) === String(ref))
-          : allHostels.find((h: any) => h.id === ref || String(h.id) === String(ref));
+        const ref = b.property_ref;
+        let property = null;
+        if (ref) {
+          property = b.property_type === "home"
+            ? allHomes.find((h: any) => h.id === ref)
+            : allHostels.find((h: any) => h.id === ref);
+        }
+        if (!property) {
+          // Fallback: match by title extracted from inquiry message
+          const title = titleFromMsg(b.message || "");
+          if (title) {
+            property = b.property_type === "home"
+              ? allHomes.find((h: any) => h.title && title.startsWith(h.title))
+              : allHostels.find((h: any) => h.name && title.includes(h.name));
+          }
+        }
         return {
           ...b,
           user: allProfiles.find(p => p.id === b.user_id) || null,

@@ -474,14 +474,18 @@ export default function HomeDetailPage({ params }: Props) {
             <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
               <h2 className="text-base font-bold mb-4" style={{ color: "var(--uber-text)" }}>Property rules</h2>
               <div className="space-y-3">
-                {[
-                  { icon: "🕐", label: "Move-in", value: "Flexible — by arrangement" },
-                  { icon: "📅", label: "Lease term", value: property.forSale ? "Freehold / outright purchase" : "Minimum 6 months" },
-                  { icon: "💰", label: "Negotiable", value: property.isNegotiable ? "Yes — price is negotiable" : "No — fixed price" },
-                  { icon: "🐾", label: "Pets", value: "Contact owner to confirm" },
-                  { icon: "🚬", label: "Smoking", value: "Not permitted indoors" },
-                  { icon: "👥", label: "Subletting", value: "Not permitted" },
-                ].map(({ icon, label, value }) => (
+                {(() => {
+                  const r = (property as any).rules ?? {};
+                  const petsMap: Record<string, string> = { yes: "Allowed", no: "Not allowed", ask: "Contact owner to confirm" };
+                  return [
+                    { icon: "🕐", label: "Move-in",    value: r.move_in || "Flexible — by arrangement" },
+                    { icon: "📅", label: "Lease term", value: property.forSale ? "Freehold / outright purchase" : "Minimum 6 months" },
+                    { icon: "💰", label: "Negotiable", value: property.isNegotiable ? "Yes — price is negotiable" : "No — fixed price" },
+                    { icon: "🐾", label: "Pets",        value: petsMap[r.pets] ?? "Contact owner to confirm" },
+                    { icon: "🚬", label: "Smoking",     value: r.smoking === "yes" ? "Permitted indoors" : "Not permitted indoors" },
+                    { icon: "👥", label: "Subletting",  value: r.subletting === "yes" ? "Permitted" : "Not permitted" },
+                  ];
+                })().map(({ icon, label, value }) => (
                   <div key={label} className="flex items-center justify-between py-2" style={{ borderBottom: "0.5px solid var(--uber-border)" }}>
                     <div className="flex items-center gap-2">
                       <span>{icon}</span>
@@ -494,27 +498,33 @@ export default function HomeDetailPage({ params }: Props) {
             </div>
 
             {/* What's nearby */}
-            <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
-              <h2 className="text-base font-bold mb-4" style={{ color: "var(--uber-text)" }}>What&apos;s nearby</h2>
-              <div className="space-y-3">
-                {[
-                  { icon: "🏪", label: "Shops & Supermarkets", dist: "Within walking distance" },
-                  { icon: "🍽️", label: "Restaurants & Eateries", dist: "Within 1 km" },
-                  { icon: "🚌", label: "Public Transport", dist: "Nearby bus stop / trotro" },
-                  { icon: "🏥", label: "Hospital / Clinic", dist: "Within the area" },
-                  { icon: "⛪", label: "Place of Worship", dist: "Within the area" },
-                ].map(({ icon, label, dist }) => (
-                  <div key={label} className="flex items-center gap-3">
-                    <span className="text-xl w-8 text-center">{icon}</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold" style={{ color: "var(--uber-text)" }}>{label}</p>
-                      <p className="text-xs" style={{ color: "var(--uber-muted)" }}>{dist} · {property.city}</p>
-                    </div>
-                    <svg className="w-4 h-4 shrink-0" style={{ color: "var(--uber-green)" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            {(() => {
+              const nb = (property as any).nearby ?? {};
+              const nearbyItems = [
+                { icon: "🏪", label: "Shops & Supermarkets", value: nb.shops },
+                { icon: "🍽️", label: "Restaurants & Eateries", value: nb.restaurants },
+                { icon: "🚌", label: "Public Transport",        value: nb.transport },
+                { icon: "🏥", label: "Hospital / Clinic",       value: nb.hospital },
+              ].filter((x) => x.value);
+              if (nearbyItems.length === 0) return null;
+              return (
+                <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
+                  <h2 className="text-base font-bold mb-4" style={{ color: "var(--uber-text)" }}>What&apos;s nearby</h2>
+                  <div className="space-y-3">
+                    {nearbyItems.map(({ icon, label, value }) => (
+                      <div key={label} className="flex items-center gap-3">
+                        <span className="text-xl w-8 text-center">{icon}</span>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold" style={{ color: "var(--uber-text)" }}>{label}</p>
+                          <p className="text-xs" style={{ color: "var(--uber-muted)" }}>{value}</p>
+                        </div>
+                        <svg className="w-4 h-4 shrink-0" style={{ color: "var(--uber-green)" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              );
+            })()}
 
             {/* Location */}
             <div className="rounded-2xl overflow-hidden" style={{ border: "0.5px solid var(--uber-border)" }}>
