@@ -14,6 +14,7 @@ import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import { preloadImages } from "@/lib/image-cache";
 import { cachedFetch, invalidateCache } from "@/lib/local-cache";
+import { AnimatedList } from "@/components/ui/AnimatedList";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -199,7 +200,7 @@ function FilterSidebar({ radius, setRadius, filters, setFilters, onOpenModal }: 
 /* ─── Skeleton ───────────────────────────────────────────────────────────── */
 function ListSkeleton() {
   return (
-    <div className="space-y-8 pt-1 pb-10">
+    <div className="space-y-10 pt-2 pb-10">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="rounded-2xl overflow-hidden flex flex-col sm:flex-row animate-pulse"
           style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
@@ -560,11 +561,11 @@ export default function HostelsPage() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-8 pt-1 pb-10">
+              <AnimatedList className="space-y-10 pt-2 pb-10">
                 {filteredHostels.map((hostel) => (
                   <HostelListCard key={hostel.id} hostel={hostel} />
                 ))}
-              </div>
+              </AnimatedList>
             )}
 
             <div ref={sentinelRef} />
