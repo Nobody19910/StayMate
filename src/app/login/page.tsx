@@ -33,14 +33,22 @@ export default function LoginPage() {
     const isNative = typeof (window as any).Capacitor !== "undefined" &&
       (window as any).Capacitor.isNativePlatform?.();
 
-    await supabase.auth.signInWithOAuth({
+    const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: isNative
           ? "com.staymate.app://auth/callback"
           : `${window.location.origin}/homes`,
+        skipBrowserRedirect: true,
       },
     });
+
+    if (oauthError || !data.url) {
+      setError(oauthError?.message || "OAuth failed");
+      return;
+    }
+
+    window.location.assign(data.url);
   }
 
   return (
@@ -103,8 +111,8 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="rounded-xl px-3 py-2" style={{ background: "rgba(239,68,68,0.08)", border: "0.5px solid rgba(239,68,68,0.2)" }}>
-              <p className="text-xs font-medium" style={{ color: "#EF4444" }}>{error}</p>
+            <div className="rounded-xl px-3 py-2" style={{ background: "var(--error-bg)", border: "0.5px solid var(--error-border)" }}>
+              <p className="text-xs font-medium" style={{ color: "var(--error-text)" }}>{error}</p>
             </div>
           )}
 

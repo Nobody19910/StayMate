@@ -1,0 +1,210 @@
+@import "tailwindcss";
+
+
+/* ── Uber Estate Design Tokens ─────────────────────────────────────────────── */
+:root {
+  --uber-black:   #000000;
+  --uber-white:   #FFFFFF;
+  --uber-green:   #06C167;
+  --uber-green-dark: #04945A;
+  --uber-surface: #F6F6F6;
+  --uber-surface2: #EEEEEE;
+  --uber-text:    #1A1A1A;
+  --uber-muted:   #6B6B6B;
+  --uber-border:  rgba(0, 0, 0, 0.09);
+  /* Keep gold for fee banners */
+  --gold:         #D4AF37;
+  --gold-light:   #f0d97a;
+  --background:   #F6F6F6;
+  --foreground:   #1A1A1A;
+  /* Button/badge tokens (same as text in light) */
+  --uber-btn-bg:  #1A1A1A;
+  --uber-btn-text: #FFFFFF;
+  --uber-card-bg: #FFFFFF;
+  /* Semantic status colors */
+  --uber-error:       #EF4444;
+  --uber-error-bg:    rgba(239, 68, 68, 0.08);
+  --uber-error-border: rgba(239, 68, 68, 0.20);
+  --uber-green-bg:    rgba(6, 193, 103, 0.08);
+  --gold-bg:          rgba(212, 175, 55, 0.08);
+  --gold-border:      rgba(212, 175, 55, 0.30);
+}
+
+/* Dark mode */
+html.dark {
+  --uber-black:   #FFFFFF;
+  --uber-white:   #1A1A1A;
+  --uber-surface: #111111;
+  --uber-surface2: #1E1E1E;
+  --uber-text:    #F0F0F0;
+  --uber-muted:   #8E8E8E;
+  --uber-border:  rgba(255, 255, 255, 0.10);
+  --background:   #111111;
+  --foreground:   #F0F0F0;
+  /* Dark mode specific: button/badge backgrounds stay dark */
+  --uber-btn-bg:  #F0F0F0;
+  --uber-btn-text: #111111;
+  --uber-card-bg: #1A1A1A;
+  /* Dark mode status colors — same hues, same translucency */
+  --uber-error-bg:    rgba(239, 68, 68, 0.12);
+  --uber-error-border: rgba(239, 68, 68, 0.25);
+  --uber-green-bg:    rgba(6, 193, 103, 0.10);
+  --gold-bg:          rgba(212, 175, 55, 0.10);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-uber-black: var(--uber-black);
+  --color-uber-white: var(--uber-white);
+  --color-uber-green: var(--uber-green);
+  --color-uber-surface: var(--uber-surface);
+  --font-sans: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-serif: var(--font-playfair), 'Playfair Display', Georgia, serif;
+  --font-mono: 'SF Mono', monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── 120Hz / ProMotion Scroll Optimizations ────────────────────────────────── */
+
+/* Hint the compositor to promote scrollable containers to their own layer */
+.scroll-container,
+[style*="overflow"] {
+  will-change: scroll-position;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* GPU-accelerate all transforms and opacity transitions */
+* {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Ensure animations use the highest available refresh rate */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+    interpolate-size: allow-keywords;
+  }
+}
+
+.font-serif { font-family: var(--font-serif); }
+
+/* Border utilities */
+.border-uber { border: 0.5px solid var(--uber-border); }
+
+/* Green accent */
+.text-green  { color: var(--uber-green); }
+.bg-green    { background: var(--uber-green); }
+
+/* Safe area padding */
+.safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Bottom nav total height = 4rem (h-16) + safe area inset */
+.bottom-nav-offset {
+  bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+.pb-nav {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 1024px) {
+  .bottom-nav-offset { bottom: 0; }
+  .pb-nav { padding-bottom: 0; }
+}
+.safe-area-pt { padding-top: env(safe-area-inset-top, 0px); }
+
+/* Scrollbar hide */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.HideScrollbar::-webkit-scrollbar { display: none; }
+.HideScrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Sponsored badge shimmer (keep gold) */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.shimmer-gold {
+  background: linear-gradient(90deg, #D4AF37 0%, #f0d97a 50%, #D4AF37 100%);
+  background-size: 200% auto;
+  animation: shimmer 2.5s linear infinite;
+}
+
+/* ── Dark-mode aware utility classes ───────────────────────────────────────── */
+/* Buttons: always high contrast regardless of theme */
+.btn-primary {
+  background: var(--uber-btn-bg);
+  color: var(--uber-btn-text);
+}
+.btn-primary:hover {
+  opacity: 0.85;
+}
+
+/* Input fields */
+.input-field {
+  background: var(--uber-white);
+  color: var(--uber-text);
+  border: 0.5px solid var(--uber-border);
+}
+.input-field::placeholder {
+  color: var(--uber-muted);
+}
+
+/* Cards */
+.card {
+  background: var(--uber-card-bg);
+  border: 0.5px solid var(--uber-border);
+}
+
+/* ── Confetti & Status Celebrations ────────────────────────────────────────── */
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+.confetti-particle {
+  animation: confettiFall 2s ease-in forwards;
+}
+@keyframes fadeInScale {
+  0%   { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes pulseGreen {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(6, 193, 103, 0.4); }
+  50%      { box-shadow: 0 0 0 12px rgba(6, 193, 103, 0); }
+}
+
+/* ── Skeleton Shimmer ─────────────────────────────────────────────────────── */
+@keyframes skeletonShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--uber-surface2) 25%, var(--uber-surface) 50%, var(--uber-surface2) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Virtual Scroll ───────────────────────────────────────────────────────── */
+.grid-card-virtual {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 280px;
+}
+
+/* ── Progressive Image Loading ────────────────────────────────────────────── */
+/* Simple fade-in instead of blur (blur + scale on 20+ cards kills GPU) */
+.img-blur-load { opacity: 0; transition: opacity 0.3s ease; }
+.img-blur-load.loaded { opacity: 1; }
+
+/* ── Responsive Layout Helpers ──────────────────────────────────────────────── */
+/* Desktop main content area expands naturally */
+.main-content {
+  width: 100%;
+  min-height: 100vh;
+}

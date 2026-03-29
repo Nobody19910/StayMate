@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import AdminLocationButton from "@/components/ui/AdminLocationButton";
 import { IconSchool, IconHome, IconCreditCard, IconChat } from "@/components/ui/Icons";
 
-const UBER_GREEN = "#06C167";
-
 const MSG_POLL_MS = 3000;   // re-fetch active chat messages every 3 s
 const CONV_POLL_MS = 8000;   // re-fetch conversation list every 8 s
 
@@ -356,8 +354,8 @@ export default function AdminInbox() {
                 className="w-full text-left p-4 flex items-start gap-3 transition-colors"
                 style={{
                   borderBottom: "0.5px solid var(--uber-border)",
-                  background: selectedConv?.id === conv.id ? "rgba(6,193,103,0.07)" : undefined,
-                  borderLeft: selectedConv?.id === conv.id ? `2px solid ${UBER_GREEN}` : "2px solid transparent",
+                  background: selectedConv?.id === conv.id ? "var(--success-bg)" : undefined,
+                  borderLeft: selectedConv?.id === conv.id ? "2px solid var(--uber-green)" : "2px solid transparent",
                 }}>
                 <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm mt-0.5" style={{ background: "var(--uber-black)", color: "var(--uber-white)" }}>
                   {conv.seeker?.full_name?.[0]?.toUpperCase() || "?"}
@@ -461,7 +459,7 @@ export default function AdminInbox() {
                       <div className={`rounded-2xl max-w-[80%] overflow-hidden text-[13px] leading-relaxed ${isAdmin ? "rounded-br-sm" : "rounded-bl-sm"} ${isOpt ? "opacity-60" : ""}`}
                         style={isAdmin
                           ? { background: "var(--uber-black)", color: "var(--uber-white)" }
-                          : { background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                          : { background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)", boxShadow: "var(--shadow-sm)" }}>
                         {inquiryImg && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={inquiryImg} alt="Property" className="w-full h-32 object-cover" />
@@ -483,9 +481,9 @@ export default function AdminInbox() {
               if (!booking || booking.status !== "pending") return null;
               return (
                 <div className="px-3 pt-3 pb-1" style={{ background: "var(--uber-white)", borderTop: "0.5px solid rgba(212,175,55,0.3)" }}>
-                  <div className="flex items-center gap-2 rounded-2xl px-3 py-2.5" style={{ background: "#EAFAF1", border: `0.5px solid ${UBER_GREEN}30` }}>
+                  <div className="flex items-center gap-2 rounded-2xl px-3 py-2.5" style={{ background: "var(--pending-bg)", border: "0.5px solid rgba(var(--uber-green-rgb),0.19)" }}>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[9px] font-extrabold uppercase tracking-widest" style={{ color: UBER_GREEN }}>Inquiry Pending</p>
+                      <p className="text-[9px] font-extrabold uppercase tracking-widest" style={{ color: "var(--uber-green)" }}>Inquiry Pending</p>
                       <p className="text-[10px] font-medium" style={{ color: "var(--uber-muted)" }}>{selectedConv.seeker?.full_name} is waiting</p>
                     </div>
                     <button onClick={() => resolveBooking("rejected")} disabled={resolvingBooking}
@@ -493,7 +491,7 @@ export default function AdminInbox() {
                       style={{ color: "var(--uber-muted)", background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>Decline</button>
                     <button onClick={() => resolveBooking("accepted")} disabled={resolvingBooking}
                       className="shrink-0 px-3 py-1.5 text-xs font-bold text-white rounded-xl active:scale-95 disabled:opacity-50 flex items-center gap-1"
-                      style={{ background: UBER_GREEN }}>
+                      style={{ background: "var(--uber-green)" }}>
                       {resolvingBooking && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                       Accept
                     </button>
@@ -508,7 +506,7 @@ export default function AdminInbox() {
               if (!booking) return null;
               if (booking.status === "accepted") return (
                 <div className="px-3 pt-2 pb-1" style={{ background: "var(--uber-white)", borderTop: "0.5px solid rgba(212,175,55,0.2)" }}>
-                  <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "#FDF8E7", border: "0.5px solid rgba(212,175,55,0.3)" }}>
+                  <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "var(--awaiting-bg)", border: "0.5px solid rgba(212,175,55,0.3)" }}>
                     <span>⏳</span>
                     <p className="text-[10px] font-bold" style={{ color: "var(--uber-text)" }}>Accepted — Awaiting GH₵ 200 payment</p>
                   </div>
@@ -522,7 +520,7 @@ export default function AdminInbox() {
                     {propertyData && (
                       <button onClick={releaseAgentContact} disabled={releasingContact}
                         className="shrink-0 px-3 py-1.5 text-[10px] font-bold text-white rounded-xl active:scale-95 disabled:opacity-50 flex items-center gap-1"
-                        style={{ background: UBER_GREEN }}>
+                        style={{ background: "var(--uber-green)" }}>
                         {releasingContact && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                         Release Contact
                       </button>

@@ -7,7 +7,7 @@ import { useSavedCount } from "@/lib/useSavedCount";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 
-const UBER_GREEN = "#06C167";
+/* Use CSS variable var(--uber-green) instead of hardcoded hex */
 
 /** Unread count for SEEKER — polls every 5 s */
 function useSeekerUnread() {
@@ -125,8 +125,7 @@ export default function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-50 safe-area-pb"
       style={{
         background: "var(--uber-white)",
-        opacity: 0.97,
-        backdropFilter: "blur(16px)",
+        opacity: 0.98,
         borderTop: "0.5px solid var(--uber-border)",
       }}
     >
@@ -156,23 +155,23 @@ export default function BottomNav() {
                 {isSaved && savedCount > 0 && (
                   <span
                     className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5"
-                    style={{ background: UBER_GREEN }}
+                    style={{ background: "var(--uber-green)" }}
                   >
                     {savedCount > 99 ? "99+" : savedCount}
                   </span>
                 )}
                 {isChat && !isAdmin && seekerUnread > 0 && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5" style={{ background: UBER_GREEN }}>
+                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5" style={{ background: "var(--uber-green)" }}>
                     {seekerUnread > 99 ? "99+" : seekerUnread}
                   </span>
                 )}
                 {isChat && isAdmin && adminUnread > 0 && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5" style={{ background: UBER_GREEN }}>
+                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5" style={{ background: "var(--uber-green)" }}>
                     {adminUnread > 99 ? "99+" : adminUnread}
                   </span>
                 )}
                 {href === "/admin" && adminBadge > 0 && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5" style={{ background: "#EF4444" }}>
+                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5" style={{ background: "var(--error-text)" }}>
                     {adminBadge > 99 ? "99+" : adminBadge}
                   </span>
                 )}

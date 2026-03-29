@@ -83,7 +83,7 @@ export default function ImageGallery({ images, alt, heightClass = "h-72", childr
         {total > 1 && (
           <div
             className="absolute bottom-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-sm z-10"
-            style={{ background: "rgba(0,0,0,0.5)", color: "#fff" }}
+            style={{ background: "var(--overlay-dark)", color: "#fff" }}
           >
             {currentIndex + 1}/{total}
           </div>

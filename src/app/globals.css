@@ -6,6 +6,7 @@
   --uber-black:   #000000;
   --uber-white:   #FFFFFF;
   --uber-green:   #06C167;
+  --uber-green-rgb: 6, 193, 103;
   --uber-green-dark: #04945A;
   --uber-surface: #F6F6F6;
   --uber-surface2: #EEEEEE;
@@ -21,6 +22,24 @@
   --uber-btn-bg:  #1A1A1A;
   --uber-btn-text: #FFFFFF;
   --uber-card-bg: #FFFFFF;
+  /* Semantic status colors */
+  --error-text:   #EF4444;
+  --error-bg:     rgba(239, 68, 68, 0.10);
+  --error-border: rgba(239, 68, 68, 0.20);
+  --warning-text: #D97706;
+  --warning-bg:   rgba(245, 158, 11, 0.12);
+  --info-text:    #3B82F6;
+  --info-bg:      rgba(59, 130, 246, 0.12);
+  --success-bg:   rgba(6, 193, 103, 0.12);
+  --pending-bg:   #EAFAF1;
+  --awaiting-bg:  #FDF8E7;
+  /* Overlay / image */
+  --overlay-dark: rgba(0, 0, 0, 0.5);
+  --overlay-light: rgba(0, 0, 0, 0.06);
+  /* Shadows */
+  --shadow-sm:    0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-md:    0 2px 16px rgba(0, 0, 0, 0.07);
+  --shadow-lg:    0 4px 24px rgba(0, 0, 0, 0.12);
 }
 
 /* Dark mode */
@@ -34,10 +53,25 @@ html.dark {
   --uber-border:  rgba(255, 255, 255, 0.10);
   --background:   #111111;
   --foreground:   #F0F0F0;
-  /* Dark mode specific: button/badge backgrounds stay dark */
   --uber-btn-bg:  #F0F0F0;
   --uber-btn-text: #111111;
   --uber-card-bg: #1A1A1A;
+  /* Semantic status colors (dark) */
+  --error-text:   #F87171;
+  --error-bg:     rgba(239, 68, 68, 0.15);
+  --error-border: rgba(239, 68, 68, 0.25);
+  --warning-text: #FBBF24;
+  --warning-bg:   rgba(245, 158, 11, 0.15);
+  --info-text:    #60A5FA;
+  --info-bg:      rgba(59, 130, 246, 0.15);
+  --success-bg:   rgba(6, 193, 103, 0.15);
+  --pending-bg:   rgba(6, 193, 103, 0.08);
+  --awaiting-bg:  rgba(212, 175, 55, 0.10);
+  --overlay-dark: rgba(0, 0, 0, 0.7);
+  --overlay-light: rgba(255, 255, 255, 0.06);
+  --shadow-sm:    0 1px 4px rgba(0, 0, 0, 0.2);
+  --shadow-md:    0 2px 16px rgba(0, 0, 0, 0.25);
+  --shadow-lg:    0 4px 24px rgba(0, 0, 0, 0.35);
 }
 
 @theme inline {
@@ -69,10 +103,20 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* GPU-accelerate all transforms and opacity transitions */
-* {
+/* GPU-accelerate only animated/transformed elements (not every node) */
+[style*="transform"],
+.confetti-particle,
+.shimmer-gold,
+.skeleton-shimmer,
+.img-blur-load {
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
+}
+
+/* Paint containment on cards to limit reflow scope */
+.grid-card-virtual,
+.card {
+  contain: layout paint;
 }
 
 /* Ensure animations use the highest available refresh rate */

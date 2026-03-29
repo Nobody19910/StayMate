@@ -15,7 +15,7 @@ interface Particle {
   drift: number;
 }
 
-const COLORS = ["#06C167", "#D4AF37", "#FF6B6B", "#4ECDC4", "#FFD93D", "#6C5CE7"];
+const COLORS = ["var(--uber-green)", "var(--gold)", "#FF6B6B", "#4ECDC4", "#FFD93D", "#6C5CE7"];
 
 function generateParticles(count: number): Particle[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -74,7 +74,7 @@ export function StatusCelebration({ status }: { status: string }) {
   if (status === "fee_paid") {
     return (
       <div className="flex flex-col items-center gap-2 py-4 animate-[fadeInScale_0.5s_ease-out]">
-        <div className="w-14 h-14 rounded-full flex items-center justify-center animate-[pulseGreen_1s_ease-in-out_2]" style={{ background: "#06C167" }}>
+        <div className="w-14 h-14 rounded-full flex items-center justify-center animate-[pulseGreen_1s_ease-in-out_2]" style={{ background: "var(--uber-green)" }}>
           <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
           </svg>
@@ -100,7 +100,7 @@ export function StatusCelebration({ status }: { status: string }) {
   if (status === "completed") {
     return (
       <div className="flex flex-col items-center gap-2 py-4 animate-[fadeInScale_0.5s_ease-out]">
-        <div className="w-14 h-14 rounded-full flex items-center justify-center animate-[pulseGreen_1s_ease-in-out_2]" style={{ background: "#D4AF37" }}>
+        <div className="w-14 h-14 rounded-full flex items-center justify-center animate-[pulseGreen_1s_ease-in-out_2]" style={{ background: "var(--gold)" }}>
           <IconParty className="w-7 h-7 text-white" />
         </div>
         <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>All Done!</p>

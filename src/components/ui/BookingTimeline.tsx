@@ -2,14 +2,14 @@
 
 import { IconCheck, IconClose, IconCreditCard, IconCalendar, IconHome } from "@/components/ui/Icons";
 
-const STATUS_CONFIG: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
-  pending: { color: "#6B6B6B", icon: "⏳", label: "Pending Review" },
-  accepted: { color: "#06C167", icon: <IconCheck className="w-3.5 h-3.5" />, label: "Accepted" },
-  rejected: { color: "#FF4444", icon: <IconClose className="w-3.5 h-3.5" />, label: "Rejected" },
-  fee_paid: { color: "#D4AF37", icon: <IconCreditCard className="w-3.5 h-3.5" />, label: "Fee Paid" },
-  paid: { color: "#D4AF37", icon: <IconCreditCard className="w-3.5 h-3.5" />, label: "Fee Paid" },
-  viewing_scheduled: { color: "#4A90D9", icon: <IconCalendar className="w-3.5 h-3.5" />, label: "Viewing Scheduled" },
-  completed: { color: "#06C167", icon: <IconHome className="w-3.5 h-3.5" />, label: "Completed" },
+const STATUS_CONFIG: Record<string, { colorVar: string; icon: React.ReactNode; label: string }> = {
+  pending: { colorVar: "var(--uber-muted)", icon: "⏳", label: "Pending Review" },
+  accepted: { colorVar: "var(--uber-green)", icon: <IconCheck className="w-3.5 h-3.5" />, label: "Accepted" },
+  rejected: { colorVar: "var(--error-text)", icon: <IconClose className="w-3.5 h-3.5" />, label: "Rejected" },
+  fee_paid: { colorVar: "var(--gold)", icon: <IconCreditCard className="w-3.5 h-3.5" />, label: "Fee Paid" },
+  paid: { colorVar: "var(--gold)", icon: <IconCreditCard className="w-3.5 h-3.5" />, label: "Fee Paid" },
+  viewing_scheduled: { colorVar: "var(--info-text)", icon: <IconCalendar className="w-3.5 h-3.5" />, label: "Viewing Scheduled" },
+  completed: { colorVar: "var(--uber-green)", icon: <IconHome className="w-3.5 h-3.5" />, label: "Completed" },
 };
 
 const TIMELINE_STEPS = ["pending", "accepted", "fee_paid", "viewing_scheduled", "completed"];
@@ -60,7 +60,8 @@ export default function BookingTimeline({ bookings, onSelect, onPay, payingId }:
             <div className="flex flex-col items-center">
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                style={{ background: config.color, color: "#fff" }}
+                style={{ background: config.colorVar, color: "#fff" }}
+
               >
                 {config.icon}
               </div>
@@ -83,7 +84,7 @@ export default function BookingTimeline({ bookings, onSelect, onPay, payingId }:
                   <div className="flex items-center gap-2 mt-1">
                     <span
                       className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded text-white"
-                      style={{ background: config.color }}
+                      style={{ background: config.colorVar }}
                     >
                       {config.label}
                     </span>
@@ -102,7 +103,7 @@ export default function BookingTimeline({ bookings, onSelect, onPay, payingId }:
                       key={step}
                       className="h-1 flex-1 rounded-full"
                       style={{
-                        background: si <= stepIdx ? config.color : "var(--uber-surface2)",
+                        background: si <= stepIdx ? config.colorVar : "var(--uber-surface2)",
                         opacity: si <= stepIdx ? 1 : 0.5,
                       }}
                     />
@@ -116,7 +117,7 @@ export default function BookingTimeline({ bookings, onSelect, onPay, payingId }:
                   onClick={(e) => { e.stopPropagation(); onPay(booking); }}
                   disabled={payingId === booking.id}
                   className="mt-2.5 w-full flex items-center justify-center gap-1 text-xs font-bold text-white px-3 py-2 rounded-lg active:scale-95 transition-all disabled:opacity-60"
-                  style={{ background: "#06C167" }}
+                  style={{ background: "var(--uber-green)" }}
                 >
                   {payingId === booking.id ? (
                     <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />

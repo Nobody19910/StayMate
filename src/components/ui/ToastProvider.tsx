@@ -16,14 +16,14 @@ export default function ToastProvider() {
           fontWeight: 600,
           borderRadius: "12px",
           padding: "10px 16px",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+          boxShadow: "var(--shadow-lg)",
           border: "0.5px solid var(--uber-border)",
         },
         success: {
-          iconTheme: { primary: "#06C167", secondary: "var(--uber-btn-text)" },
+          iconTheme: { primary: "var(--uber-green)", secondary: "var(--uber-btn-text)" },
         },
         error: {
-          iconTheme: { primary: "#FF4444", secondary: "var(--uber-btn-text)" },
+          iconTheme: { primary: "var(--error-text)", secondary: "var(--uber-btn-text)" },
         },
       }}
     />

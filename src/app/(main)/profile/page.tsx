@@ -14,8 +14,6 @@ import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { IconPhone, IconHome, IconMailbox, IconCheck, IconCreditCard, IconCalendar, IconCheckCircle, IconChat, IconClose, IconStar } from "@/components/ui/Icons";
 
-const UBER_GREEN = "#06C167";
-
 const ROLE_LABELS: Record<string, string> = {
   seeker: "Property Seeker",
   owner: "Property Owner",
@@ -38,13 +36,13 @@ const STATUS_ORDER: ListingStatus[] = ["sponsored", "active", "rented"];
 /* ── Booking badge ── */
 function BookingStatusBadge({ status }: { status: string }) {
   const styles: Record<string, { background: string; color: string }> = {
-    pending: { background: "rgba(245,158,11,0.12)", color: "#D97706" },
-    accepted: { background: "rgba(6,193,103,0.12)", color: UBER_GREEN },
+    pending: { background: "var(--warning-bg)", color: "var(--warning-text)" },
+    accepted: { background: "var(--success-bg)", color: "var(--uber-green)" },
     confirmed: { background: "var(--uber-surface2)", color: "var(--uber-text)" },
-    fee_paid: { background: "rgba(6,193,103,0.12)", color: UBER_GREEN },
-    cancelled: { background: "rgba(239,68,68,0.12)", color: "#EF4444" },
-    rejected: { background: "rgba(239,68,68,0.12)", color: "#EF4444" },
-    completed: { background: "rgba(59,130,246,0.12)", color: "#3B82F6" },
+    fee_paid: { background: "var(--success-bg)", color: "var(--uber-green)" },
+    cancelled: { background: "var(--error-bg)", color: "var(--error-text)" },
+    rejected: { background: "var(--error-bg)", color: "var(--error-text)" },
+    completed: { background: "var(--info-bg)", color: "var(--info-text)" },
   };
   const s = styles[status] ?? { background: "var(--uber-surface2)", color: "var(--uber-muted)" };
   return (
@@ -295,7 +293,7 @@ export default function ProfilePage() {
           <Link href="/login" className="block text-white font-bold text-center py-3.5 rounded-2xl active:scale-95 transition-transform" style={{ background: "var(--uber-black)" }}>
             Sign In
           </Link>
-          <Link href="/signup" className="block font-bold text-center py-3.5 rounded-2xl active:scale-95 transition-transform" style={{ background: UBER_GREEN, color: "#fff" }}>
+          <Link href="/signup" className="block font-bold text-center py-3.5 rounded-2xl active:scale-95 transition-transform" style={{ background: "var(--uber-green)", color: "#fff" }}>
             Create Account
           </Link>
           <div className="rounded-xl px-4 py-3 mt-4" style={{ background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }}>
@@ -328,7 +326,7 @@ export default function ProfilePage() {
             </div>
           )}
           {isEditingProfile && (
-            <label className="absolute bottom-3 -right-2 text-white p-1.5 rounded-full shadow-md cursor-pointer active:scale-95 transition-transform" style={{ background: UBER_GREEN }}>
+            <label className="absolute bottom-3 -right-2 text-white p-1.5 rounded-full shadow-md cursor-pointer active:scale-95 transition-transform" style={{ background: "var(--uber-green)" }}>
               {uploadingAvatar ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
@@ -365,7 +363,7 @@ export default function ProfilePage() {
           <>
             <h1 className="text-lg font-bold" style={{ color: "var(--uber-text)" }}>{profile?.fullName ?? "Your Account"}</h1>
             {profile && (
-              <span className="mt-1 text-[11px] font-bold uppercase text-white px-2 py-0.5 rounded" style={{ background: UBER_GREEN }}>
+              <span className="mt-1 text-[11px] font-bold uppercase text-white px-2 py-0.5 rounded" style={{ background: "var(--uber-green)" }}>
                 {ROLE_LABELS[profile.role] ?? profile.role}
               </span>
             )}
@@ -400,17 +398,17 @@ export default function ProfilePage() {
                 <p className="text-2xl font-extrabold" style={{ color: "var(--uber-text)" }}>{myProperties.length}</p>
                 <p className="text-[9px] font-semibold mt-0.5" style={{ color: "var(--uber-muted)" }}>Listings</p>
               </div>
-              <div className="flex-1 rounded-xl p-3 text-center" style={{ background: "rgba(245,158,11,0.08)", border: "0.5px solid rgba(245,158,11,0.15)" }}>
-                <p className="text-2xl font-extrabold" style={{ color: "#D97706" }}>{analytics.pendingCount}</p>
-                <p className="text-[9px] font-semibold mt-0.5" style={{ color: "#B45309" }}>Pending</p>
+              <div className="flex-1 rounded-xl p-3 text-center" style={{ background: "var(--warning-bg)", border: "0.5px solid rgba(245,158,11,0.15)" }}>
+                <p className="text-2xl font-extrabold" style={{ color: "var(--warning-text)" }}>{analytics.pendingCount}</p>
+                <p className="text-[9px] font-semibold mt-0.5" style={{ color: "var(--warning-text)" }}>Pending</p>
               </div>
-              <div className="flex-1 rounded-xl p-3 text-center" style={{ background: "rgba(6,193,103,0.08)", border: "0.5px solid rgba(6,193,103,0.15)" }}>
-                <p className="text-2xl font-extrabold" style={{ color: UBER_GREEN }}>{analytics.completedCount}</p>
-                <p className="text-[9px] font-semibold mt-0.5" style={{ color: "#059855" }}>Completed</p>
+              <div className="flex-1 rounded-xl p-3 text-center" style={{ background: "var(--success-bg)", border: "0.5px solid rgba(var(--uber-green-rgb),0.15)" }}>
+                <p className="text-2xl font-extrabold" style={{ color: "var(--uber-green)" }}>{analytics.completedCount}</p>
+                <p className="text-[9px] font-semibold mt-0.5" style={{ color: "var(--uber-green)" }}>Completed</p>
               </div>
-              <div className="flex-1 rounded-xl p-3 text-center" style={{ background: "rgba(212,175,55,0.08)", border: "0.5px solid rgba(212,175,55,0.15)" }}>
-                <p className="text-2xl font-extrabold" style={{ color: "#D4AF37" }}>{analytics.sponsoredCount}</p>
-                <p className="text-[9px] font-semibold mt-0.5" style={{ color: "#B8941E" }}>Sponsored</p>
+              <div className="flex-1 rounded-xl p-3 text-center" style={{ background: "var(--gold-light)", border: "0.5px solid rgba(212,175,55,0.15)" }}>
+                <p className="text-2xl font-extrabold" style={{ color: "var(--gold)" }}>{analytics.sponsoredCount}</p>
+                <p className="text-[9px] font-semibold mt-0.5" style={{ color: "var(--gold)" }}>Sponsored</p>
               </div>
             </div>
 
@@ -425,7 +423,7 @@ export default function ProfilePage() {
                 >
                   {t}
                   {t === "bookings" && analytics.pendingCount > 0 && (
-                    <span className="ml-1 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "#D97706" }}>
+                    <span className="ml-1 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "var(--warning-text)" }}>
                       {analytics.pendingCount}
                     </span>
                   )}
@@ -479,7 +477,7 @@ export default function ProfilePage() {
                             <span
                               className="w-2 h-2 rounded-full"
                               style={{
-                                background: group === "sponsored" ? "#D4AF37" : group === "active" ? UBER_GREEN : "#EF4444",
+                                background: group === "sponsored" ? "var(--gold)" : group === "active" ? "var(--uber-green)" : "var(--error-text)",
                               }}
                             />
                             <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--uber-muted)" }}>
@@ -579,13 +577,13 @@ export default function ProfilePage() {
                           <button onClick={() => updateBookingStatus(booking.id, "confirmed")} className="flex-1 font-bold text-xs py-2.5 rounded-xl active:scale-95 transition-transform" style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>
                             Confirm
                           </button>
-                          <button onClick={() => updateBookingStatus(booking.id, "cancelled")} className="flex-1 font-bold text-xs py-2.5 rounded-xl active:scale-95 transition-transform" style={{ border: "0.5px solid rgba(239,68,68,0.3)", color: "#EF4444" }}>
+                          <button onClick={() => updateBookingStatus(booking.id, "cancelled")} className="flex-1 font-bold text-xs py-2.5 rounded-xl active:scale-95 transition-transform" style={{ border: "0.5px solid var(--error-border)", color: "var(--error-text)" }}>
                             Decline
                           </button>
                         </div>
                       )}
                       {booking.status === "confirmed" && (
-                        <button onClick={() => updateBookingStatus(booking.id, "completed")} className="w-full font-bold text-xs py-2.5 rounded-xl active:scale-95 transition-transform" style={{ background: "rgba(59,130,246,0.15)", color: "#3B82F6" }}>
+                        <button onClick={() => updateBookingStatus(booking.id, "completed")} className="w-full font-bold text-xs py-2.5 rounded-xl active:scale-95 transition-transform" style={{ background: "var(--info-bg)", color: "var(--info-text)" }}>
                           Mark as Completed (Payment Received)
                         </button>
                       )}
@@ -632,8 +630,8 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Sponsorship spend */}
-                <div className="rounded-2xl p-5" style={{ background: "rgba(212,175,55,0.06)", border: "0.5px solid rgba(212,175,55,0.15)" }}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#D4AF37" }}>Sponsored Listings</p>
+                <div className="rounded-2xl p-5" style={{ background: "var(--gold-light)", border: "0.5px solid rgba(212,175,55,0.15)" }}>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "var(--gold)" }}>Sponsored Listings</p>
                   <p className="text-xl font-extrabold" style={{ color: "var(--uber-text)" }}>
                     {analytics.sponsoredCount} active
                   </p>
@@ -648,9 +646,9 @@ export default function ProfilePage() {
                 <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
                   <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--uber-muted)" }}>Booking Funnel</p>
                   {[
-                    { label: "Pending", count: analytics.pendingCount, color: "#D97706" },
-                    { label: "Confirmed", count: analytics.confirmedCount, color: "#3B82F6" },
-                    { label: "Paid", count: analytics.paidBookings, color: UBER_GREEN },
+                    { label: "Pending", count: analytics.pendingCount, color: "var(--warning-text)" },
+                    { label: "Confirmed", count: analytics.confirmedCount, color: "var(--info-text)" },
+                    { label: "Paid", count: analytics.paidBookings, color: "var(--uber-green)" },
                     { label: "Completed", count: analytics.completedCount, color: "#8B5CF6" },
                   ].map((step) => (
                     <div key={step.label} className="flex items-center gap-3 mb-2 last:mb-0">
@@ -672,7 +670,7 @@ export default function ProfilePage() {
             {(profile as any)?.is_agent && new Date((profile as any)?.agent_subscription_until ?? 0) > new Date() ? (
               <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: UBER_GREEN }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "var(--uber-green)" }}>
                     <IconCheck />
                   </div>
                   <div>
@@ -753,7 +751,7 @@ export default function ProfilePage() {
                     <div className="w-full flex justify-between items-start mb-4">
                       <div className="flex-1 pr-4">
                         <p className="text-sm font-bold line-clamp-1" style={{ color: "var(--uber-text)" }}>{ticket.listing_title}</p>
-                        <span className="inline-block mt-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded text-white" style={{ background: ticket.status === "accepted" || ticket.status === "fee_paid" ? UBER_GREEN : "var(--uber-black)" }}>
+                        <span className="inline-block mt-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded text-white" style={{ background: ticket.status === "accepted" || ticket.status === "fee_paid" ? "var(--uber-green)" : "var(--uber-black)" }}>
                           {ticket.status}
                         </span>
                       </div>
@@ -770,7 +768,7 @@ export default function ProfilePage() {
                           onClick={(e) => { e.stopPropagation(); handlePayCommitment(ticket); }}
                           disabled={payingId === ticket.id}
                           className="flex items-center gap-1 text-xs font-bold text-white px-3 py-1.5 rounded-lg active:scale-95 transition-all disabled:opacity-60"
-                          style={{ background: UBER_GREEN }}
+                          style={{ background: "var(--uber-green)" }}
                         >
                           {payingId === ticket.id ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><IconCreditCard /> Pay Fee</>}
                         </button>
@@ -795,7 +793,7 @@ export default function ProfilePage() {
         <button
           onClick={handleSignOut}
           className="w-full mt-2 text-red-500 font-bold py-3 rounded-2xl active:scale-95 transition-transform text-sm"
-          style={{ border: "0.5px solid rgba(239,68,68,0.3)", background: "color-mix(in srgb, #ef4444 8%, var(--uber-surface))" }}
+          style={{ border: "0.5px solid var(--error-border)", background: "var(--error-bg)" }}
         >
           Sign Out
         </button>
@@ -821,7 +819,7 @@ export default function ProfilePage() {
               </div>
               <div className="space-y-6">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: UBER_GREEN }}>Property</p>
+                  <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--uber-green)" }}>Property</p>
                   <p className="text-lg font-bold" style={{ color: "var(--uber-text)" }}>{selectedTicket.listing_title}</p>
                   <p className="text-xs mt-1 flex items-center gap-1.5" style={{ color: "var(--uber-muted)" }}>
                     <IconCalendar />
@@ -839,7 +837,7 @@ export default function ProfilePage() {
                   </div>
                 )}
                 {selectedTicket.status === "accepted" && (
-                  <div className="rounded-2xl p-5" style={{ background: "color-mix(in srgb, #D4AF37 15%, var(--uber-surface))", border: "0.5px solid rgba(212,175,55,0.3)" }}>
+                  <div className="rounded-2xl p-5" style={{ background: "color-mix(in srgb, var(--gold) 15%, var(--uber-surface))", border: "0.5px solid rgba(212,175,55,0.3)" }}>
                     <div className="flex items-center gap-3 mb-3">
                       <IconCreditCard />
                       <div>
@@ -858,7 +856,7 @@ export default function ProfilePage() {
                   </div>
                 )}
                 {(selectedTicket.status === "fee_paid" || selectedTicket.status === "paid") && (
-                  <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: "color-mix(in srgb, #06C167 12%, var(--uber-surface))", border: "0.5px solid rgba(6,193,103,0.3)" }}>
+                  <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: "color-mix(in srgb, var(--uber-green) 12%, var(--uber-surface))", border: "0.5px solid rgba(var(--uber-green-rgb),0.3)" }}>
                     <IconCheckCircle />
                     <div>
                       <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Fee Paid</p>
@@ -873,7 +871,7 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Chat with Admin</p>
-                      <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: UBER_GREEN }}>Open Thread</p>
+                      <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--uber-green)" }}>Open Thread</p>
                     </div>
                   </div>
                   <span className="font-bold" style={{ color: "var(--uber-muted)" }}>→</span>
@@ -948,17 +946,17 @@ function PropertyCard({
               {isHostel ? "Hostel" : "Home"}
             </span>
             {isRentedOrSold && (
-              <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded text-white" style={{ background: "#EF4444" }}>
+              <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded text-white" style={{ background: "var(--error-text)" }}>
                 {property.status}
               </span>
             )}
             {!isRentedOrSold && (
-              <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded text-white" style={{ background: UBER_GREEN }}>
+              <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded text-white" style={{ background: "var(--uber-green)" }}>
                 {property.status ?? "active"}
               </span>
             )}
             {isSponsoredActive && (
-              <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded shimmer-gold text-[#1A1A1A]"><IconStar /> Sponsored</span>
+              <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded shimmer-gold" style={{ color: "var(--uber-black)" }}><IconStar /> Sponsored</span>
             )}
           </div>
           <p className="text-xs font-semibold mt-1" style={{ color: "var(--uber-text)" }}>
@@ -1000,7 +998,7 @@ function PropertyCard({
                       ))}
                     </div>
                   </div>
-                  <span className="text-sm font-extrabold shrink-0 ml-3" style={{ color: "#D4AF37" }}>GH₵{tier.price}</span>
+                  <span className="text-sm font-extrabold shrink-0 ml-3" style={{ color: "var(--gold)" }}>GH₵{tier.price}</span>
                 </button>
               ))}
               <button onClick={() => setSponsoringId(null)} className="w-full text-xs font-bold py-1.5" style={{ color: "var(--uber-muted)" }}>
@@ -1023,7 +1021,7 @@ function PropertyCard({
         <button
           onClick={() => router.push(`/edit/${property.id}?type=${isHostel ? "hostel" : "home"}`)}
           className="flex-1 py-1.5 text-[10px] font-bold rounded-lg active:scale-95"
-          style={{ background: "rgba(59,130,246,0.12)", color: "#3B82F6" }}
+          style={{ background: "var(--info-bg)", color: "var(--info-text)" }}
         >
           Edit
         </button>
@@ -1031,7 +1029,7 @@ function PropertyCard({
           <button
             onClick={() => setSponsoringId(property.id)}
             className="flex-1 py-1.5 text-[10px] uppercase tracking-wider font-extrabold rounded-lg active:scale-95"
-            style={{ background: "#D4AF37", color: "#1A1A1A" }}
+            style={{ background: "var(--gold)", color: "var(--uber-black)" }}
           >
             <IconStar /> Sponsor
           </button>
@@ -1048,7 +1046,7 @@ function PropertyCard({
           <button
             onClick={() => onStatusChange(property.id, isHostel, "approved")}
             className="py-1.5 px-2 text-[10px] font-bold rounded-lg active:scale-95"
-            style={{ background: "rgba(6,193,103,0.12)", color: UBER_GREEN }}
+            style={{ background: "var(--success-bg)", color: "var(--uber-green)" }}
           >
             Re-activate
           </button>
@@ -1057,7 +1055,7 @@ function PropertyCard({
           onClick={() => onDelete(property.id, isHostel)}
           disabled={deletingId === property.id}
           className="py-1.5 px-2 text-[10px] font-bold rounded-lg active:scale-95 disabled:opacity-50"
-          style={{ background: "rgba(239,68,68,0.1)", color: "#EF4444" }}
+          style={{ background: "var(--error-bg)", color: "var(--error-text)" }}
         >
           {deletingId === property.id ? "…" : <IconClose />}
         </button>
