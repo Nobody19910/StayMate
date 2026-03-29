@@ -65,8 +65,8 @@ function HeroSearch({
         </p>
 
         {/* Search bar */}
-        <div className="flex flex-col sm:flex-row gap-2 max-w-3xl">
-          <div className="relative flex-1">
+        <div className="flex flex-row gap-2 max-w-3xl">
+          <div className="relative" style={{ flex: "0 0 75%", maxWidth: "75%" }}>
             <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#06c167" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
@@ -81,7 +81,7 @@ function HeroSearch({
             />
           </div>
           <button
-            className="px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 justify-center shrink-0"
+            className="py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 justify-center flex-1"
             style={{ background: "#06c167", color: "#fff" }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
