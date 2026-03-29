@@ -50,11 +50,17 @@ export default function AdminDashboardPage() {
       ]);
 
       // Fetch agent_applications separately — table may not exist yet
-      const appsRes = await supabase
-        .from("agent_applications")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .catch(() => ({ data: [], error: null })) as { data: any[] | null; error: any };
+      // Use try/catch because .catch() is not available on the Supabase query builder
+      let appsRes: { data: any[] | null; error: any } = { data: [], error: null };
+      try {
+        const res = await supabase
+          .from("agent_applications")
+          .select("*")
+          .order("created_at", { ascending: false });
+        appsRes = res;
+      } catch {
+        // table doesn't exist yet — silently ignore
+      }
 
       const allProfiles = agentsRes.data || [];
       const allHomes = homesRes.data || [];
