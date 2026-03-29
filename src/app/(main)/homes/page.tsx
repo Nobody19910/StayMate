@@ -47,28 +47,27 @@ function HeroSearch({
     <div
       className="relative w-full overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, var(--uber-btn-bg) 0%, color-mix(in srgb, var(--uber-btn-bg) 80%, var(--uber-green)) 100%)",
+        background: "linear-gradient(135deg, #0f172a 0%, #0f2a1a 100%)",
         minHeight: "220px",
       }}
     >
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-5"
-        style={{ backgroundImage: "radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+      {/* Subtle green glow */}
+      <div className="absolute inset-0 opacity-10"
+        style={{ background: "radial-gradient(ellipse 80% 60% at 50% 100%, #06c167, transparent)" }} />
 
       <div className="relative max-w-screen-xl mx-auto px-4 lg:px-6 py-8 lg:py-12">
         {/* Headline */}
-        <h1 className="text-2xl lg:text-4xl font-extrabold text-white mb-1 font-serif">
+        <h1 className="text-2xl lg:text-4xl font-extrabold mb-1 font-serif" style={{ color: "#06c167" }}>
           Find your next home in Ghana
         </h1>
-        <p className="text-sm lg:text-base mb-6 font-medium" style={{ color: "rgba(255,255,255,0.75)" }}>
+        <p className="text-sm lg:text-base mb-6 font-medium" style={{ color: "rgba(255,255,255,0.55)" }}>
           Homes for rent and sale · No brokers · No commission
         </p>
 
         {/* Search bar */}
         <div className="flex flex-col sm:flex-row gap-2 max-w-3xl">
-          {/* Destination */}
           <div className="relative flex-1">
-            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#06c167" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
             </svg>
@@ -77,15 +76,13 @@ function HeroSearch({
               placeholder="Where are you looking? City, neighbourhood…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl pl-9 pr-3 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/40"
-              style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "none" }}
+              className="w-full rounded-xl pl-9 pr-3 py-3 text-sm font-medium focus:outline-none"
+              style={{ background: "rgba(255,255,255,0.07)", color: "#fff", border: "0.5px solid rgba(6,193,103,0.35)" }}
             />
           </div>
-
-          {/* Search button */}
           <button
             className="px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 justify-center shrink-0"
-            style={{ background: "var(--uber-green)", color: "#fff" }}
+            style={{ background: "#06c167", color: "#fff" }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
@@ -103,8 +100,8 @@ function HeroSearch({
               onClick={() => setFilter(f)}
               className="px-4 py-1.5 rounded-full text-xs font-semibold transition-all"
               style={filter === f
-                ? { background: "#fff", color: "var(--uber-btn-bg)" }
-                : { background: "rgba(255,255,255,0.18)", color: "#fff", border: "0.5px solid rgba(255,255,255,0.35)" }}
+                ? { background: "#06c167", color: "#fff" }
+                : { background: "rgba(6,193,103,0.12)", color: "#06c167", border: "0.5px solid rgba(6,193,103,0.3)" }}
             >
               {f === "all" ? "All Listings" : f === "rent" ? "For Rent" : "For Sale"}
             </button>
@@ -112,14 +109,14 @@ function HeroSearch({
 
           {/* Radius pill */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-            style={{ background: "rgba(255,255,255,0.18)", color: "#fff", border: "0.5px solid rgba(255,255,255,0.35)" }}>
+            style={{ background: "rgba(6,193,103,0.12)", color: "#06c167", border: "0.5px solid rgba(6,193,103,0.3)" }}>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="3" /><path strokeLinecap="round" d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
             </svg>
             {radius >= 50 ? "50+ km" : `${radius} km`}
             <input type="range" min={1} max={50} value={radius}
               onChange={(e) => setRadius(parseInt(e.target.value))}
-              className="w-20 h-1 accent-white ml-1" />
+              className="w-20 h-1 ml-1" style={{ accentColor: "#06c167" } as React.CSSProperties} />
           </div>
 
           {/* Filter modal trigger */}
@@ -127,8 +124,8 @@ function HeroSearch({
             onClick={onFilterClick}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
             style={activeFilterCount > 0
-              ? { background: "var(--uber-green)", color: "#fff" }
-              : { background: "rgba(255,255,255,0.18)", color: "#fff", border: "0.5px solid rgba(255,255,255,0.35)" }}
+              ? { background: "#06c167", color: "#fff" }
+              : { background: "rgba(6,193,103,0.12)", color: "#06c167", border: "0.5px solid rgba(6,193,103,0.3)" }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />

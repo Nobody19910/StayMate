@@ -231,7 +231,7 @@ export default function OwnerDashboardPage() {
                     </div>
                   ) : properties.map((p) => (
                     <div key={p.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors" style={{ borderBottom: "1px solid #e9edf2" }}>
-                      <div className="w-14 h-10 rounded-lg overflow-hidden shrink-0" style={{ background: "#e9edf2" }}>
+                      <div className="relative w-14 h-10 rounded-lg overflow-hidden shrink-0" style={{ background: "#e9edf2" }}>
                         {p.images?.[0] && <OptimizedImage src={p.images[0]} alt="" width={80} className="w-full h-full" />}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -266,7 +266,7 @@ export default function OwnerDashboardPage() {
                     </div>
                   ) : pending.map((p) => (
                     <div key={p.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: "1px solid #e9edf2" }}>
-                      <div className="w-14 h-10 rounded-lg overflow-hidden shrink-0" style={{ background: "#e9edf2" }}>
+                      <div className="relative w-14 h-10 rounded-lg overflow-hidden shrink-0" style={{ background: "#e9edf2" }}>
                         {p.images?.[0] && <OptimizedImage src={p.images[0]} alt="" width={80} className="w-full h-full" />}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -295,7 +295,7 @@ function OwnerKanbanCard({ booking: b, accentColor, onAccept, onReject, onDelete
       <Link href={b.property_type === "home" ? `/homes/${b.property_ref || b.property?.id}` : `/hostels/${b.property_ref || b.property?.id}`} target="_blank"
         className="flex items-start gap-2 p-3 pb-2 hover:bg-slate-50 transition-colors" style={{ display: "flex" }}
         onClick={(e) => e.stopPropagation()}>
-        <div className="w-12 h-9 rounded-lg overflow-hidden shrink-0" style={{ background: "#e9edf2" }}>
+        <div className="relative w-12 h-9 rounded-lg overflow-hidden shrink-0" style={{ background: "#e9edf2" }}>
           {b.property?.images?.[0] && <OptimizedImage src={b.property.images[0]} alt="" width={80} className="w-full h-full" />}
         </div>
         <div className="flex-1 min-w-0">

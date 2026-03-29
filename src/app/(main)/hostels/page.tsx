@@ -44,25 +44,25 @@ function HeroSearch({
     <div
       className="relative w-full overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, color-mix(in srgb, var(--uber-btn-bg) 90%, var(--uber-green)) 0%, color-mix(in srgb, var(--uber-btn-bg) 70%, var(--uber-green)) 100%)",
+        background: "linear-gradient(135deg, #0f172a 0%, #0a1f12 100%)",
         minHeight: "200px",
       }}
     >
-      <div className="absolute inset-0 opacity-5"
-        style={{ backgroundImage: "radial-gradient(circle at 25% 50%, white 1px, transparent 1px), radial-gradient(circle at 75% 25%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+      <div className="absolute inset-0 opacity-10"
+        style={{ background: "radial-gradient(ellipse 80% 60% at 50% 100%, #06c167, transparent)" }} />
 
       <div className="relative max-w-screen-xl mx-auto px-4 lg:px-6 py-8 lg:py-12">
-        <h1 className="text-2xl lg:text-4xl font-extrabold text-white mb-1 font-serif">
+        <h1 className="text-2xl lg:text-4xl font-extrabold mb-1 font-serif" style={{ color: "#06c167" }}>
           Student & Staff Accommodation
         </h1>
-        <p className="text-sm lg:text-base mb-6 font-medium" style={{ color: "rgba(255,255,255,0.75)" }}>
+        <p className="text-sm lg:text-base mb-6 font-medium" style={{ color: "rgba(255,255,255,0.55)" }}>
           Hostels near campuses · All universities covered
         </p>
 
         {/* Search bar */}
         <div className="flex flex-col sm:flex-row gap-2 max-w-3xl">
           <div className="relative flex-1">
-            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#06c167" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
             </svg>
             <input
@@ -70,12 +70,12 @@ function HeroSearch({
               placeholder="Search campus, city, university…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl pl-9 pr-3 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/40"
-              style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "none" }}
+              className="w-full rounded-xl pl-9 pr-3 py-3 text-sm font-medium focus:outline-none"
+              style={{ background: "rgba(255,255,255,0.07)", color: "#fff", border: "0.5px solid rgba(6,193,103,0.35)" }}
             />
           </div>
           <button className="px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 justify-center shrink-0"
-            style={{ background: "var(--uber-green)", color: "#fff" }}>
+            style={{ background: "#06c167", color: "#fff" }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
               <circle cx="10" cy="10" r="7" />
@@ -87,20 +87,20 @@ function HeroSearch({
         {/* Pills */}
         <div className="flex items-center gap-2 mt-4 flex-wrap">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-            style={{ background: "rgba(255,255,255,0.18)", color: "#fff", border: "0.5px solid rgba(255,255,255,0.35)" }}>
+            style={{ background: "rgba(6,193,103,0.12)", color: "#06c167", border: "0.5px solid rgba(6,193,103,0.3)" }}>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="3" /><path strokeLinecap="round" d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
             </svg>
             {radius >= 50 ? "50+ km" : `${radius} km`}
             <input type="range" min={1} max={50} value={radius}
               onChange={(e) => setRadius(parseInt(e.target.value))}
-              className="w-20 h-1 accent-white ml-1" />
+              className="w-20 h-1 ml-1" style={{ accentColor: "#06c167" } as React.CSSProperties} />
           </div>
           <button onClick={onFilterClick}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
             style={activeFilterCount > 0
-              ? { background: "var(--uber-green)", color: "#fff" }
-              : { background: "rgba(255,255,255,0.18)", color: "#fff", border: "0.5px solid rgba(255,255,255,0.35)" }}>
+              ? { background: "#06c167", color: "#fff" }
+              : { background: "rgba(6,193,103,0.12)", color: "#06c167", border: "0.5px solid rgba(6,193,103,0.3)" }}>
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
             </svg>
