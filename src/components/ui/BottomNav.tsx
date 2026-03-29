@@ -104,13 +104,14 @@ const tabs = [
 export default function BottomNav() {
   const pathname = usePathname();
   const savedCount = useSavedCount();
-
-  // Don't render on admin — it has its own internal nav
-  if (pathname === "/admin") return null;
   const seekerUnread = useSeekerUnread();
   const { profile } = useAuth();
   const adminUnread = useAdminUnread();
   const adminPending = useAdminPending();
+
+  // Don't render on admin — it has its own internal nav
+  // All hooks MUST be called above this line (React rules of hooks)
+  if (pathname === "/admin") return null;
 
   const isAdmin = profile?.role === "admin";
   const adminBadge = adminUnread + adminPending;
