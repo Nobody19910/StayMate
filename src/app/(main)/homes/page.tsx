@@ -347,7 +347,7 @@ const HomeListCard = memo(function HomeListCard({ property }: { property: Proper
         }}
       >
         {/* Image */}
-        <div className="relative shrink-0 w-48 sm:w-56 md:w-64" style={{ minHeight: "160px", background: "var(--uber-surface2)" }}>
+        <div className="relative shrink-0 w-48 sm:w-56 md:w-72" style={{ minHeight: "200px", background: "var(--uber-surface2)" }}>
           <OptimizedImage
             src={property.images[0] || ""}
             alt={property.title || ""}
@@ -373,7 +373,7 @@ const HomeListCard = memo(function HomeListCard({ property }: { property: Proper
         </div>
 
         {/* Details */}
-        <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+        <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
           <div>
             {/* Tags row */}
             <div className="flex flex-wrap gap-1.5 mb-2">
@@ -450,7 +450,7 @@ const HomeListCard = memo(function HomeListCard({ property }: { property: Proper
           </div>
 
           {/* Price + CTA */}
-          <div className="flex items-end justify-between mt-3 pt-3" style={{ borderTop: "0.5px solid var(--uber-border)" }}>
+          <div className="flex items-end justify-between mt-4 pt-4" style={{ borderTop: "0.5px solid var(--uber-border)" }}>
             <div>
               <p className="text-lg font-extrabold leading-none" style={{ color: "var(--uber-text)" }}>
                 {property.priceLabel}
@@ -739,7 +739,7 @@ export default function HomesPage() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {filteredHomes.map((property) => (
                   <HomeListCard key={property.id} property={property} />
                 ))}

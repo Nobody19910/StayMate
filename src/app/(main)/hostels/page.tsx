@@ -239,7 +239,7 @@ const HostelListCard = memo(function HostelListCard({ hostel }: { hostel: Hostel
         style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", boxShadow: "var(--shadow-sm)" }}>
 
         {/* Image */}
-        <div className="relative shrink-0 w-48 sm:w-56 md:w-64" style={{ minHeight: "160px", background: "var(--uber-surface2)" }}>
+        <div className="relative shrink-0 w-48 sm:w-56 md:w-72" style={{ minHeight: "200px", background: "var(--uber-surface2)" }}>
           <OptimizedImage
             src={hostel.images[0] || ""}
             alt={hostel.name}
@@ -260,7 +260,7 @@ const HostelListCard = memo(function HostelListCard({ hostel }: { hostel: Hostel
         </div>
 
         {/* Details */}
-        <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+        <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
           <div>
             {/* Tags */}
             <div className="flex flex-wrap gap-1.5 mb-2">
@@ -560,7 +560,7 @@ export default function HostelsPage() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {filteredHostels.map((hostel) => (
                   <HostelListCard key={hostel.id} hostel={hostel} />
                 ))}

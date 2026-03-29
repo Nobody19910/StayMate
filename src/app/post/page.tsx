@@ -135,8 +135,11 @@ interface HostelInfo {
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
-const HOME_STEPS = ["Type", "Details", "Amenities", "Photos", "Preview"] as const;
-const HOSTEL_STEPS = ["Type", "Details", "Rooms", "Photos", "Preview"] as const;
+const HOME_STEPS = ["Category", "Property Type", "Name", "Description", "Location", "Bedrooms & Bathrooms", "Property Details", "Price", "Contact", "Facilities", "Photos", "Review"] as const;
+const HOSTEL_STEPS = ["Category", "Name", "Description", "Location", "Rooms", "Photos", "Review"] as const;
+
+type HomeStep = typeof HOME_STEPS[number];
+type HostelStep = typeof HOSTEL_STEPS[number];
 
 function makeRoomDraft(): RoomDraft {
   return {
@@ -262,16 +265,37 @@ export default function PostPage() {
   // ─── Validation ────────────────────────────────────────────────────────────
 
   const canGoNext = useCallback((): boolean => {
-    if (currentStep === "Type") return kind !== null;
-    if (currentStep === "Details") {
-      if (kind === "home") return homeInfo.title.trim() !== "" && homeInfo.price.trim() !== "" && homeInfo.city.trim() !== "" && homeInfo.lat.trim() !== "" && homeInfo.lng.trim() !== "";
-      return hostelInfo.title.trim() !== "" && hostelInfo.city.trim() !== "" && hostelInfo.lat.trim() !== "" && hostelInfo.lng.trim() !== "";
+    if (currentStep === "Category") return kind !== null;
+    if (currentStep === "Property Type") return true;
+    if (currentStep === "Name") {
+      if (kind === "home") return homeInfo.title.trim() !== "";
+      return hostelInfo.title.trim() !== "";
     }
-    if (currentStep === "Amenities") return true;
+    if (currentStep === "Description") return true;
+    // legacy "About" kept for hostel backward compat — not used now
+    if (currentStep === "About") {
+      if (kind === "home") return homeInfo.title.trim() !== "";
+      return hostelInfo.title.trim() !== "";
+    }
+    if (currentStep === "Location") {
+      if (kind === "home") return homeInfo.city.trim() !== "" && homeInfo.lat.trim() !== "" && homeInfo.lng.trim() !== "";
+      return hostelInfo.city.trim() !== "" && hostelInfo.lat.trim() !== "" && hostelInfo.lng.trim() !== "";
+    }
+    if (currentStep === "Bedrooms & Bathrooms") return true;
+    if (currentStep === "Property Details") return true;
+    if (currentStep === "Specs") return true;
+    if (currentStep === "Price") {
+      if (kind === "home") return homeInfo.price.trim() !== "";
+      return true;
+    }
+    if (currentStep === "Contact") return true;
+    if (currentStep === "Pricing") {
+      if (kind === "home") return homeInfo.price.trim() !== "";
+      return true;
+    }
+    if (currentStep === "Facilities") return true;
     if (currentStep === "Rooms") return hostelInfo.rooms.length > 0 && hostelInfo.rooms.every((r) => r.name.trim() !== "" && r.price.trim() !== "");
-    if (currentStep === "Photos") {
-      return photos.length >= MIN_PHOTOS;
-    }
+    if (currentStep === "Photos") return photos.length >= MIN_PHOTOS;
     return true;
   }, [currentStep, kind, homeInfo, hostelInfo, photos]);
 
@@ -589,6 +613,122 @@ export default function PostPage() {
     });
   }
 
+  const STEP_TIPS: Record<string, string[]> = {
+    "Category": [
+      "Choose 'Home / Apartment' to list residential properties for rent or sale.",
+      "Choose 'Hostel / Rooms' if you manage student accommodation with multiple room types.",
+    ],
+    "Property Type": [
+      "Studios are self-contained single-unit spaces.",
+      "Duplexes have two separate floors.",
+      "Accurate type helps seekers filter effectively.",
+    ],
+    "Name": [
+      "Great titles mention the type, beds, and area: 'Modern 3-Bed in East Legon'.",
+      "Include the neighbourhood — it's the first thing seekers search for.",
+      "Keep it under 60 characters so it reads cleanly on mobile.",
+    ],
+    "Description": [
+      "Descriptions with nearby landmarks get 40% more inquiries.",
+      "Mention what makes this property special — views, renovation, estate name.",
+      "Write at least 3 sentences for best results.",
+    ],
+    "About": [
+      "Great titles mention the type, beds, and area: 'Modern 3-Bed in East Legon'.",
+      "Descriptions with landmarks get 40% more inquiries.",
+    ],
+    "Location": [
+      "Use 'Detect Location' to auto-fill your address — it's faster and more accurate.",
+      "The exact map pin helps seekers know how close you are to their workplace or campus.",
+      "If your estate isn't listed, pick the nearest district and add the estate name manually.",
+    ],
+    "Bedrooms & Bathrooms": [
+      "Accurate bedroom and bathroom counts are the most searched filters.",
+      "A studio counts as 0 bedrooms — use the correct number.",
+    ],
+    "Property Details": [
+      "Property size (sqft) helps buyers compare value per cedi.",
+      "Condition and furnishing level set realistic expectations.",
+      "'New build' means completed within the last 2 years.",
+    ],
+    "Specs": [
+      "Accurate bedroom and bathroom counts are the most searched filters.",
+      "Property size (sqft) helps buyers compare value.",
+    ],
+    "Price": [
+      "Rental prices should be monthly (e.g. GH₵ 3,500/mo).",
+      "Marking a price as negotiable attracts 25% more inquiries.",
+      "Service charges should include estate management fees.",
+    ],
+    "Contact": [
+      "Your phone number is only shared after a booking is confirmed.",
+      "We recommend using a WhatsApp-enabled number for faster responses.",
+    ],
+    "Pricing": [
+      "Rental prices should be monthly (e.g. GH₵ 3,500/mo).",
+      "Marking a price as negotiable attracts 25% more inquiries.",
+    ],
+    "Facilities": [
+      "Listings with 5+ facilities get 2× more views.",
+      "Fiber Wi-Fi, Generator and Security are top 3 most-searched amenities in Ghana.",
+      "Only select what is actually available — accuracy builds trust.",
+    ],
+    "Rooms": [
+      "Add each distinct room type you offer (e.g. Single, Double, En-suite).",
+      "Prices are yearly since most students book per academic year.",
+      "More room types listed = more students can find what they need.",
+    ],
+    "Photos": [
+      "Listings with 8+ photos get 3× more inquiries.",
+      "Natural daylight photos look best — shoot in the morning.",
+      "Always include: entrance, living room, kitchen, bedroom, bathroom, and exterior.",
+      "First photo is your cover — make it the best shot.",
+    ],
+    "Review": [
+      "Double-check your price and location before submitting.",
+      "Your listing goes to admin review first — usually approved within 24 hours.",
+      "After approval, you can boost your listing to the top of search results.",
+    ],
+  };
+
+  const STEP_QUESTIONS: Record<string, string> = {
+    "Category": "What are you listing?",
+    "Property Type": "What type of home is it?",
+    "Name": "What's the name of your property?",
+    "Description": "How would you describe it?",
+    "About": "Tell us about your property",
+    "Location": "Where is it located?",
+    "Bedrooms & Bathrooms": "How many bedrooms and bathrooms?",
+    "Property Details": "Size, condition and furnishing",
+    "Specs": "Property specifications",
+    "Price": "What's the asking price?",
+    "Contact": "How should seekers reach you?",
+    "Pricing": "Pricing & contact details",
+    "Facilities": "What facilities are available?",
+    "Rooms": "Add your room types",
+    "Photos": "Show it off with great photos",
+    "Review": "Review & publish",
+  };
+
+  const STEP_SUBTITLES: Record<string, string> = {
+    "Category": "Select the type of property you want to list on StayMate.",
+    "Property Type": "This helps seekers find your property with the right filters.",
+    "Name": "Give your listing a clear, memorable name.",
+    "Description": "Tell seekers what makes this property special.",
+    "About": "Give your listing a clear, memorable name and a detailed description.",
+    "Location": "Accurate location is the most important factor for seekers.",
+    "Bedrooms & Bathrooms": "These are the most-searched filters on StayMate.",
+    "Property Details": "Size and condition help seekers compare properties.",
+    "Specs": "Size, rooms and condition help seekers compare properties.",
+    "Price": "Set a competitive price — you can always mark it as negotiable.",
+    "Contact": "Your number is only shared after an inquiry is accepted.",
+    "Pricing": "Set your asking price and preferred contact details.",
+    "Facilities": "Select all the facilities and amenities your property offers.",
+    "Rooms": "Add each type of room available in your hostel.",
+    "Photos": "High-quality photos significantly increase inquiries.",
+    "Review": "Check everything looks correct before submitting for review.",
+  };
+
   if (authLoading || !user) return null;
 
   // ─── Success screen ────────────────────────────────────────────────────────
@@ -691,592 +831,792 @@ export default function PostPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "var(--background)" }}>
-      {/* Header */}
-      <div className="px-4 pb-4" style={{ paddingTop: "calc(env(safe-area-inset-top, 20px) + 12px)", background: "var(--uber-white)", borderBottom: "0.5px solid var(--uber-border)" }}>
-        <h1 className="text-xl font-extrabold" style={{ color: "var(--uber-text)" }}>Post a Listing</h1>
-        <p className="text-xs mt-0.5" style={{ color: "var(--uber-muted)" }}>Submit property details for verification</p>
-        <div className="flex items-center gap-1 mt-4">
+      {/* ── Booking.com style header ── */}
+      <div style={{ background: "var(--uber-white)", borderBottom: "0.5px solid var(--uber-border)" }}>
+        {/* Top bar: logo + step count */}
+        <div className="px-4 py-3 flex items-center justify-between" style={{ paddingTop: "calc(env(safe-area-inset-top, 20px) + 12px)" }}>
+          <div>
+            <h1 className="text-lg font-extrabold font-serif" style={{ color: "var(--uber-text)" }}>StayMate</h1>
+            <p className="text-xs" style={{ color: "var(--uber-muted)" }}>List your property</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-bold" style={{ color: "var(--uber-muted)" }}>Step {stepIndex + 1} of {steps.length}</p>
+            <p className="text-xs font-semibold" style={{ color: "var(--uber-text)" }}>{currentStep}</p>
+          </div>
+        </div>
+        {/* Progress bar */}
+        <div className="flex" style={{ height: "3px" }}>
           {steps.map((s, i) => (
-            <div key={s} className="flex-1">
-              <div className={`h-1.5 rounded-full transition-colors ${i <= stepIndex ? "bg-emerald-500" : ""}`} style={i > stepIndex ? { background: "var(--uber-surface2)" } : undefined} />
+            <div
+              key={s}
+              className="flex-1 transition-colors"
+              style={{ background: i <= stepIndex ? "var(--uber-green)" : "var(--uber-surface2)" }}
+            />
+          ))}
+        </div>
+        {/* Step circles — desktop */}
+        <div className="hidden lg:flex items-center px-6 py-3 gap-0">
+          {steps.map((s, i) => (
+            <div key={s} className="flex-1 flex flex-col items-center gap-1">
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                style={i < stepIndex
+                  ? { background: "var(--uber-green)", color: "#fff" }
+                  : i === stepIndex
+                    ? { background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }
+                    : { background: "var(--uber-surface2)", color: "var(--uber-muted)" }
+                }
+              >
+                {i < stepIndex ? (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                ) : i + 1}
+              </div>
+              <span className="text-[9px] font-semibold text-center leading-tight" style={{ color: i === stepIndex ? "var(--uber-text)" : "var(--uber-muted)" }}>{s}</span>
             </div>
           ))}
         </div>
-        <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>
-          Step {stepIndex + 1} of {steps.length} — <span className="font-semibold" style={{ color: "var(--uber-text)" }}>{currentStep}</span>
-        </p>
       </div>
 
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep + kind}
-          className="flex-1 px-4 py-6 pb-32"
+          className="flex-1 pb-32 lg:pb-8"
           initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -16 }}
           transition={{ duration: 0.18 }}
         >
-          {/* ── Step: Type ── */}
-          {currentStep === "Type" && (
-            <div className="space-y-4">
-              <h2 className="text-base font-bold" style={{ color: "var(--uber-text)" }}>What are you listing?</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {(["home", "hostel"] as const).map((k) => (
-                  <button
-                    key={k}
-                    onClick={() => setKind(k)}
-                    className={`flex flex-col items-start gap-2 p-4 rounded-2xl border-2 text-left transition-all ${kind === k ? "border-emerald-500 bg-emerald-50" : ""}`}
-                    style={kind !== k ? { borderColor: "var(--uber-border)", background: "var(--uber-white)" } : undefined}
-                  >
-                    <span className="text-3xl">{k === "home" ? <IconHome /> : <IconSchool />}</span>
-                    <div>
-                      <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>{k === "home" ? "Home / Apartment" : "Hostel / Rooms"}</p>
-                      <p className="text-[11px]" style={{ color: "var(--uber-muted)" }}>{k === "home" ? "Rent or sell your property" : "Student accommodation"}</p>
-                    </div>
-                    {kind === k && (
-                      <div className="self-end w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <div className="max-w-5xl mx-auto lg:grid lg:grid-cols-[1fr_300px] lg:gap-8 px-4 py-6 lg:px-6 lg:py-8">
 
-          {/* ── Step: Details (Home) ── */}
-          {currentStep === "Details" && kind === "home" && (
-            <div className="space-y-4">
-              <h2 className="text-base font-bold" style={{ color: "var(--uber-text)" }}>Property Details</h2>
+            {/* Main form content */}
+            <div className="space-y-5">
 
-              {/* Property type picker */}
+              {/* Step heading */}
               <div>
-                <label className="block text-xs font-semibold mb-2" style={{ color: "var(--uber-text)" }}>Property Type</label>
-                <div className="grid grid-cols-3 gap-2">
+                <h2 className="text-2xl font-extrabold font-serif" style={{ color: "var(--uber-text)" }}>
+                  {STEP_QUESTIONS[currentStep as string] || currentStep}
+                </h2>
+                {STEP_SUBTITLES[currentStep as string] && (
+                  <p className="text-sm mt-1" style={{ color: "var(--uber-muted)" }}>
+                    {STEP_SUBTITLES[currentStep as string]}
+                  </p>
+                )}
+              </div>
+
+              {/* ── Category ── */}
+              {currentStep === "Category" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {(["home", "hostel"] as const).map((k) => (
+                    <button
+                      key={k}
+                      onClick={() => setKind(k)}
+                      className={`flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition-all ${kind === k ? "border-emerald-500" : ""}`}
+                      style={kind !== k ? { borderColor: "var(--uber-border)", background: "var(--uber-white)" } : { background: "rgba(6,193,103,0.04)" }}
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-2xl" style={{ background: kind === k ? "rgba(6,193,103,0.12)" : "var(--uber-surface)" }}>
+                        {k === "home" ? <IconHome /> : <IconSchool />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-bold" style={{ color: "var(--uber-text)" }}>{k === "home" ? "Home / Apartment" : "Hostel / Rooms"}</p>
+                        <p className="text-sm mt-1" style={{ color: "var(--uber-muted)" }}>{k === "home" ? "List a property for rent or sale — apartments, houses, studios and more." : "Student accommodation with multiple room types and shared facilities."}</p>
+                        {kind === k && (
+                          <div className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            Selected
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* ── Property Type (home only) ── */}
+              {currentStep === "Property Type" && kind === "home" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {PROPERTY_TYPES.map((pt) => (
                     <button
                       key={pt.value}
                       onClick={() => setHomeInfo((s) => ({ ...s, propertyType: pt.value }))}
-                      className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 text-center transition-all ${homeInfo.propertyType === pt.value ? "border-emerald-500 bg-emerald-50" : ""}`}
-                      style={homeInfo.propertyType !== pt.value ? { borderColor: "var(--uber-border)", background: "var(--uber-white)" } : undefined}
+                      className={`flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all ${homeInfo.propertyType === pt.value ? "border-emerald-500" : ""}`}
+                      style={homeInfo.propertyType !== pt.value ? { borderColor: "var(--uber-border)", background: "var(--uber-white)" } : { background: "rgba(6,193,103,0.04)" }}
                     >
-                      <span className="text-xl">{pt.icon}</span>
-                      <span className="text-[10px] font-semibold leading-tight" style={{ color: "var(--uber-text)" }}>{pt.label}</span>
+                      <span className="text-2xl">{pt.icon}</span>
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>{pt.label}</p>
+                        {homeInfo.propertyType === pt.value && (
+                          <div className="flex items-center gap-1 mt-0.5 text-xs font-bold text-emerald-600">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            Selected
+                          </div>
+                        )}
+                      </div>
                     </button>
                   ))}
                 </div>
-              </div>
+              )}
 
-              <FormField label="Title *" placeholder="e.g. Modern 3-Bedroom Flat in East Legon" value={homeInfo.title} onChange={(v) => setHomeInfo((s) => ({ ...s, title: v }))} />
-
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="Price (GH₵) *" placeholder="e.g. 3500" value={homeInfo.price} onChange={(v) => setHomeInfo((s) => ({ ...s, price: v }))} inputMode="numeric" />
+              {/* ── Name (Home) ── */}
+              {currentStep === "Name" && kind === "home" && (
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>Type</label>
-                  <div className="flex rounded-xl overflow-hidden" style={{ border: "0.5px solid var(--uber-border)" }}>
-                    {(["Rent", "Sale"] as const).map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => setHomeInfo((s) => ({ ...s, forSale: t === "Sale" }))}
-                        className={`flex-1 py-2.5 text-xs font-bold transition-colors ${(t === "Sale") === homeInfo.forSale ? "bg-emerald-500 text-white" : ""}`}
-                        style={(t === "Sale") !== homeInfo.forSale ? { background: "var(--uber-white)", color: "var(--uber-muted)" } : undefined}
-                      >
-                        {t}
-                      </button>
-                    ))}
+                  <input
+                    type="text"
+                    placeholder="e.g. Modern 3-Bedroom Flat in East Legon"
+                    value={homeInfo.title}
+                    onChange={(e) => setHomeInfo((s) => ({ ...s, title: e.target.value }))}
+                    className="w-full rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
+                    autoFocus
+                  />
+                  <p className="text-xs mt-2" style={{ color: "var(--uber-muted)" }}>Good titles include type, beds, and area — e.g. &quot;Modern 3-Bed in East Legon&quot;</p>
+                </div>
+              )}
+
+              {/* ── Name (Hostel) ── */}
+              {currentStep === "Name" && kind === "hostel" && (
+                <div>
+                  <input
+                    type="text"
+                    placeholder="e.g. Greenfield Student Lodge"
+                    value={hostelInfo.title}
+                    onChange={(e) => setHostelInfo((s) => ({ ...s, title: e.target.value }))}
+                    className="w-full rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
+                    autoFocus
+                  />
+                  <p className="text-xs mt-2" style={{ color: "var(--uber-muted)" }}>Use a name that students will recognise, e.g. &quot;Greenfield Student Lodge&quot;</p>
+                </div>
+              )}
+
+              {/* ── Description (Home) ── */}
+              {currentStep === "Description" && kind === "home" && (
+                <div>
+                  <textarea
+                    rows={7}
+                    placeholder="Describe your property — key features, nearby landmarks, what makes it special…"
+                    value={homeInfo.description}
+                    onChange={(e) => setHomeInfo((s) => ({ ...s, description: e.target.value }))}
+                    className="w-full rounded-xl px-4 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-none"
+                    style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
+                    autoFocus
+                  />
+                  <p className="text-xs mt-2" style={{ color: "var(--uber-muted)" }}>Mention nearby landmarks, estate name, and any special features. At least 3 sentences recommended.</p>
+                </div>
+              )}
+
+              {/* ── Description (Hostel) ── */}
+              {currentStep === "Description" && kind === "hostel" && (
+                <div>
+                  <textarea
+                    rows={7}
+                    placeholder="Describe your hostel — facilities, security, atmosphere, distance to campus…"
+                    value={hostelInfo.description}
+                    onChange={(e) => setHostelInfo((s) => ({ ...s, description: e.target.value }))}
+                    className="w-full rounded-xl px-4 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-none"
+                    style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
+                    autoFocus
+                  />
+                  <p className="text-xs mt-2" style={{ color: "var(--uber-muted)" }}>Mention security features, study environment, and proximity to campus gates.</p>
+                </div>
+              )}
+
+              {/* ── About (Home) ── */}
+              {currentStep === "About" && kind === "home" && (
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Property name / title *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Modern 3-Bedroom Flat in East Legon"
+                      value={homeInfo.title}
+                      onChange={(e) => setHomeInfo((s) => ({ ...s, title: e.target.value }))}
+                      className="w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
+                    />
+                    <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>Make it descriptive — good titles include the type, beds, and area.</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Description</label>
+                    <textarea
+                      rows={5}
+                      placeholder="Describe your property — key features, nearby landmarks, what makes it special…"
+                      value={homeInfo.description}
+                      onChange={(e) => setHomeInfo((s) => ({ ...s, description: e.target.value }))}
+                      className="w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-none"
+                      style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
+                    />
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Region → District picker */}
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>Region *</label>
-                <div className="flex flex-wrap gap-2 mb-2 max-h-28 overflow-y-auto">
-                  {REGION_NAMES.map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => setHomeInfo((s) => ({ ...s, region: r, city: "" }))}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${homeInfo.region === r ? "bg-emerald-500 text-white" : ""}`}
-                      style={homeInfo.region !== r ? { background: "var(--uber-white)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" } : { border: "0.5px solid transparent" }}
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {homeInfo.region && (
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>District / Town *</label>
-                  <div className="flex flex-wrap gap-2 mb-2 max-h-36 overflow-y-auto">
-                    {getDistrictsForRegion(homeInfo.region).map((d) => (
-                      <button
-                        key={d}
-                        onClick={() => setHomeInfo((s) => ({ ...s, city: d }))}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${homeInfo.city === d ? "bg-emerald-500 text-white" : ""}`}
-                        style={homeInfo.city !== d ? { background: "var(--uber-white)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" } : { border: "0.5px solid transparent" }}
-                      >
-                        {d}
-                      </button>
-                    ))}
+              {/* ── About (Hostel) ── */}
+              {currentStep === "About" && kind === "hostel" && (
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Hostel name *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Greenfield Student Lodge"
+                      value={hostelInfo.title}
+                      onChange={(e) => setHostelInfo((s) => ({ ...s, title: e.target.value }))}
+                      className="w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
+                    />
                   </div>
-                  {homeInfo.city && !getDistrictsForRegion(homeInfo.region).includes(homeInfo.city) && (
-                    <input type="text" placeholder="Other town…" value={homeInfo.city} onChange={(e) => setHomeInfo((s) => ({ ...s, city: e.target.value }))}
-                      className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Description</label>
+                    <textarea
+                      rows={5}
+                      placeholder="Describe your hostel — facilities, security, atmosphere, distance to campus…"
+                      value={hostelInfo.description}
+                      onChange={(e) => setHostelInfo((s) => ({ ...s, description: e.target.value }))}
+                      className="w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-none"
+                      style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ── Location (Home) ── */}
+              {currentStep === "Location" && kind === "home" && (
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Region *</label>
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                      {REGION_NAMES.map((r) => (
+                        <button key={r} onClick={() => setHomeInfo((s) => ({ ...s, region: r, city: "" }))}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${homeInfo.region === r ? "bg-emerald-500 text-white" : ""}`}
+                          style={homeInfo.region !== r ? { background: "var(--uber-white)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" } : {}}>
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {homeInfo.region && (
+                    <div>
+                      <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>District / Town *</label>
+                      <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                        {getDistrictsForRegion(homeInfo.region).map((d) => (
+                          <button key={d} onClick={() => setHomeInfo((s) => ({ ...s, city: d }))}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${homeInfo.city === d ? "bg-emerald-500 text-white" : ""}`}
+                            style={homeInfo.city !== d ? { background: "var(--uber-white)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" } : {}}>
+                            {d}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Street address / Estate</label>
+                    <input type="text" placeholder="e.g. 14 Orchid Rd, East Legon" value={homeInfo.address}
+                      onChange={(e) => setHomeInfo((s) => ({ ...s, address: e.target.value }))}
+                      className="w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
                       style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
+                  </div>
+                  <LocationPicker lat={homeInfo.lat} lng={homeInfo.lng}
+                    onLocationSet={(lat, lng) => setHomeInfo((s) => ({ ...s, lat, lng }))}
+                    onAddressFetched={(addr, city, region) => setHomeInfo((s) => ({
+                      ...s,
+                      address: addr || s.address,
+                      city: city || s.city,
+                      region: region || s.region,
+                    }))} />
+                </div>
+              )}
+
+              {/* ── Location (Hostel) ── */}
+              {currentStep === "Location" && kind === "hostel" && (
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Region *</label>
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                      {REGION_NAMES.map((r) => (
+                        <button key={r} onClick={() => setHostelInfo((s) => ({ ...s, region: r, city: "" }))}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${hostelInfo.region === r ? "bg-blue-600 text-white" : ""}`}
+                          style={hostelInfo.region !== r ? { background: "var(--uber-white)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" } : {}}>
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {hostelInfo.region && (
+                    <div>
+                      <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>District / Town *</label>
+                      <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                        {getDistrictsForRegion(hostelInfo.region).map((d) => (
+                          <button key={d} onClick={() => setHostelInfo((s) => ({ ...s, city: d }))}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${hostelInfo.city === d ? "bg-blue-600 text-white" : ""}`}
+                            style={hostelInfo.city !== d ? { background: "var(--uber-white)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" } : {}}>
+                            {d}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Street address</label>
+                    <input type="text" placeholder="e.g. 12 University Road, Legon" value={hostelInfo.address}
+                      onChange={(e) => setHostelInfo((s) => ({ ...s, address: e.target.value }))}
+                      className="w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
+                  </div>
+                  <LocationPicker lat={hostelInfo.lat} lng={hostelInfo.lng}
+                    onLocationSet={(lat, lng) => setHostelInfo((s) => ({ ...s, lat, lng }))}
+                    onAddressFetched={(addr, city, region) => setHostelInfo((s) => ({
+                      ...s,
+                      address: addr || s.address,
+                      city: city || s.city,
+                      region: region || s.region,
+                    }))} />
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Nearby universities / schools</label>
+                    <input type="text" placeholder="e.g. University of Ghana, KNUST" value={hostelInfo.nearbyUniversities}
+                      onChange={(e) => setHostelInfo((s) => ({ ...s, nearbyUniversities: e.target.value }))}
+                      className="w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
+                    <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>Comma-separated list</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Your phone (shown after booking)</label>
+                    <input type="tel" placeholder="+233 20 000 0000" value={hostelInfo.managerPhone}
+                      onChange={(e) => setHostelInfo((s) => ({ ...s, managerPhone: e.target.value }))}
+                      className="w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
+                  </div>
+                </div>
+              )}
+
+              {/* ── Bedrooms & Bathrooms ── */}
+              {currentStep === "Bedrooms & Bathrooms" && kind === "home" && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold mb-3" style={{ color: "var(--uber-text)" }}>Bedrooms</label>
+                    <div className="grid grid-cols-5 gap-3">
+                      {["0", "1", "2", "3", "4", "5", "6+"].map((n) => (
+                        <button key={n} onClick={() => setHomeInfo((s) => ({ ...s, beds: n === "6+" ? "6" : n }))}
+                          className="py-4 rounded-2xl text-base font-bold transition-all border-2"
+                          style={homeInfo.beds === (n === "6+" ? "6" : n)
+                            ? { borderColor: "#10b981", background: "rgba(6,193,103,0.06)", color: "#059669" }
+                            : { borderColor: "var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-text)" }}>
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-3" style={{ color: "var(--uber-text)" }}>Bathrooms</label>
+                    <div className="grid grid-cols-5 gap-3">
+                      {["1", "2", "3", "4", "5+"].map((n) => (
+                        <button key={n} onClick={() => setHomeInfo((s) => ({ ...s, baths: n === "5+" ? "5" : n }))}
+                          className="py-4 rounded-2xl text-base font-bold transition-all border-2"
+                          style={homeInfo.baths === (n === "5+" ? "5" : n)
+                            ? { borderColor: "#10b981", background: "rgba(6,193,103,0.06)", color: "#059669" }
+                            : { borderColor: "var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-text)" }}>
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Property Details ── */}
+              {currentStep === "Property Details" && kind === "home" && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>
+                      Property size (sqft) <span style={{ color: "var(--uber-muted)", fontWeight: 400 }}>— optional</span>
+                    </label>
+                    <div className="relative">
+                      <input type="text" inputMode="numeric" placeholder="e.g. 1400" value={homeInfo.sqft}
+                        onChange={(e) => setHomeInfo((s) => ({ ...s, sqft: e.target.value }))}
+                        className="w-full rounded-xl px-4 py-4 text-base font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
+                    </div>
+                    {homeInfo.propertyType === "house" && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Land size (sq meters) — optional</label>
+                        <input type="text" inputMode="numeric" placeholder="e.g. 450" value={homeInfo.landSize}
+                          onChange={(e) => setHomeInfo((s) => ({ ...s, landSize: e.target.value }))}
+                          className="w-full rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                          style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-3" style={{ color: "var(--uber-text)" }}>Property condition</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {CONDITION_OPTIONS.map((c) => (
+                        <button key={c.value} onClick={() => setHomeInfo((s) => ({ ...s, condition: c.value }))}
+                          className="py-5 rounded-2xl text-sm font-bold transition-all border-2"
+                          style={homeInfo.condition === c.value
+                            ? { borderColor: "#10b981", background: "rgba(6,193,103,0.06)", color: "#059669" }
+                            : { borderColor: "var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-muted)" }}>
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-3" style={{ color: "var(--uber-text)" }}>Furnishing level</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {FURNISHING_OPTIONS.map((f) => (
+                        <button key={f.value} onClick={() => setHomeInfo((s) => ({ ...s, furnishing: f.value }))}
+                          className="py-5 rounded-2xl text-sm font-bold transition-all border-2"
+                          style={homeInfo.furnishing === f.value
+                            ? { borderColor: "#10b981", background: "rgba(6,193,103,0.06)", color: "#059669" }
+                            : { borderColor: "var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-muted)" }}>
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Specs (Home) — legacy fallback ── */}
+              {currentStep === "Specs" && kind === "home" && (
+                <div className="space-y-5">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Bedrooms</label>
+                      <input type="text" inputMode="numeric" placeholder="3" value={homeInfo.beds}
+                        onChange={(e) => setHomeInfo((s) => ({ ...s, beds: e.target.value }))}
+                        className="w-full rounded-xl px-4 py-3.5 text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Bathrooms</label>
+                      <input type="text" inputMode="numeric" placeholder="2" value={homeInfo.baths}
+                        onChange={(e) => setHomeInfo((s) => ({ ...s, baths: e.target.value }))}
+                        className="w-full rounded-xl px-4 py-3.5 text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Size (sqft)</label>
+                      <input type="text" inputMode="numeric" placeholder="1400" value={homeInfo.sqft}
+                        onChange={(e) => setHomeInfo((s) => ({ ...s, sqft: e.target.value }))}
+                        className="w-full rounded-xl px-4 py-3.5 text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Price (Home) ── */}
+              {currentStep === "Price" && kind === "home" && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold mb-3" style={{ color: "var(--uber-text)" }}>Is this for rent or sale?</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      {(["Rent", "Sale"] as const).map((t) => (
+                        <button key={t} onClick={() => setHomeInfo((s) => ({ ...s, forSale: t === "Sale" }))}
+                          className="py-6 rounded-2xl text-base font-bold transition-all border-2 flex flex-col items-center gap-1"
+                          style={(t === "Sale") === homeInfo.forSale
+                            ? { borderColor: "#10b981", background: "rgba(6,193,103,0.06)", color: "#059669" }
+                            : { borderColor: "var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-muted)" }}>
+                          <span className="text-2xl">{t === "Rent" ? "🏠" : "🏷️"}</span>
+                          <span>For {t}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>
+                      Asking price (GH₵{homeInfo.forSale ? "" : " per month"}) *
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base font-bold" style={{ color: "var(--uber-muted)" }}>GH₵</span>
+                      <input type="text" inputMode="numeric" placeholder="e.g. 3500" value={homeInfo.price}
+                        onChange={(e) => setHomeInfo((s) => ({ ...s, price: e.target.value }))}
+                        className="w-full rounded-xl pl-14 pr-4 py-4 text-base font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
+                        autoFocus />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>
+                      Service charge (GH₵/mo) <span style={{ color: "var(--uber-muted)", fontWeight: 400 }}>— optional</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold" style={{ color: "var(--uber-muted)" }}>GH₵</span>
+                      <input type="text" inputMode="numeric" placeholder="0" value={homeInfo.serviceCharge}
+                        onChange={(e) => setHomeInfo((s) => ({ ...s, serviceCharge: e.target.value }))}
+                        className="w-full rounded-xl pl-14 pr-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-5 rounded-2xl" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
+                    <div>
+                      <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Price is negotiable</p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--uber-muted)" }}>Allow seekers to make offers</p>
+                    </div>
+                    <button onClick={() => setHomeInfo((s) => ({ ...s, isNegotiable: !s.isNegotiable }))}
+                      className="w-12 h-6 rounded-full transition-colors relative shrink-0"
+                      style={{ background: homeInfo.isNegotiable ? "var(--uber-green)" : "var(--uber-surface2)" }}>
+                      <div className="absolute top-0.5 w-5 h-5 rounded-full shadow transition-all" style={{ background: "var(--uber-white)", left: homeInfo.isNegotiable ? "1.375rem" : "0.125rem" }} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Contact (Home) ── */}
+              {currentStep === "Contact" && kind === "home" && (
+                <div>
+                  <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Your phone number</label>
+                  <input type="tel" placeholder="+233 20 000 0000" value={homeInfo.ownerPhone}
+                    onChange={(e) => setHomeInfo((s) => ({ ...s, ownerPhone: e.target.value }))}
+                    className="w-full rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
+                    autoFocus />
+                  <p className="text-xs mt-2" style={{ color: "var(--uber-muted)" }}>Only shared with seekers after their inquiry is accepted. Use a WhatsApp-enabled number for fastest response.</p>
+                </div>
+              )}
+
+              {/* ── Pricing (Home) — legacy fallback ── */}
+              {currentStep === "Pricing" && kind === "home" && (
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>
+                      Price (GH₵{homeInfo.forSale ? "" : "/month"}) *
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold" style={{ color: "var(--uber-muted)" }}>GH₵</span>
+                      <input type="text" inputMode="numeric" placeholder="e.g. 3500" value={homeInfo.price}
+                        onChange={(e) => setHomeInfo((s) => ({ ...s, price: e.target.value }))}
+                        className="w-full rounded-xl pl-12 pr-4 py-3.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Facilities (Home) ── */}
+              {currentStep === "Facilities" && kind === "home" && (
+                <div className="space-y-4">
+                  <p className="text-sm" style={{ color: "var(--uber-muted)" }}>Select all that apply — helps seekers find your listing faster.</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {HOME_AMENITIES.map((a) => {
+                      const selected = homeInfo.amenities.includes(a.value);
+                      return (
+                        <button key={a.value}
+                          onClick={() => setHomeInfo((s) => ({
+                            ...s,
+                            amenities: selected ? s.amenities.filter((x) => x !== a.value) : [...s.amenities, a.value],
+                          }))}
+                          className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border-2 text-left transition-all ${selected ? "border-emerald-500" : ""}`}
+                          style={!selected ? { borderColor: "var(--uber-border)", background: "var(--uber-white)" } : { background: "rgba(6,193,103,0.04)" }}>
+                          <span className="text-xl shrink-0">{a.icon}</span>
+                          <span className="text-sm font-semibold flex-1" style={{ color: selected ? "#059669" : "var(--uber-text)" }}>{a.label}</span>
+                          {selected && (
+                            <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Rooms (Hostel) ── */}
+              {currentStep === "Rooms" && kind === "hostel" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm" style={{ color: "var(--uber-muted)" }}>Add each type of room you offer</p>
+                    <button
+                      onClick={() => {
+                        const draft = makeRoomDraft();
+                        setHostelInfo((s) => ({ ...s, rooms: [...s.rooms, draft] }));
+                        setEditingRoom(draft.id);
+                      }}
+                      className="flex items-center gap-1.5 bg-blue-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl active:scale-95 transition-transform"
+                    >
+                      <span className="text-base leading-none">+</span> Add Room
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {hostelInfo.rooms.map((room, idx) => (
+                      <RoomEditor key={room.id} room={room} index={idx} isOpen={editingRoom === room.id}
+                        onToggle={() => setEditingRoom(editingRoom === room.id ? null : room.id)}
+                        onChange={(updated) => setHostelInfo((s) => ({ ...s, rooms: s.rooms.map((r) => r.id === updated.id ? updated : r) }))}
+                        onRemove={() => setHostelInfo((s) => ({ ...s, rooms: s.rooms.filter((r) => r.id !== room.id) }))} />
+                    ))}
+                  </div>
+                  {hostelInfo.rooms.length === 0 && (
+                    <div className="text-center py-12 rounded-2xl" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
+                      <p className="text-3xl mb-2"><IconBed /></p>
+                      <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>No rooms yet</p>
+                      <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>Tap &quot;Add Room&quot; to get started</p>
+                    </div>
+                  )}
+                  {hostelInfo.rooms.length > 0 && !hostelInfo.rooms.every((r) => r.name.trim() && r.price.trim()) && (
+                    <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+                      <p className="text-xs text-amber-700 font-medium">Fill in name and price for all rooms to continue</p>
+                    </div>
                   )}
                 </div>
               )}
 
-              <FormField label="Address / Estate" placeholder="e.g. 14 Orchid Rd, East Legon" value={homeInfo.address} onChange={(v) => setHomeInfo((s) => ({ ...s, address: v }))} />
-
-              <LocationPicker
-                lat={homeInfo.lat}
-                lng={homeInfo.lng}
-                onLocationSet={(lat, lng) => setHomeInfo((s) => ({ ...s, lat, lng }))}
-                onAddressFetched={(addr, city, region) => setHomeInfo((s) => ({
-                  ...s,
-                  address: addr || s.address,
-                  city: city || s.city,
-                  region: region || s.region,
-                }))}
-              />
-
-              <div className="grid grid-cols-3 gap-3">
-                <FormField label="Beds" placeholder="3" value={homeInfo.beds} onChange={(v) => setHomeInfo((s) => ({ ...s, beds: v }))} inputMode="numeric" />
-                <FormField label="Baths" placeholder="2" value={homeInfo.baths} onChange={(v) => setHomeInfo((s) => ({ ...s, baths: v }))} inputMode="numeric" />
-                <FormField label="Sqft" placeholder="1400" value={homeInfo.sqft} onChange={(v) => setHomeInfo((s) => ({ ...s, sqft: v }))} inputMode="numeric" />
-              </div>
-
-              {/* Land Size — only for houses */}
-              {homeInfo.propertyType === "house" && (
-                <FormField label="Land Size (sq meters)" placeholder="e.g. 450" value={homeInfo.landSize} onChange={(v) => setHomeInfo((s) => ({ ...s, landSize: v }))} inputMode="numeric" />
-              )}
-
-              {/* Condition */}
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>Condition</label>
-                <div className="flex gap-2">
-                  {CONDITION_OPTIONS.map((c) => (
-                    <button
-                      key={c.value}
-                      onClick={() => setHomeInfo((s) => ({ ...s, condition: c.value }))}
-                      className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all text-center"
-                      style={homeInfo.condition === c.value
-                        ? { background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }
-                        : { background: "var(--uber-white)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" }
-                      }
-                    >
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Furnishing */}
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>Furnishing</label>
-                <div className="flex gap-2">
-                  {FURNISHING_OPTIONS.map((f) => (
-                    <button
-                      key={f.value}
-                      onClick={() => setHomeInfo((s) => ({ ...s, furnishing: f.value }))}
-                      className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all text-center"
-                      style={homeInfo.furnishing === f.value
-                        ? { background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }
-                        : { background: "var(--uber-white)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" }
-                      }
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Service Charge + Negotiable */}
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="Service Charge (GH₵/mo)" placeholder="0" value={homeInfo.serviceCharge} onChange={(v) => setHomeInfo((s) => ({ ...s, serviceCharge: v }))} inputMode="numeric" />
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>Negotiable?</label>
-                  <button
-                    onClick={() => setHomeInfo((s) => ({ ...s, isNegotiable: !s.isNegotiable }))}
-                    className="w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
-                    style={homeInfo.isNegotiable
-                      ? { background: "var(--uber-green)", color: "#fff" }
-                      : { background: "var(--uber-white)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" }
-                    }
-                  >
-                    <div className={`w-8 h-4 rounded-full relative transition-all ${homeInfo.isNegotiable ? "bg-white/30" : ""}`} style={!homeInfo.isNegotiable ? { background: "var(--uber-surface2)" } : undefined}>
-                      <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${homeInfo.isNegotiable ? "right-0.5 bg-white" : "left-0.5"}`} style={!homeInfo.isNegotiable ? { background: "var(--uber-muted)" } : undefined} />
-                    </div>
-                    {homeInfo.isNegotiable ? "Yes" : "No"}
-                  </button>
-                </div>
-              </div>
-
-              <FormField label="Your Phone (shown to seekers after booking)" placeholder="+233 20 000 0000" value={homeInfo.ownerPhone} onChange={(v) => setHomeInfo((s) => ({ ...s, ownerPhone: v }))} inputMode="tel" />
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>Description</label>
-                <textarea
-                  rows={4}
-                  placeholder="Describe your property — key features, nearby landmarks, what makes it special…"
-                  value={homeInfo.description}
-                  onChange={(e) => setHomeInfo((s) => ({ ...s, description: e.target.value }))}
-                  className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-none"
-                  style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ── Step: Details (Hostel) ── */}
-          {currentStep === "Details" && kind === "hostel" && (
-            <div className="space-y-4">
-              <h2 className="text-base font-bold" style={{ color: "var(--uber-text)" }}>Hostel Details</h2>
-              <FormField label="Hostel Name *" placeholder="e.g. Greenfield Student Lodge" value={hostelInfo.title} onChange={(v) => setHostelInfo((s) => ({ ...s, title: v }))} />
-
-              {/* Region → District picker */}
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>Region *</label>
-                <div className="flex flex-wrap gap-2 mb-2 max-h-28 overflow-y-auto">
-                  {REGION_NAMES.map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => setHostelInfo((s) => ({ ...s, region: r, city: "" }))}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${hostelInfo.region === r ? "bg-blue-600 text-white" : ""}`}
-                      style={hostelInfo.region !== r ? { background: "var(--uber-white)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" } : { border: "0.5px solid transparent" }}
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {hostelInfo.region && (
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>District / Town *</label>
-                  <div className="flex flex-wrap gap-2 mb-2 max-h-36 overflow-y-auto">
-                    {getDistrictsForRegion(hostelInfo.region).map((d) => (
-                      <button
-                        key={d}
-                        onClick={() => setHostelInfo((s) => ({ ...s, city: d }))}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${hostelInfo.city === d ? "bg-blue-600 text-white" : ""}`}
-                        style={hostelInfo.city !== d ? { background: "var(--uber-white)", color: "var(--uber-muted)", border: "0.5px solid var(--uber-border)" } : { border: "0.5px solid transparent" }}
-                      >
-                        {d}
-                      </button>
+              {/* ── Photos ── */}
+              {currentStep === "Photos" && (
+                <div className="space-y-5">
+                  <p className="text-sm" style={{ color: "var(--uber-muted)" }}>Minimum {MIN_PHOTOS} photos required. Add up to 10. First photo is your cover image.</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {photos.map((f, i) => (
+                      <div key={i} className="relative aspect-square rounded-xl overflow-hidden" style={{ background: "var(--uber-surface2)" }}>
+                        <img src={photoPreviews[i] || ""} alt="" className="w-full h-full object-cover" />
+                        {i === 0 && (
+                          <div className="absolute top-1 left-1 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">Cover</div>
+                        )}
+                        <button onClick={() => removePhoto(i)} className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white rounded-full text-[10px] flex items-center justify-center"><IconClose /></button>
+                        <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1">
+                          {i > 0 && <button onClick={() => movePhoto(i, i - 1)} className="w-5 h-5 bg-black/60 text-white rounded-full text-[10px] flex items-center justify-center">←</button>}
+                          {i < photos.length - 1 && <button onClick={() => movePhoto(i, i + 1)} className="w-5 h-5 bg-black/60 text-white rounded-full text-[10px] flex items-center justify-center">→</button>}
+                        </div>
+                      </div>
                     ))}
+                    {photos.length < 10 && (
+                      <button onClick={() => photoInputRef.current?.click()}
+                        className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 hover:border-emerald-400 hover:text-emerald-500 transition-colors"
+                        style={{ borderColor: "var(--uber-border)", color: "var(--uber-muted)" }}>
+                        <span className="text-2xl">+</span>
+                        <span className="text-[10px]">Add Photo</span>
+                      </button>
+                    )}
+                  </div>
+                  <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { handlePhotoAdd(e.target.files); e.target.value = ""; }} />
+                  {compressing && <p className="text-xs font-medium animate-pulse" style={{ color: "var(--uber-muted)" }}>Compressing images…</p>}
+                  <div className={`rounded-xl px-4 py-3 ${photos.length >= MIN_PHOTOS ? "bg-emerald-50 border border-emerald-100" : "bg-amber-50 border border-amber-100"}`}>
+                    <p className={`text-sm font-medium ${photos.length >= MIN_PHOTOS ? "text-emerald-700" : "text-amber-700"}`}>
+                      {photos.length < MIN_PHOTOS
+                        ? `Add ${MIN_PHOTOS - photos.length} more photo${MIN_PHOTOS - photos.length > 1 ? "s" : ""} to continue`
+                        : `✓ ${photos.length} photo${photos.length !== 1 ? "s" : ""} ready`}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Video Tour <span className="text-xs font-normal" style={{ color: "var(--uber-muted)" }}>(optional, max 100 MB)</span></h3>
+                    {videoPreview ? (
+                      <div className="relative rounded-xl overflow-hidden" style={{ border: "0.5px solid var(--uber-border)" }}>
+                        <video src={videoPreview} controls className="w-full max-h-48 object-contain" style={{ background: "#000" }} />
+                        <button onClick={removeVideo} className="absolute top-2 right-2 w-6 h-6 bg-black/60 text-white rounded-full text-xs flex items-center justify-center"><IconClose /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => videoInputRef.current?.click()}
+                        className="w-full py-5 rounded-xl border-2 border-dashed flex flex-col items-center gap-1.5 hover:border-emerald-400 transition-colors"
+                        style={{ borderColor: "var(--uber-border)", color: "var(--uber-muted)" }}>
+                        <span className="text-2xl"><IconFilm /></span>
+                        <span className="text-sm font-medium">Add Video Tour</span>
+                        <span className="text-xs">Takes seekers on a virtual walkthrough</span>
+                      </button>
+                    )}
+                    <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => { handleVideoAdd(e.target.files); e.target.value = ""; }} />
                   </div>
                 </div>
               )}
 
-              <FormField label="Address" placeholder="e.g. 12 University Road, Legon" value={hostelInfo.address} onChange={(v) => setHostelInfo((s) => ({ ...s, address: v }))} />
-
-              <LocationPicker
-                lat={hostelInfo.lat}
-                lng={hostelInfo.lng}
-                onLocationSet={(lat, lng) => setHostelInfo((s) => ({ ...s, lat, lng }))}
-                onAddressFetched={(addr, city, region) => setHostelInfo((s) => ({
-                  ...s,
-                  address: addr || s.address,
-                  city: city || s.city,
-                  region: region || s.region,
-                }))}
-              />
-
-              <FormField label="Nearby Universities / Schools (comma-separated)" placeholder="e.g. University of Ghana, KNUST" value={hostelInfo.nearbyUniversities} onChange={(v) => setHostelInfo((s) => ({ ...s, nearbyUniversities: v }))} />
-              <FormField label="Your Phone (shown to students after booking)" placeholder="+233 20 000 0000" value={hostelInfo.managerPhone} onChange={(v) => setHostelInfo((s) => ({ ...s, managerPhone: v }))} inputMode="tel" />
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>Description</label>
-                <textarea
-                  rows={4}
-                  placeholder="Describe your hostel — facilities, security, atmosphere, distance to campus…"
-                  value={hostelInfo.description}
-                  onChange={(e) => setHostelInfo((s) => ({ ...s, description: e.target.value }))}
-                  className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                  style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ── Step: Amenities (Home) ── */}
-          {currentStep === "Amenities" && kind === "home" && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-base font-bold" style={{ color: "var(--uber-text)" }}>Amenities</h2>
-                <p className="text-xs mt-0.5" style={{ color: "var(--uber-muted)" }}>Select all that apply — helps seekers filter</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {HOME_AMENITIES.map((a) => {
-                  const selected = homeInfo.amenities.includes(a.value);
-                  return (
-                    <button
-                      key={a.value}
-                      onClick={() => setHomeInfo((s) => ({
-                        ...s,
-                        amenities: selected ? s.amenities.filter((x) => x !== a.value) : [...s.amenities, a.value],
-                      }))}
-                      className={`flex items-center gap-2.5 px-3 py-3 rounded-xl border-2 text-left transition-all ${selected ? "border-emerald-500 bg-emerald-50" : ""}`}
-                      style={!selected ? { borderColor: "var(--uber-border)", background: "var(--uber-white)" } : undefined}
-                    >
-                      <span className="text-lg">{a.icon}</span>
-                      <span className={`text-xs font-semibold flex-1 ${selected ? "text-emerald-700" : ""}`} style={!selected ? { color: "var(--uber-text)" } : undefined}>{a.label}</span>
-                      {selected && (
-                        <div className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-                          <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
+              {/* ── Review ── */}
+              {currentStep === "Review" && (
+                <div className="space-y-4">
+                  {/* Listing fee paywall */}
+                  {needsListingFee && listingCountLoaded && (
+                    <div className="rounded-2xl p-5 space-y-3" style={{ background: "#FDF8E7", border: "0.5px solid rgba(212,175,55,0.3)" }}>
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl"><IconShield /></span>
+                        <div>
+                          <p className="text-sm font-extrabold" style={{ color: "var(--uber-text)" }}>Listing Limit Reached</p>
+                          <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>You&apos;ve used your {FREE_LISTING_LIMIT} free listings. Choose an option below to continue posting.</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <button onClick={handlePayListingFee} className="w-full py-3.5 text-sm font-bold rounded-xl" style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>Pay GH₵{PER_LISTING_FEE} for This Listing</button>
+                        <button onClick={handlePayAgentSub} className="w-full py-3.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2" style={{ background: "#06C167", color: "#fff" }}>Subscribe — GH₵{AGENT_SUBSCRIPTION_PRICE}/mo (Unlimited)</button>
+                      </div>
+                    </div>
+                  )}
+                  {/* Preview card */}
+                  <div className="rounded-2xl overflow-hidden" style={{ border: "0.5px solid var(--uber-border)" }}>
+                    {photoPreviews[0] && (
+                      <img src={photoPreviews[0]} alt="" className="w-full h-48 object-cover" />
+                    )}
+                    <div className="p-5 space-y-3" style={{ background: "var(--uber-white)" }}>
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl mt-0.5">{kind === "hostel" ? <IconSchool /> : <IconHome />}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-bold" style={{ color: "var(--uber-text)" }}>{kind === "home" ? homeInfo.title : hostelInfo.title}</p>
+                          <p className="text-sm mt-0.5" style={{ color: "var(--uber-muted)" }}>
+                            {kind === "home"
+                              ? `${homeInfo.city} · ${PROPERTY_TYPES.find((p) => p.value === homeInfo.propertyType)?.label} · ${homeInfo.forSale ? "For Sale" : "For Rent"}`
+                              : `${hostelInfo.city} · ${hostelInfo.rooms.length} room type${hostelInfo.rooms.length !== 1 ? "s" : ""}`}
+                          </p>
+                        </div>
+                      </div>
+                      {kind === "home" && (
+                        <>
+                          <p className="text-xl font-extrabold text-emerald-600">
+                            GH₵{parseFloat(homeInfo.price.replace(/[^\d.]/g, "") || "0").toLocaleString()}{homeInfo.forSale ? "" : "/mo"}
+                          </p>
+                          <div className="flex gap-4 text-sm" style={{ color: "var(--uber-muted)" }}>
+                            {homeInfo.beds && <span><IconBed /> {homeInfo.beds} beds</span>}
+                            {homeInfo.baths && <span><IconShower /> {homeInfo.baths} baths</span>}
+                            {homeInfo.sqft && <span><IconRuler /> {homeInfo.sqft} sqft</span>}
+                          </div>
+                        </>
+                      )}
+                      {kind === "hostel" && (
+                        <div className="space-y-1.5 pt-2" style={{ borderTop: "0.5px solid var(--uber-border)" }}>
+                          {hostelInfo.rooms.map((r) => (
+                            <div key={r.id} className="flex items-center justify-between text-sm">
+                              <span style={{ color: "var(--uber-text)" }}>{r.name || r.roomType}</span>
+                              <span className="font-bold text-blue-600">GH₵{parseFloat(r.price || "0").toLocaleString()}/yr</span>
+                            </div>
+                          ))}
                         </div>
                       )}
-                    </button>
-                  );
-                })}
-              </div>
-              {homeInfo.amenities.length === 0 && (
-                <p className="text-xs text-center pt-1" style={{ color: "var(--uber-muted)" }}>No amenities selected — you can still continue</p>
-              )}
-            </div>
-          )}
-
-          {/* ── Step: Rooms (Hostel) ── */}
-          {currentStep === "Rooms" && kind === "hostel" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-bold" style={{ color: "var(--uber-text)" }}>Room Types</h2>
-                  <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Add each type of room you offer</p>
-                </div>
-                <button
-                  onClick={() => {
-                    const draft = makeRoomDraft();
-                    setHostelInfo((s) => ({ ...s, rooms: [...s.rooms, draft] }));
-                    setEditingRoom(draft.id);
-                  }}
-                  className="flex items-center gap-1.5 bg-blue-600 text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-transform"
-                >
-                  <span className="text-base leading-none">+</span> Add Room
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {hostelInfo.rooms.map((room, idx) => (
-                  <RoomEditor
-                    key={room.id}
-                    room={room}
-                    index={idx}
-                    isOpen={editingRoom === room.id}
-                    onToggle={() => setEditingRoom(editingRoom === room.id ? null : room.id)}
-                    onChange={(updated) => setHostelInfo((s) => ({ ...s, rooms: s.rooms.map((r) => r.id === updated.id ? updated : r) }))}
-                    onRemove={() => setHostelInfo((s) => ({ ...s, rooms: s.rooms.filter((r) => r.id !== room.id) }))}
-                  />
-                ))}
-              </div>
-
-              {hostelInfo.rooms.length === 0 && (
-                <div className="text-center py-8" style={{ color: "var(--uber-muted)" }}>
-                  <p className="text-2xl mb-2"><IconBed /></p>
-                  <p className="text-sm font-medium">No rooms yet</p>
-                  <p className="text-xs mt-1">Tap &quot;Add Room&quot; to get started</p>
-                </div>
-              )}
-
-              {hostelInfo.rooms.length > 0 && !hostelInfo.rooms.every((r) => r.name.trim() && r.price.trim()) && (
-                <div className="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
-                  <p className="text-xs text-amber-700 font-medium">Fill in name and price for all rooms to continue</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── Step: Photos ── */}
-          {currentStep === "Photos" && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-base font-bold" style={{ color: "var(--uber-text)" }}>Photos</h2>
-                <p className="text-xs mt-0.5" style={{ color: "var(--uber-muted)" }}>Minimum {MIN_PHOTOS} photos required for your listing.</p>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {photos.map((f, i) => (
-                  <div key={i} className="relative aspect-square rounded-xl overflow-hidden" style={{ background: "var(--uber-surface2)" }}>
-                    <img src={photoPreviews[i] || ""} alt="" className="w-full h-full object-cover" />
-                    {i === 0 && (
-                      <div className="absolute top-1 left-1 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">Cover</div>
-                    )}
-                    <button onClick={() => removePhoto(i)} className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white rounded-full text-[10px] flex items-center justify-center"><IconClose /></button>
-                    <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1">
-                      {i > 0 && (
-                        <button onClick={() => movePhoto(i, i - 1)} className="w-5 h-5 bg-black/60 text-white rounded-full text-[10px] flex items-center justify-center">←</button>
-                      )}
-                      {i < photos.length - 1 && (
-                        <button onClick={() => movePhoto(i, i + 1)} className="w-5 h-5 bg-black/60 text-white rounded-full text-[10px] flex items-center justify-center">→</button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {photos.length < 10 && (
-                  <button
-                    onClick={() => photoInputRef.current?.click()}
-                    className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 hover:border-emerald-400 hover:text-emerald-500 transition-colors"
-                    style={{ borderColor: "var(--uber-border)", color: "var(--uber-muted)" }}
-                  >
-                    <span className="text-xl">+</span>
-                    <span className="text-[10px]">Add Photo</span>
-                  </button>
-                )}
-              </div>
-              <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { handlePhotoAdd(e.target.files); e.target.value = ""; }} />
-              {compressing && (
-                <p className="text-xs font-medium animate-pulse" style={{ color: "var(--uber-muted)" }}>Compressing images…</p>
-              )}
-              <div className={`rounded-xl px-3 py-2 border ${photos.length >= MIN_PHOTOS ? "bg-emerald-50 border-emerald-100" : "bg-amber-50 border-amber-100"}`}>
-                <p className={`text-xs font-medium ${photos.length >= MIN_PHOTOS ? "text-emerald-700" : "text-amber-700"}`}>
-                  {photos.length < MIN_PHOTOS
-                    ? `Add ${MIN_PHOTOS - photos.length} more photo${MIN_PHOTOS - photos.length > 1 ? "s" : ""} to continue.`
-                    : `${photos.length} photos ready`}
-                </p>
-              </div>
-
-              {/* Video upload (optional) */}
-              <div className="mt-4 space-y-2">
-                <h3 className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Video Tour <span className="text-xs font-normal" style={{ color: "var(--uber-muted)" }}>(optional, max 100 MB)</span></h3>
-                {videoPreview ? (
-                  <div className="relative rounded-xl overflow-hidden" style={{ border: "0.5px solid var(--uber-border)" }}>
-                    <video src={videoPreview} controls className="w-full max-h-48 object-contain" style={{ background: "#000" }} />
-                    <button onClick={removeVideo} className="absolute top-2 right-2 w-6 h-6 bg-black/60 text-white rounded-full text-xs flex items-center justify-center"><IconClose /></button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => videoInputRef.current?.click()}
-                    className="w-full py-4 rounded-xl border-2 border-dashed flex flex-col items-center gap-1 hover:border-emerald-400 transition-colors"
-                    style={{ borderColor: "var(--uber-border)", color: "var(--uber-muted)" }}
-                  >
-                    <span className="text-xl"><IconFilm /></span>
-                    <span className="text-xs">Add Video Tour</span>
-                  </button>
-                )}
-                <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={(e) => { handleVideoAdd(e.target.files); e.target.value = ""; }} />
-              </div>
-            </div>
-          )}
-
-          {/* ── Step: Preview ── */}
-          {currentStep === "Preview" && (
-            <div className="space-y-4">
-              <h2 className="text-base font-bold" style={{ color: "var(--uber-text)" }}>Review &amp; Publish</h2>
-
-              {/* Listing fee paywall */}
-              {needsListingFee && listingCountLoaded && (
-                <div className="rounded-2xl p-5 space-y-3" style={{ background: "#FDF8E7", border: "0.5px solid rgba(212,175,55,0.3)" }}>
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl"><IconShield /></span>
-                    <div>
-                      <p className="text-sm font-extrabold" style={{ color: "var(--uber-text)" }}>Listing Limit Reached</p>
-                      <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>
-                        You&apos;ve used your {FREE_LISTING_LIMIT} free listings. Choose an option below to continue posting.
+                      <p className="text-xs pt-2 flex items-center gap-1.5" style={{ color: "var(--uber-muted)", borderTop: "0.5px solid var(--uber-border)" }}>
+                        <IconCamera /> {photos.length} photos
+                        {videoPreview && <> · <IconFilm /> Video tour attached</>}
                       </p>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <button onClick={handlePayListingFee}
-                      className="w-full py-3 text-sm font-bold rounded-xl active:scale-95 transition-transform"
-                      style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>
-                      Pay GH₵{PER_LISTING_FEE} for This Listing
-                    </button>
-                    <button onClick={handlePayAgentSub}
-                      className="w-full py-3 text-sm font-bold rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2"
-                      style={{ background: "#06C167", color: "#fff" }}>
-                      Subscribe — GH₵{AGENT_SUBSCRIPTION_PRICE}/mo (Unlimited)
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="rounded-2xl p-4 space-y-3" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
-                {photoPreviews[0] && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={photoPreviews[0]} alt="" className="w-full h-44 object-cover rounded-xl" />
-                )}
-                {photoPreviews.length > 1 && (
-                  <div className="flex gap-1.5 overflow-x-auto pb-1">
-                    {photoPreviews.slice(1).map((url, i) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img key={i} src={url} alt="" className="w-14 h-14 object-cover rounded-lg shrink-0" />
-                    ))}
-                  </div>
-                )}
-                {videoPreview && (
-                  <div className="rounded-xl overflow-hidden" style={{ border: "0.5px solid var(--uber-border)" }}>
-                    <video src={videoPreview} controls className="w-full max-h-32 object-contain" style={{ background: "#000" }} />
-                    <p className="text-[10px] text-center py-1" style={{ color: "var(--uber-muted)" }}>Video tour attached</p>
-                  </div>
-                )}
-                <div className="flex items-start gap-2">
-                  <span className="text-2xl mt-0.5">{kind === "hostel" ? <IconSchool /> : <IconHome />}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold truncate" style={{ color: "var(--uber-text)" }}>{kind === "home" ? homeInfo.title : hostelInfo.title}</p>
-                    <p className="text-xs" style={{ color: "var(--uber-muted)" }}>
-                      {kind === "home"
-                        ? `${homeInfo.city} · ${PROPERTY_TYPES.find((p) => p.value === homeInfo.propertyType)?.label} · ${homeInfo.forSale ? "For Sale" : "For Rent"}`
-                        : `${hostelInfo.city} · ${hostelInfo.rooms.length} room type${hostelInfo.rooms.length !== 1 ? "s" : ""}`}
-                    </p>
-                  </div>
-                </div>
-
-                {kind === "home" ? (
-                  <>
-                    <p className="text-base font-extrabold text-emerald-600">
-                      GH₵{parseFloat(homeInfo.price.replace(/[^\d.]/g, "") || "0").toLocaleString()}{homeInfo.forSale ? "" : "/mo"}
-                    </p>
-                    <div className="flex gap-4 text-xs" style={{ color: "var(--uber-muted)" }}>
-                      <span><IconBed /> {homeInfo.beds || "?"} beds</span>
-                      <span><IconShower /> {homeInfo.baths || "?"} baths</span>
-                      {homeInfo.sqft && <span><IconRuler /> {homeInfo.sqft} sqft</span>}
+                  {submitError && (
+                    <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                      <p className="text-sm text-red-600 font-medium">{submitError}</p>
                     </div>
-                    {homeInfo.amenities.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {homeInfo.amenities.map((a) => {
-                          const am = HOME_AMENITIES.find((x) => x.value === a);
-                          return <span key={a} className="text-[11px] bg-emerald-50 text-emerald-700 font-medium px-2 py-0.5 rounded-full">{am?.icon} {am?.label ?? a}</span>;
-                        })}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="space-y-1.5 pt-2" style={{ borderTop: "0.5px solid var(--uber-border)" }}>
-                    {hostelInfo.rooms.map((r) => (
-                      <div key={r.id} className="flex items-center justify-between text-xs">
-                        <span className="font-medium" style={{ color: "var(--uber-text)" }}>{r.name || r.roomType}</span>
-                        <span className="font-bold text-blue-600">GH₵{parseFloat(r.price || "0").toLocaleString()}/yr</span>
-                      </div>
-                    ))}
+                  )}
+                  <div className="rounded-xl px-4 py-3" style={{ background: "#FFF8E1", border: "0.5px solid rgba(245,158,11,0.3)" }}>
+                    <p className="text-xs font-medium text-amber-700">⚠️ Your listing will be reviewed by our team before going live. This usually takes less than 24 hours.</p>
                   </div>
-                )}
-
-                {(kind === "home" ? homeInfo.description : hostelInfo.description) && (
-                  <p className="text-xs line-clamp-2 pt-2" style={{ color: "var(--uber-muted)", borderTop: "0.5px solid var(--uber-border)" }}>
-                    {kind === "home" ? homeInfo.description : hostelInfo.description}
-                  </p>
-                )}
-                <p className="text-xs pt-2" style={{ color: "var(--uber-muted)", borderTop: "0.5px solid var(--uber-border)" }}><IconCamera /> {photos.length} photos</p>
-              </div>
-
-              {submitError && (
-                <div className="bg-red-50 border border-red-100 rounded-xl px-3 py-2">
-                  <p className="text-xs text-red-600 font-medium">{submitError}</p>
                 </div>
               )}
-              <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
-                <p className="text-xs text-amber-700 font-medium">
-                  Your listing goes live immediately. Make sure all details and photos are accurate.
-                </p>
+            </div>
+
+            {/* Desktop right sidebar: tips */}
+            <div className="hidden lg:block">
+              <div className="sticky top-20 rounded-2xl p-5 space-y-4" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm" style={{ background: "var(--uber-surface)" }}>💡</div>
+                  <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Tips for this step</p>
+                </div>
+                <div className="space-y-3">
+                  {(STEP_TIPS[currentStep as string] || []).map((tip: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <svg className="w-4 h-4 mt-0.5 shrink-0" style={{ color: "var(--uber-green)" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                      <p className="text-xs leading-relaxed" style={{ color: "var(--uber-muted)" }}>{tip}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-3 mt-2" style={{ borderTop: "0.5px solid var(--uber-border)" }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm" style={{ background: "rgba(6,193,103,0.1)" }}>🛡️</div>
+                    <p className="text-xs font-semibold" style={{ color: "var(--uber-green)" }}>StayMate verifies every listing</p>
+                  </div>
+                </div>
               </div>
             </div>
-          )}
+
+          </div>
         </motion.div>
       </AnimatePresence>
 

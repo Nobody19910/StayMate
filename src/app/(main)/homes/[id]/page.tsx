@@ -324,7 +324,7 @@ export default function HomeDetailPage({ params }: Props) {
         <div className="flex flex-col lg:flex-row gap-6">
 
           {/* ── LEFT COLUMN ────────────────────────────────────────────── */}
-          <div className="flex-1 min-w-0 space-y-4">
+          <div className="flex-1 min-w-0 space-y-6">
 
             {/* Key specs strip */}
             <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
@@ -346,6 +346,48 @@ export default function HomeDetailPage({ params }: Props) {
                 </div>
               </div>
             </div>
+
+            {/* Good to know */}
+            <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
+              <h2 className="text-base font-bold mb-4" style={{ color: "var(--uber-text)" }}>Good to know</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { icon: "🏷️", label: "Listed as", value: property.forSale ? "For Sale" : "For Rent" },
+                  { icon: "🏗️", label: "Condition", value: property.condition ? property.condition.charAt(0).toUpperCase() + property.condition.slice(1) : "Not specified" },
+                  { icon: "🛋️", label: "Furnishing", value: property.furnishing ? property.furnishing.replace("-", " ").replace(/\b\w/g, (c: string) => c.toUpperCase()) : "Not specified" },
+                  { icon: "📐", label: "Size", value: property.sqft ? `${property.sqft.toLocaleString()} sqft` : "Not specified" },
+                  { icon: "💰", label: "Negotiable", value: property.isNegotiable ? "Yes" : "Fixed price" },
+                  { icon: "📍", label: "Location", value: `${property.city}${property.state ? `, ${property.state}` : ""}` },
+                ].map(({ icon, label, value }) => (
+                  <div key={label} className="flex items-start gap-2.5 p-3 rounded-xl" style={{ background: "var(--uber-surface)" }}>
+                    <span className="text-lg leading-none mt-0.5">{icon}</span>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--uber-muted)" }}>{label}</p>
+                      <p className="text-sm font-semibold mt-0.5" style={{ color: "var(--uber-text)" }}>{value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Video Tour */}
+            {property.videoUrl && (
+              <div className="rounded-2xl overflow-hidden" style={{ border: "0.5px solid var(--uber-border)" }}>
+                <div className="px-5 py-4" style={{ background: "var(--uber-white)" }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <svg className="w-4 h-4" style={{ color: "var(--uber-green)" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" /></svg>
+                    <h2 className="text-base font-bold" style={{ color: "var(--uber-text)" }}>Video Tour</h2>
+                  </div>
+                  <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Watch a walkthrough of the property</p>
+                </div>
+                <video
+                  src={property.videoUrl}
+                  controls
+                  className="w-full"
+                  style={{ background: "#000", maxHeight: "360px", display: "block" }}
+                />
+              </div>
+            )}
 
             {/* Popular facilities */}
             {property.amenities && property.amenities.length > 0 && (
@@ -447,6 +489,29 @@ export default function HomeDetailPage({ params }: Props) {
               </div>
             </div>
 
+            {/* What's nearby */}
+            <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
+              <h2 className="text-base font-bold mb-4" style={{ color: "var(--uber-text)" }}>What&apos;s nearby</h2>
+              <div className="space-y-3">
+                {[
+                  { icon: "🏪", label: "Shops & Supermarkets", dist: "Within walking distance" },
+                  { icon: "🍽️", label: "Restaurants & Eateries", dist: "Within 1 km" },
+                  { icon: "🚌", label: "Public Transport", dist: "Nearby bus stop / trotro" },
+                  { icon: "🏥", label: "Hospital / Clinic", dist: "Within the area" },
+                  { icon: "⛪", label: "Place of Worship", dist: "Within the area" },
+                ].map(({ icon, label, dist }) => (
+                  <div key={label} className="flex items-center gap-3">
+                    <span className="text-xl w-8 text-center">{icon}</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold" style={{ color: "var(--uber-text)" }}>{label}</p>
+                      <p className="text-xs" style={{ color: "var(--uber-muted)" }}>{dist} · {property.city}</p>
+                    </div>
+                    <svg className="w-4 h-4 shrink-0" style={{ color: "var(--uber-green)" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Location */}
             <div className="rounded-2xl overflow-hidden" style={{ border: "0.5px solid var(--uber-border)" }}>
               <div className="px-5 py-4" style={{ background: "var(--uber-white)" }}>
@@ -489,8 +554,16 @@ export default function HomeDetailPage({ params }: Props) {
               {/* Price + inquiry widget */}
               <div className="rounded-2xl p-5 shadow-lg" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
                 <div className="mb-4">
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-3xl font-extrabold" style={{ color: "var(--uber-text)" }}>{property.priceLabel}</p>
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div>
+                      <p className="text-3xl font-extrabold" style={{ color: "var(--uber-text)" }}>{property.priceLabel}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="inline-flex flex-col items-center px-2.5 py-1.5 rounded-xl" style={{ background: "var(--uber-btn-bg)" }}>
+                        <span className="text-xs font-bold" style={{ color: "var(--uber-btn-text)" }}>StayMate</span>
+                        <span className="text-lg font-extrabold leading-tight" style={{ color: "var(--uber-btn-text)" }}>Pick</span>
+                      </div>
+                    </div>
                   </div>
                   <p className="text-xs mt-0.5" style={{ color: "var(--uber-muted)" }}>{property.forSale ? "asking price · freehold" : "per month · excluding utilities"}</p>
                   {property.serviceCharge && (

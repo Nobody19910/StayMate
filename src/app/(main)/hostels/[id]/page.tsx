@@ -148,7 +148,7 @@ export default function HostelRoomPickerPage() {
         <div className="flex flex-col lg:flex-row gap-6">
 
           {/* Left column */}
-          <div className="flex-1 min-w-0 space-y-4">
+          <div className="flex-1 min-w-0 space-y-6">
 
             {/* Key stats */}
             <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
