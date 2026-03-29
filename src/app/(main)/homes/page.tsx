@@ -307,10 +307,10 @@ function FilterSidebar({
 /* ─── Skeleton ───────────────────────────────────────────────────────────────── */
 function ListSkeleton() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pt-1 pb-10">
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i} className="rounded-2xl overflow-hidden flex animate-pulse"
-          style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", minHeight: "160px" }}>
+          style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", minHeight: "200px" }}>
           <div className="w-52 shrink-0" style={{ background: "var(--uber-surface2)" }} />
           <div className="flex-1 p-4 space-y-3">
             <div className="h-4 rounded w-2/3" style={{ background: "var(--uber-surface2)" }} />
@@ -739,7 +739,7 @@ export default function HomesPage() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-5 pt-1 pb-10">
                 {filteredHomes.map((property) => (
                   <HomeListCard key={property.id} property={property} />
                 ))}
