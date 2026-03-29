@@ -40,15 +40,21 @@ export default function AdminDashboardPage() {
 
     async function fetchData() {
       setLoading(true);
-      const [homesRes, hostelsRes, bookingsRes, leadsRes, kycRes, agentsRes, appsRes] = await Promise.all([
+      const [homesRes, hostelsRes, bookingsRes, leadsRes, kycRes, agentsRes] = await Promise.all([
         supabase.from("homes").select("*").order("created_at", { ascending: false }),
         supabase.from("hostels").select("*").order("created_at", { ascending: false }),
         supabase.from("bookings").select("*").order("created_at", { ascending: false }),
         supabase.from("landlord_leads").select("*").order("created_at", { ascending: false }),
         supabase.from("kyc_submissions").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("*").neq("role", "admin"),
-        supabase.from("agent_applications").select("*").order("created_at", { ascending: false }),
       ]);
+
+      // Fetch agent_applications separately — table may not exist yet
+      const appsRes = await supabase
+        .from("agent_applications")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .catch(() => ({ data: [], error: null })) as { data: any[] | null; error: any };
 
       const allProfiles = agentsRes.data || [];
       const allHomes = homesRes.data || [];
@@ -88,7 +94,10 @@ export default function AdminDashboardPage() {
       // Fetch subscribed agents
       getActiveAgents().then(setSubscribedAgents).catch(() => {});
     }
-    fetchData();
+    fetchData().catch(err => {
+      console.error("Admin fetchData error:", err);
+      setLoading(false);
+    });
   }, [profile]);
 
   const liveHomes = useMemo(() => homes.filter(h => h.status === "approved"), [homes]);

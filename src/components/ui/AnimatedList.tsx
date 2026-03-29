@@ -1,9 +1,7 @@
 "use client";
 
+import React from "react";
 import { motion } from "framer-motion";
-
-// Emil Kowalski / motion-primitives stagger pattern
-// Each child fades + slides up with a cascading delay
 
 const containerVariants = {
   hidden: {},
@@ -33,11 +31,14 @@ const itemVariants = {
 };
 
 interface AnimatedListProps {
-  children: React.ReactNode[];
+  children: React.ReactNode;
   className?: string;
 }
 
 export function AnimatedList({ children, className }: AnimatedListProps) {
+  // React.Children.toArray handles single elements, arrays, fragments safely
+  const items = React.Children.toArray(children);
+
   return (
     <motion.div
       className={className}
@@ -45,7 +46,7 @@ export function AnimatedList({ children, className }: AnimatedListProps) {
       initial="hidden"
       animate="show"
     >
-      {children.map((child, i) => (
+      {items.map((child, i) => (
         <motion.div key={i} variants={itemVariants}>
           {child}
         </motion.div>
