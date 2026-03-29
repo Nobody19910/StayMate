@@ -327,7 +327,10 @@ function ListSkeleton() {
 
 /* ─── Property List Card (Booking.com style) ─────────────────────────────── */
 const HomeListCard = memo(function HomeListCard({ property }: { property: Property }) {
-  const [saved, setSaved] = useState(() => isSaved(property.id));
+  // Start false on both server and client (avoids hydration mismatch),
+  // then sync from localStorage after mount.
+  const [saved, setSaved] = useState(false);
+  useEffect(() => { setSaved(isSaved(property.id)); }, [property.id]);
 
   function toggleSave(e: React.MouseEvent) {
     e.preventDefault();
