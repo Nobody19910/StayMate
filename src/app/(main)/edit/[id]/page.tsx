@@ -127,8 +127,8 @@ export default function EditListingPage() {
           setFurnishing(data.furnishing ?? "unfurnished");
           setAmenities(data.amenities ?? []);
           setServiceCharge(data.service_charge ? data.service_charge.toString() : "");
-          setNegotiable(!!data.negotiable);
-          setContactPhone(data.contact_phone ?? data.owner_phone ?? "");
+          setNegotiable(!!data.is_negotiable);
+          setContactPhone(data.owner_phone ?? "");
           setCity(data.city ?? "");
         }
       } else {
@@ -177,8 +177,8 @@ export default function EditListingPage() {
           furnishing,
           amenities,
           service_charge: scNum,
-          negotiable,
-          contact_phone: contactPhone || null,
+          is_negotiable: negotiable,
+          owner_phone: contactPhone || null,
         }).eq("id", id);
 
         if (updateError) throw updateError;
