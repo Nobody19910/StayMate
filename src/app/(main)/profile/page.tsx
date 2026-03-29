@@ -15,11 +15,11 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import { IconPhone, IconHome, IconMailbox, IconCheck, IconCreditCard, IconCalendar, IconCheckCircle, IconChat, IconClose, IconStar } from "@/components/ui/Icons";
 
 const ROLE_LABELS: Record<string, string> = {
-  seeker: "Property Seeker",
-  owner: "Property Owner",
-  manager: "Hostel Manager",
-  admin: "StayMate Admin",
-  agent: "StayMate Agent",
+  seeker:  "Property Seeker",
+  owner:   "Property Owner",
+  manager: "Property Owner",   // legacy — display same as owner
+  admin:   "StayMate Admin",
+  agent:   "StayMate Agent",
 };
 
 /* ── status helpers ── */
@@ -92,7 +92,7 @@ export default function ProfilePage() {
     if (!user) return;
     setLoadingData(true);
     const isAdmin = profile?.role === "admin";
-    const isOwnerOrManager = profile?.role === "owner" || profile?.role === "manager";
+    const isOwnerOrManager = profile?.role === "owner" || profile?.role === "manager" || profile?.role === "agent";
 
     const promises: Promise<any>[] = [];
 
@@ -308,7 +308,7 @@ export default function ProfilePage() {
   }
 
   const initials = (profile?.fullName ?? user.email ?? "?").split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-  const isOwnerOrManager = profile?.role === "owner" || profile?.role === "manager" || profile?.role === "admin";
+  const isOwnerOrManager = profile?.role === "owner" || profile?.role === "manager" || profile?.role === "agent" || profile?.role === "admin";
 
   return (
     <div className="min-h-screen pb-28" style={{ background: "var(--background)" }}>
@@ -393,6 +393,15 @@ export default function ProfilePage() {
         {/* ══════════════════════════════════════════════════════════════════ */}
         {isOwnerOrManager && (
           <div className="pt-2">
+            {/* Dashboard shortcut */}
+            <Link href="/dashboard" className="flex items-center justify-between px-4 py-3 rounded-2xl mb-4"
+              style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
+              <div>
+                <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>My Dashboard</p>
+                <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Pipeline, properties & pending queue</p>
+              </div>
+              <span className="text-lg" style={{ color: "var(--uber-green)" }}>→</span>
+            </Link>
             {/* Stats bar */}
             <div className="flex gap-2 mb-4">
               <div className="flex-1 rounded-xl p-3 text-center" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
@@ -680,6 +689,18 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <p className="text-xs mt-3" style={{ color: "var(--uber-muted)" }}>Your listings are tagged as agent properties. Post unlimited listings during your subscription.</p>
+                <button
+                  onClick={async () => {
+                    if (!confirm("Cancel your agent subscription? You'll keep access until the current period ends, but won't be renewed.")) return;
+                    await supabase.from("profiles").update({ is_agent: false, agent_subscription_until: null }).eq("id", user!.id);
+                    await supabase.from("profiles").update({ role: "owner" }).eq("id", user!.id);
+                    fetchAll();
+                  }}
+                  className="mt-3 text-xs font-semibold underline"
+                  style={{ color: "var(--uber-muted)" }}
+                >
+                  Cancel subscription
+                </button>
               </div>
             ) : (
               <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>

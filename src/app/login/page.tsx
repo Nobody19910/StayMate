@@ -38,7 +38,7 @@ export default function LoginPage() {
       options: {
         redirectTo: isNative
           ? "com.staymate.app://auth/callback"
-          : `${window.location.origin}/homes`,
+          : `${window.location.origin}/set-password`,
         skipBrowserRedirect: true,
       },
     });

@@ -526,9 +526,9 @@ export default function PostPage() {
         if (hostelError) throw hostelError;
         setLastInsertedId(hostelId);
         setLastInsertedKind("hostels");
-        // Promote seeker → manager so they appear in Active Agents
+        // Promote seeker → owner (property owner covers both homes and hostels)
         if (profile?.role === "seeker") {
-          await supabase.from("profiles").update({ role: "manager" }).eq("id", user.id);
+          await supabase.from("profiles").update({ role: "owner" }).eq("id", user.id);
         }
 
         for (const room of hostelInfo.rooms) {
@@ -1526,7 +1526,7 @@ export default function PostPage() {
                         <span className="text-2xl"><IconShield /></span>
                         <div>
                           <p className="text-sm font-extrabold" style={{ color: "var(--uber-text)" }}>Listing Limit Reached</p>
-                          <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>You&apos;ve used your {FREE_LISTING_LIMIT} free listings. Choose an option below to continue posting.</p>
+                          <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>You already have {listingCount} properties listed. To post 3 or more, you need to become a StayMate Agent.</p>
                         </div>
                       </div>
                       <div className="space-y-2">

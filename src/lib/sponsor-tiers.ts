@@ -73,7 +73,7 @@ export const SPONSOR_TIERS: SponsorTierOption[] = [
   },
 ];
 
-export const FREE_LISTING_LIMIT = 3;
+export const FREE_LISTING_LIMIT = 2; // post up to 2 free; 3rd requires agent subscription
 export const PER_LISTING_FEE = 20; // GHS per listing after free limit
 export const PER_LISTING_FEE_PESEWAS = 2000;
 export const AGENT_SUBSCRIPTION_PRICE = 100; // GHS

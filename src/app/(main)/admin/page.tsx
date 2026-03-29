@@ -1200,8 +1200,14 @@ function BookingKanbanCard({
         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
       }}
     >
-      {/* Top: image + info */}
-      <div className="flex items-start gap-2.5 p-3 pb-2">
+      {/* Top: image + info — click opens property detail */}
+      <Link
+        href={b.property_type === "home" ? `/homes/${b.property_id}` : `/hostels/${b.property_id}`}
+        target="_blank"
+        className="flex items-start gap-2.5 p-3 pb-2 hover:bg-slate-50 transition-colors"
+        style={{ display: "flex" }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="w-16 h-12 rounded-lg overflow-hidden shrink-0 relative" style={{ background: "#e9edf2" }}>
           {b.property?.images?.[0] && (
             <OptimizedImage src={b.property.images[0]} alt="" width={100} className="w-full h-full" />
@@ -1231,7 +1237,7 @@ function BookingKanbanCard({
             {b.viewing_date ? new Date(b.viewing_date).toLocaleDateString() : "Anytime"}
           </p>
         </div>
-      </div>
+      </Link>
 
       {/* Bottom: actions */}
       <div className="flex items-center gap-1 px-3 pb-3">
