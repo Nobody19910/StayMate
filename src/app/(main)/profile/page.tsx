@@ -19,6 +19,7 @@ const ROLE_LABELS: Record<string, string> = {
   owner: "Property Owner",
   manager: "Hostel Manager",
   admin: "StayMate Admin",
+  agent: "StayMate Agent",
 };
 
 /* ── status helpers ── */
@@ -363,8 +364,8 @@ export default function ProfilePage() {
           <>
             <h1 className="text-lg font-bold" style={{ color: "var(--uber-text)" }}>{profile?.fullName ?? "Your Account"}</h1>
             {profile && (
-              <span className="mt-1 text-[11px] font-bold uppercase text-white px-2 py-0.5 rounded" style={{ background: "var(--uber-green)" }}>
-                {ROLE_LABELS[profile.role] ?? profile.role}
+              <span className="mt-1 text-[11px] font-bold uppercase text-white px-2 py-0.5 rounded" style={{ background: (profile as any).is_agent ? "#7c3aed" : "var(--uber-green)" }}>
+                {(profile as any).is_agent ? "StayMate Agent" : (ROLE_LABELS[profile.role] ?? profile.role)}
               </span>
             )}
             <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>{user.email}</p>
@@ -664,7 +665,7 @@ export default function ProfilePage() {
         )}
 
         {/* ── Agent Subscription ── */}
-        {profile?.role !== "admin" && (profile?.role === "owner" || profile?.role === "manager") && (
+        {profile?.role !== "admin" && (
           <div className="mb-6 pt-2">
             <h2 className="text-lg font-bold mb-3 px-1" style={{ color: "var(--uber-text)" }}>Agent Subscription</h2>
             {(profile as any)?.is_agent && new Date((profile as any)?.agent_subscription_until ?? 0) > new Date() ? (
@@ -682,8 +683,8 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
-                <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Become an Agent</p>
-                <p className="text-xs mt-1 mb-3" style={{ color: "var(--uber-muted)" }}>Post unlimited listings for GH₵100/month. Your name will appear on all your property cards.</p>
+                <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Become a Concierge Agent</p>
+                <p className="text-xs mt-1 mb-3" style={{ color: "var(--uber-muted)" }}>Subscribe for GH₵100/month, then complete a quick ID verification. Once approved, you'll be a verified StayMate Agent.</p>
                 <ul className="space-y-1 mb-4">
                   {["Post unlimited properties", "Agent badge on all your listings", "Your name displayed on property cards", "Direct contact shared after payment confirmation"].map((perk) => (
                     <li key={perk} className="text-[11px] flex items-center gap-1.5" style={{ color: "var(--uber-muted)" }}>
@@ -705,7 +706,8 @@ export default function ProfilePage() {
                           if (!(profile as any)?.display_name && profile?.fullName) {
                             await supabase.from("profiles").update({ display_name: profile.fullName }).eq("id", user!.id);
                           }
-                          window.location.reload();
+                          // Send to agent application form to complete verification
+                          router.push("/apply");
                         } catch {
                           alert("Payment received but activation failed. Contact support.");
                         }
