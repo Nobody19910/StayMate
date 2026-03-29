@@ -21,7 +21,8 @@ export default function AdminDashboardPage() {
   const [kyc, setKyc] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [tab, setTab] = useState<"dashboard" | "properties" | "queue" | "audit" | "leads" | "agents" | "featured">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "properties" | "queue" | "audit" | "leads" | "agents" | "featured" | "applications">("dashboard");
+  const [applications, setApplications] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [subscribedAgents, setSubscribedAgents] = useState<any[]>([]);
@@ -39,13 +40,14 @@ export default function AdminDashboardPage() {
 
     async function fetchData() {
       setLoading(true);
-      const [homesRes, hostelsRes, bookingsRes, leadsRes, kycRes, agentsRes] = await Promise.all([
+      const [homesRes, hostelsRes, bookingsRes, leadsRes, kycRes, agentsRes, appsRes] = await Promise.all([
         supabase.from("homes").select("*").order("created_at", { ascending: false }),
         supabase.from("hostels").select("*").order("created_at", { ascending: false }),
         supabase.from("bookings").select("*").order("created_at", { ascending: false }),
         supabase.from("landlord_leads").select("*").order("created_at", { ascending: false }),
         supabase.from("kyc_submissions").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("*").neq("role", "admin"),
+        supabase.from("agent_applications").select("*").order("created_at", { ascending: false }),
       ]);
 
       const allProfiles = agentsRes.data || [];
@@ -77,6 +79,10 @@ export default function AdminDashboardPage() {
       setLeads(leadsRes.data || []);
       setKyc(mappedKyc);
       setAgents(allProfiles);
+      setApplications((appsRes.data || []).map(a => ({
+        ...a,
+        user: allProfiles.find(p => p.id === a.user_id) || null,
+      })));
       setLoading(false);
 
       // Fetch subscribed agents
@@ -92,6 +98,7 @@ export default function AdminDashboardPage() {
   const pendingHostels = useMemo(() => hostels.filter(h => h.status === "pending_admin"), [hostels]);
 
   const pendingKyc = useMemo(() => kyc.filter(k => k.status === "pending"), [kyc]);
+  const pendingApplications = useMemo(() => applications.filter(a => a.status === "pending"), [applications]);
 
   const totalInquiries = useMemo(() => bookings.length, [bookings]);
   const activeAgentIds = useMemo(() => new Set([...homes.filter(h => h.owner_id).map(h => h.owner_id), ...hostels.filter(h => h.manager_id).map(h => h.manager_id)]), [homes, hostels]);
@@ -145,6 +152,15 @@ export default function AdminDashboardPage() {
     setKyc(prev => prev.map(k => k.id === id ? { ...k, status } : k));
   }
 
+  async function resolveApplication(id: string, userId: string, approve: boolean) {
+    const status = approve ? "approved" : "rejected";
+    await supabase.from("agent_applications").update({ status }).eq("id", id);
+    if (approve) {
+      await supabase.from("profiles").update({ is_agent: true }).eq("id", userId);
+    }
+    setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+  }
+
   async function resolveBooking(id: string, status: "accepted" | "rejected") {
     const { error } = await supabase.from("bookings").update({ status }).eq("id", id);
     if (!error) {
@@ -176,7 +192,7 @@ export default function AdminDashboardPage() {
 
   if (!profile || profile.role !== "admin") return null;
 
-  const attentionCount = pendingHomes.length + pendingHostels.length + pendingKyc.length;
+  const attentionCount = pendingHomes.length + pendingHostels.length + pendingKyc.length + pendingApplications.length;
   const adminInitials = (profile?.full_name || "SA").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
@@ -215,6 +231,7 @@ export default function AdminDashboardPage() {
             <TabButton active={tab === "agents"} onClick={() => { setTab("agents"); setSelectedAgentId(null); }} icon={<IconTie />} label="Active Agents" count={activeAgents} />
             <TabButton active={tab === "queue"} onClick={() => setTab("queue")} icon="⏳" label="Agent Queue" count={pendingHomes.length + pendingHostels.length} />
             <TabButton active={false} onClick={() => {}} icon={<IconIdCard />} label="KYC Audit" disabled />
+            <TabButton active={tab === "applications"} onClick={() => setTab("applications")} icon={<IconCheckCircle />} label="Applications" count={pendingApplications.length} />
             <TabButton active={tab === "featured"} onClick={() => setTab("featured")} icon={<IconStar />} label="Featured" count={homes.filter(h => h.is_sponsored).length + hostels.filter(h => h.is_sponsored).length} />
             <TabButton active={tab === "leads"} onClick={() => setTab("leads")} icon={<IconTarget />} label="Seeker Leads" count={leads.filter(l => l.status === "pending").length} />
           </nav>
@@ -231,6 +248,7 @@ export default function AdminDashboardPage() {
             { t: "agents", icon: <IconTie />, label: "Agents", count: activeAgents },
             { t: "queue", icon: "⏳", label: "Queue", count: pendingHomes.length + pendingHostels.length },
             { t: "featured", icon: <IconStar />, label: "Featured" },
+            { t: "applications", icon: <IconCheckCircle />, label: "Apply", count: pendingApplications.length },
             { t: "leads", icon: <IconTarget />, label: "Leads", count: leads.filter((l: any) => l.status === "pending").length },
           ].map(({ t, icon, label, count }) => (
             <button key={t} onClick={() => { setTab(t as typeof tab); if (t === "agents") setSelectedAgentId(null); }}
@@ -805,6 +823,119 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── APPLICATIONS TAB ── */}
+            {tab === "applications" && (
+              <div className="space-y-5">
+                <div className="rounded-xl overflow-hidden" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
+                  <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "0.5px solid var(--uber-border)" }}>
+                    <div className="flex items-center gap-2">
+                      <IconCheckCircle />
+                      <h2 className="font-bold text-sm" style={{ color: "var(--uber-text)" }}>Concierge Agent Applications</h2>
+                    </div>
+                    {pendingApplications.length > 0 && (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>
+                        {pendingApplications.length} pending
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    {applications.length === 0 ? (
+                      <div className="text-center py-12">
+                        <p className="font-bold text-sm mb-1" style={{ color: "var(--uber-text)" }}>No applications yet</p>
+                        <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Applications submitted via the /apply page will appear here.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {applications.map(app => (
+                          <div key={app.id} className="rounded-xl overflow-hidden" style={{ border: "0.5px solid var(--uber-border)", background: "var(--uber-surface)" }}>
+                            {/* Header row */}
+                            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "0.5px solid var(--uber-border)", background: "var(--uber-white)" }}>
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0" style={{ background: "var(--uber-surface2)", color: "var(--uber-text)" }}>
+                                  {(app.full_name || "?").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>{app.full_name}</p>
+                                  <p className="text-[11px]" style={{ color: "var(--uber-muted)" }}>{app.phone}{app.email ? ` · ${app.email}` : ""}</p>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-full"
+                                style={app.status === "approved"
+                                  ? { background: "rgba(6,193,103,0.1)", color: "var(--uber-green)" }
+                                  : app.status === "rejected"
+                                  ? { background: "rgba(239,68,68,0.08)", color: "#ef4444" }
+                                  : { background: "rgba(245,158,11,0.1)", color: "#d69e2e" }}>
+                                {app.status}
+                              </span>
+                            </div>
+
+                            {/* ID info */}
+                            <div className="px-4 py-3 flex gap-2 flex-wrap" style={{ borderBottom: "0.5px solid var(--uber-border)" }}>
+                              <span className="text-[11px] font-semibold px-2 py-1 rounded" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", color: "var(--uber-text)" }}>
+                                {app.id_type}
+                              </span>
+                              <span className="text-[11px] font-mono font-semibold px-2 py-1 rounded" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", color: "var(--uber-text)" }}>
+                                {app.id_number}
+                              </span>
+                              {app.user?.full_name && app.user.full_name.toLowerCase() !== app.full_name.toLowerCase() && (
+                                <span className="text-[10px] font-bold px-2 py-1 rounded" style={{ background: "rgba(245,158,11,0.1)", color: "#d69e2e" }}>
+                                  ⚠ Name mismatch with profile
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Photos side by side */}
+                            <div className="grid grid-cols-2 gap-3 p-4">
+                              <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--uber-muted)" }}>ID Document</p>
+                                {app.id_photo_url ? (
+                                  <a href={app.id_photo_url} target="_blank" rel="noopener noreferrer">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={app.id_photo_url} alt="ID" className="w-full rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity" style={{ aspectRatio: "16/9" }} />
+                                  </a>
+                                ) : (
+                                  <div className="w-full rounded-lg flex items-center justify-center text-xs font-semibold" style={{ aspectRatio: "16/9", background: "var(--uber-surface2)", color: "var(--uber-muted)" }}>No photo</div>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--uber-muted)" }}>Selfie</p>
+                                {app.selfie_url ? (
+                                  <a href={app.selfie_url} target="_blank" rel="noopener noreferrer">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={app.selfie_url} alt="Selfie" className="w-full rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity" style={{ aspectRatio: "3/4" }} />
+                                  </a>
+                                ) : (
+                                  <div className="w-full rounded-lg flex items-center justify-center text-xs font-semibold" style={{ aspectRatio: "3/4", background: "var(--uber-surface2)", color: "var(--uber-muted)" }}>No photo</div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            {app.status === "pending" && (
+                              <div className="flex gap-2 px-4 pb-4">
+                                <button
+                                  onClick={() => resolveApplication(app.id, app.user_id, true)}
+                                  className="flex-1 py-2.5 rounded-xl font-bold text-sm transition-opacity hover:opacity-90"
+                                  style={{ background: "var(--uber-green)", color: "#fff" }}>
+                                  Approve &amp; Activate Agent
+                                </button>
+                                <button
+                                  onClick={() => resolveApplication(app.id, app.user_id, false)}
+                                  className="py-2.5 px-4 rounded-xl font-bold text-sm transition-opacity hover:opacity-80"
+                                  style={{ background: "var(--uber-surface2)", color: "var(--uber-muted)" }}>
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
