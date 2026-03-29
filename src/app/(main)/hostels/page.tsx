@@ -199,11 +199,11 @@ function FilterSidebar({ radius, setRadius, filters, setFilters, onOpenModal }: 
 /* ─── Skeleton ───────────────────────────────────────────────────────────── */
 function ListSkeleton() {
   return (
-    <div className="space-y-5 pt-1 pb-10">
+    <div className="space-y-8 pt-1 pb-10">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="rounded-2xl overflow-hidden flex animate-pulse"
-          style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", minHeight: "200px" }}>
-          <div className="w-52 shrink-0" style={{ background: "var(--uber-surface2)" }} />
+        <div key={i} className="rounded-2xl overflow-hidden flex flex-col sm:flex-row animate-pulse"
+          style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
+          <div className="w-full sm:w-52 shrink-0" style={{ minHeight: "160px", background: "var(--uber-surface2)" }} />
           <div className="flex-1 p-4 space-y-3">
             <div className="h-4 rounded w-2/3" style={{ background: "var(--uber-surface2)" }} />
             <div className="h-3 rounded w-1/3" style={{ background: "var(--uber-surface2)" }} />
@@ -235,11 +235,11 @@ const HostelListCard = memo(function HostelListCard({ hostel }: { hostel: Hostel
 
   return (
     <Link href={`/hostels/${hostel.id}`}>
-      <div className="rounded-2xl overflow-hidden flex transition-all cursor-pointer group"
+      <div className="rounded-2xl overflow-hidden flex flex-col sm:flex-row transition-all cursor-pointer group hover:shadow-md"
         style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", boxShadow: "var(--shadow-sm)" }}>
 
-        {/* Image */}
-        <div className="relative shrink-0 w-48 sm:w-56 md:w-72" style={{ minHeight: "200px", background: "var(--uber-surface2)" }}>
+        {/* Image — full width on mobile, fixed sidebar on sm+ */}
+        <div className="relative w-full sm:w-56 md:w-72 shrink-0" style={{ minHeight: "180px", background: "var(--uber-surface2)" }}>
           <OptimizedImage
             src={hostel.images[0] || ""}
             alt={hostel.name}
@@ -260,7 +260,7 @@ const HostelListCard = memo(function HostelListCard({ hostel }: { hostel: Hostel
         </div>
 
         {/* Details */}
-        <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
+        <div className="flex-1 p-4 sm:p-5 flex flex-col justify-between min-w-0">
           <div>
             {/* Tags */}
             <div className="flex flex-wrap gap-1.5 mb-2">
@@ -560,7 +560,7 @@ export default function HostelsPage() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-5 pt-1 pb-10">
+              <div className="space-y-8 pt-1 pb-10">
                 {filteredHostels.map((hostel) => (
                   <HostelListCard key={hostel.id} hostel={hostel} />
                 ))}
