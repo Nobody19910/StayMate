@@ -722,6 +722,7 @@ export default function ProfilePage() {
                       ref: `agent-sub-${user?.id}-${Date.now()}`,
                       metadata: { type: "agent_subscription", user_id: user?.id },
                       onSuccess: async (reference) => {
+                        console.log("[AgentSub] Paystack onSuccess fired, ref:", reference, "userId:", user!.id);
                         try {
                           await activateAgentSubscription(user!.id, reference);
                           if (!(profile as any)?.display_name && profile?.fullName) {
@@ -730,7 +731,8 @@ export default function ProfilePage() {
                           await refreshProfile();
                           fetchAll();
                           router.push("/apply");
-                        } catch {
+                        } catch (err) {
+                          console.error("[AgentSub] activation error:", err);
                           alert("Payment received but activation failed. Contact support.");
                         }
                       },

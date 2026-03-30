@@ -425,7 +425,7 @@ export async function activateAgentSubscription(
   const until = new Date(Date.now() + 30 * 86400000).toISOString();
 
   // 1. Promote profile to agent
-  await supabase
+  const { error, data, count } = await supabase
     .from("profiles")
     .update({
       is_agent: true,
@@ -433,7 +433,18 @@ export async function activateAgentSubscription(
       agent_subscription_until: until,
       agent_subscription_ref: paymentRef,
     })
-    .eq("id", userId);
+    .eq("id", userId)
+    .select();
+
+  console.log("[activateAgentSubscription] userId:", userId, "until:", until);
+  console.log("[activateAgentSubscription] result:", { data, error, count });
+  if (error) {
+    console.error("[activateAgentSubscription] UPDATE failed:", error);
+    throw error;
+  }
+  if (!data || data.length === 0) {
+    console.error("[activateAgentSubscription] No rows updated — RLS or id mismatch");
+  }
 
   // 2. Send automatic welcome message from admin in the user's chat
   try {
