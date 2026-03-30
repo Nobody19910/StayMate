@@ -14,6 +14,7 @@ import PropertyMap from "@/components/ui/PropertyMap";
 import DistanceBadge from "@/components/ui/DistanceBadge";
 import SponsorModal from "@/components/ui/SponsorModal";
 import { IconCheck, IconStar, IconBed, IconShower, IconRuler } from "@/components/ui/Icons";
+import ReviewsSection from "@/components/ui/ReviewsSection";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -61,6 +62,7 @@ export default function HomeDetailPage({ params }: Props) {
   const [editedProperty, setEditedProperty] = useState<Partial<Property> | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
+  const [completedBookingId, setCompletedBookingId] = useState<string | undefined>();
 
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -70,9 +72,27 @@ export default function HomeDetailPage({ params }: Props) {
         if (!p) { setNotFoundFlag(true); return; }
         setProperty(p);
         setSaved(isSaved(p.id));
+        // Increment view count (fire-and-forget)
+        supabase.rpc("increment_view", { p_table: "homes", p_id: id }).then(() => {});
       });
     });
   }, [params]);
+
+  // Find completed booking for this property (to enable review form)
+  useEffect(() => {
+    if (!user) return;
+    params.then(({ id }) => {
+      supabase
+        .from("bookings")
+        .select("id, status, property_ref")
+        .eq("user_id", user.id)
+        .eq("status", "completed")
+        .then(({ data }) => {
+          const match = (data ?? []).find((b: any) => b.property_ref === id);
+          if (match) setCompletedBookingId(match.id);
+        });
+    });
+  }, [user, params]);
 
   useEffect(() => {
     const onScroll = () => setStickyHeader(window.scrollY > 300);
@@ -534,6 +554,13 @@ export default function HomeDetailPage({ params }: Props) {
               </div>
               <PropertyMap city={property.city} title={property.address} />
             </div>
+
+            {/* Reviews */}
+            <ReviewsSection
+              propertyId={property.id}
+              propertyType="home"
+              completedBookingId={completedBookingId}
+            />
 
             {/* FAQs */}
             <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>

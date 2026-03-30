@@ -8,6 +8,7 @@ import { useUserLocation } from "@/lib/useUserLocation";
 import { searchHomes } from "@/lib/api";
 import { addSaved, removeSaved, isSaved } from "@/lib/saved-store";
 import type { Property } from "@/lib/types";
+import SavedSearches from "@/components/ui/SavedSearches";
 import FeaturedCarousel from "@/components/ui/FeaturedCarousel";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
@@ -710,6 +711,17 @@ export default function HomesPage() {
                 </svg>
                 Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
               </button>
+              <SavedSearches
+                currentFilters={{ filter, radius, ...filters }}
+                propertyType="home"
+                onApply={(saved) => {
+                  if (saved.filter) setFilter(saved.filter as string);
+                  if (saved.radius) setRadius(saved.radius as number);
+                  if (saved.priceMin !== undefined || saved.priceMax !== undefined) {
+                    setFilters(prev => ({ ...prev, ...(saved as any) }));
+                  }
+                }}
+              />
             </div>
 
             {/* List */}

@@ -982,13 +982,33 @@ export default function ProfilePage() {
                     </button>
                   </div>
                 )}
-                {(selectedTicket.status === "fee_paid" || selectedTicket.status === "paid") && (
-                  <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: "color-mix(in srgb, var(--uber-green) 12%, var(--uber-surface))", border: "0.5px solid rgba(var(--uber-green-rgb),0.3)" }}>
-                    <IconCheckCircle />
-                    <div>
-                      <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Fee Paid</p>
-                      <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Your spot is secured. The admin will be in touch shortly.</p>
+                {(selectedTicket.status === "fee_paid" || selectedTicket.status === "paid" || selectedTicket.status === "completed") && (
+                  <div className="space-y-3">
+                    <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: "color-mix(in srgb, var(--uber-green) 12%, var(--uber-surface))", border: "0.5px solid rgba(var(--uber-green-rgb),0.3)" }}>
+                      <IconCheckCircle />
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Fee Paid</p>
+                        <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Your spot is secured. The admin will be in touch shortly.</p>
+                      </div>
                     </div>
+                    <Link
+                      href={`/receipt/${selectedTicket.id}`}
+                      className="flex items-center justify-between p-4 rounded-2xl active:scale-[0.98] transition-all"
+                      style={{ background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "var(--uber-btn-bg)" }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--uber-btn-text)" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>View Receipt</p>
+                          <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: "var(--uber-green)" }}>Download / Print</p>
+                        </div>
+                      </div>
+                      <span className="font-bold" style={{ color: "var(--uber-muted)" }}>→</span>
+                    </Link>
                   </div>
                 )}
                 <Link href="/chat" className="flex items-center justify-between p-4 rounded-2xl hover:opacity-90 transition-opacity active:scale-[0.98]" style={{ background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }}>

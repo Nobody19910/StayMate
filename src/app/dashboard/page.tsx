@@ -184,10 +184,10 @@ export default function OwnerDashboardPage() {
                 <div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                     {[
-                      { label: "Live",      value: live.length,                                           color: "#06c167" },
-                      { label: "Bookings",  value: bookings.length,                                       color: "#2563eb" },
-                      { label: "Pending",   value: pending.length,                                        color: "#d97706" },
-                      { label: "Completed", value: bookings.filter((b) => b.status === "completed").length, color: "#059669" },
+                      { label: "Live",       value: live.length,                                                                  color: "#06c167" },
+                      { label: "Bookings",   value: bookings.length,                                                              color: "#2563eb" },
+                      { label: "Pending",    value: pending.length,                                                               color: "#d97706" },
+                      { label: "Total Views", value: properties.reduce((s: number, p: any) => s + (p.view_count ?? 0), 0),        color: "#7c3aed" },
                     ].map((s) => (
                       <div key={s.label} className="rounded-xl p-4" style={{ background: "#fff", border: "1px solid #e9edf2", borderLeft: `3px solid ${s.color}` }}>
                         <p className="text-2xl font-extrabold" style={{ color: s.color }}>{s.value}</p>
@@ -249,7 +249,15 @@ export default function OwnerDashboardPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold truncate" style={{ color: "#0f172a" }}>{p.title || p.name}</p>
-                        <p className="text-xs" style={{ color: "#64748b" }}>{p.city} · {p._type === "home" ? "Home" : "Hostel"}</p>
+                        <p className="text-xs flex items-center gap-2" style={{ color: "#64748b" }}>
+                          {p.city} · {p._type === "home" ? "Home" : "Hostel"}
+                          {(p.view_count ?? 0) > 0 && (
+                            <span className="flex items-center gap-0.5 text-[10px] font-semibold" style={{ color: "#7c3aed" }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                              {p.view_count}
+                            </span>
+                          )}
+                        </p>
                       </div>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
                         style={p.status === "approved"
