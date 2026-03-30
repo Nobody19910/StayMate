@@ -140,9 +140,9 @@ export default function AdminDashboardPage() {
   const activeAgentIds = useMemo(() => new Set([...homes.filter(h => h.owner_id).map(h => h.owner_id), ...hostels.filter(h => h.manager_id).map(h => h.manager_id)]), [homes, hostels]);
   const activeAgents = activeAgentIds.size;
 
-  // Agents who have at least one listing
+  // All agents: subscribed OR have at least one listing
   const activeAgentProfiles = useMemo(() => {
-    return agents.filter(a => activeAgentIds.has(a.id));
+    return agents.filter(a => activeAgentIds.has(a.id) || a.is_agent || a.role === "agent");
   }, [agents, activeAgentIds]);
 
   // Properties for a selected agent
@@ -833,16 +833,37 @@ export default function AdminDashboardPage() {
               <div className="space-y-5">
                 {selectedAgentId ? (
                   <div className="rounded-xl overflow-hidden" style={{ background: "#ffffff", border: "1px solid #e9edf2", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
-                    <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: "1px solid #e9edf2" }}>
-                      <button onClick={() => setSelectedAgentId(null)} className="flex items-center gap-1.5 text-sm font-bold transition-colors hover:opacity-70" style={{ color: "#2563eb" }}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                        Back to Agents
-                      </button>
-                      <span style={{ color: "#e9edf2" }}>|</span>
-                      <h2 className="text-sm font-bold" style={{ color: "#0f172a" }}>
-                        {activeAgentProfiles.find(a => a.id === selectedAgentId)?.full_name || "Agent"}&apos;s Listings
-                      </h2>
-                    </div>
+                    {(() => {
+                      const agent = activeAgentProfiles.find(a => a.id === selectedAgentId);
+                      const subUntil = agent?.agent_subscription_until;
+                      const daysLeft = subUntil ? Math.max(0, Math.ceil((new Date(subUntil).getTime() - Date.now()) / 86400000)) : 0;
+                      const isActive = agent?.is_agent && daysLeft > 0;
+                      return (
+                        <div className="px-5 py-4" style={{ borderBottom: "1px solid #e9edf2" }}>
+                          <div className="flex items-center gap-3">
+                            <button onClick={() => setSelectedAgentId(null)} className="flex items-center gap-1.5 text-sm font-bold transition-colors hover:opacity-70" style={{ color: "#2563eb" }}>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                              Back to Agents
+                            </button>
+                            <span style={{ color: "#e9edf2" }}>|</span>
+                            <h2 className="text-sm font-bold" style={{ color: "#0f172a" }}>
+                              {agent?.full_name || "Agent"}&apos;s Listings
+                            </h2>
+                          </div>
+                          {isActive && (
+                            <div className="mt-3 flex items-center gap-3">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: daysLeft > 7 ? "rgba(6,193,103,0.1)" : "rgba(239,68,68,0.1)", color: daysLeft > 7 ? "#06c167" : "#ef4444" }}>
+                                {daysLeft} day{daysLeft !== 1 ? "s" : ""} left
+                              </span>
+                              <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "#e9edf2", maxWidth: 120 }}>
+                                <div className="h-full rounded-full" style={{ width: `${Math.min(100, (daysLeft / 30) * 100)}%`, background: daysLeft > 7 ? "#06c167" : "#ef4444" }} />
+                              </div>
+                              <span className="text-[10px]" style={{ color: "#94a3b8" }}>expires {new Date(subUntil).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <div className="p-5">
                       {agentHomes.length === 0 && agentHostels.length === 0 ? (
                         <p className="text-sm py-8 text-center italic" style={{ color: "#94a3b8" }}>This agent has no listings.</p>
