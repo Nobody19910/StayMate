@@ -340,15 +340,15 @@ const HomeListCard = memo(function HomeListCard({ property }: { property: Proper
   return (
     <Link href={`/homes/${property.id}`}>
       <div
-        className="rounded-2xl overflow-hidden flex flex-col sm:flex-row transition-all cursor-pointer group hover:shadow-md"
+        className="rounded-2xl overflow-hidden flex flex-row transition-all cursor-pointer group hover:shadow-md"
         style={{
           background: "var(--uber-white)",
           border: "0.5px solid var(--uber-border)",
           boxShadow: "var(--shadow-sm)",
         }}
       >
-        {/* Image — full width on mobile, fixed sidebar on sm+ */}
-        <div className="relative w-full sm:w-56 md:w-72 shrink-0" style={{ minHeight: "180px", background: "var(--uber-surface2)" }}>
+        {/* Image — compact on mobile, wider on desktop */}
+        <div className="relative w-28 sm:w-56 md:w-72 shrink-0" style={{ minHeight: "120px", background: "var(--uber-surface2)" }}>
           <OptimizedImage
             src={property.images[0] || ""}
             alt={property.title || ""}
@@ -374,7 +374,7 @@ const HomeListCard = memo(function HomeListCard({ property }: { property: Proper
         </div>
 
         {/* Details */}
-        <div className="flex-1 p-4 sm:p-5 flex flex-col justify-between min-w-0">
+        <div className="flex-1 p-2.5 sm:p-5 flex flex-col justify-between min-w-0 overflow-hidden">
           <div>
             {/* Tags row */}
             <div className="flex flex-wrap gap-1.5 mb-2">

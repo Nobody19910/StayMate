@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSavedCount } from "@/lib/useSavedCount";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
@@ -48,12 +48,10 @@ function useAdminUnread() {
     if (!user || profile?.role !== "admin") return;
 
     async function refresh() {
-      // Get all conversations
       const { data: convs } = await supabase.from("conversations").select("id, seeker_id");
       if (!convs?.length) { setCount(0); return; }
       const convIds = convs.map((c: any) => c.id);
       const seekerIds = convs.map((c: any) => c.seeker_id);
-      // Count unread messages sent by seekers (not by admin)
       const { count: c } = await supabase
         .from("messages").select("id", { count: "exact", head: true })
         .in("conversation_id", convIds)
@@ -109,8 +107,27 @@ export default function BottomNav() {
   const adminUnread = useAdminUnread();
   const adminPending = useAdminPending();
 
+  const [collapsed, setCollapsed] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const lastScrollY = useRef(0);
+
+  // Collapse nav on scroll down, expand on scroll up / at top
+  useEffect(() => {
+    function onScroll() {
+      const y = window.scrollY;
+      if (y > lastScrollY.current && y > 80) {
+        setCollapsed(true);
+        setMenuOpen(false);
+      } else if (y < lastScrollY.current || y <= 20) {
+        setCollapsed(false);
+      }
+      lastScrollY.current = y;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   // Don't render on admin — it has its own internal nav
-  // All hooks MUST be called above this line (React rules of hooks)
   if (pathname === "/admin") return null;
 
   const isAdmin = profile?.role === "admin";
@@ -124,6 +141,79 @@ export default function BottomNav() {
       ]
     : tabs;
 
+  const totalBadge = savedCount + seekerUnread + adminBadge;
+
+  // ── Collapsed FAB ──────────────────────────────────────────────────────────
+  if (collapsed && !menuOpen) {
+    return (
+      <button
+        onClick={() => setMenuOpen(true)}
+        className="fixed bottom-6 right-5 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95"
+        style={{ background: "var(--uber-black)", color: "var(--uber-white)" }}
+        aria-label="Open navigation"
+      >
+        {/* Hamburger */}
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+        {totalBadge > 0 && (
+          <span className="absolute top-1 right-1 w-4 h-4 rounded-full text-[8px] font-extrabold flex items-center justify-center"
+            style={{ background: "var(--uber-green)", color: "#fff" }}>
+            {totalBadge > 9 ? "9+" : totalBadge}
+          </span>
+        )}
+      </button>
+    );
+  }
+
+  // ── Expanded menu (from FAB) ───────────────────────────────────────────────
+  if (collapsed && menuOpen) {
+    return (
+      <>
+        {/* Backdrop */}
+        <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+        {/* Menu sheet */}
+        <div className="fixed bottom-6 right-5 z-50 rounded-2xl overflow-hidden shadow-xl"
+          style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", minWidth: 180 }}>
+          {allTabs.map(({ href, label, icon: Icon }) => {
+            const active = pathname.startsWith(href);
+            const isSaved = href === "/saved";
+            const isChat = href === "/chat";
+            const isPost = href === "/post";
+            const badge = isSaved ? savedCount : isChat && !isAdmin ? seekerUnread : isChat && isAdmin ? adminUnread : href === "/admin" ? adminBadge : 0;
+            return (
+              <Link key={href} href={href} onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--uber-surface)]"
+                style={{ borderBottom: "0.5px solid var(--uber-border)" }}>
+                <span className="relative">
+                  {isPost ? (
+                    <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "var(--uber-black)" }}>
+                      <Icon active={true} />
+                    </span>
+                  ) : <Icon active={active} />}
+                  {badge > 0 && (
+                    <span className="absolute -top-1 -right-1.5 w-4 h-4 rounded-full text-[8px] font-extrabold flex items-center justify-center"
+                      style={{ background: active ? "var(--uber-green)" : "#ef4444", color: "#fff" }}>
+                      {badge > 9 ? "9+" : badge}
+                    </span>
+                  )}
+                </span>
+                <span className="text-sm font-semibold" style={{ color: active ? "var(--uber-black)" : "var(--uber-muted)" }}>{label}</span>
+                {active && <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: "var(--uber-green)" }} />}
+              </Link>
+            );
+          })}
+          <button onClick={() => setMenuOpen(false)}
+            className="flex items-center justify-center w-full py-3 text-xs font-bold"
+            style={{ color: "var(--uber-muted)" }}>
+            Close ✕
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  // ── Full bottom bar (default / scrolled to top) ────────────────────────────
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 safe-area-pb"

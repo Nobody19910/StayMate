@@ -202,9 +202,9 @@ function ListSkeleton() {
   return (
     <div className="space-y-10 pt-2 pb-10">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="rounded-2xl overflow-hidden flex flex-col sm:flex-row animate-pulse"
+        <div key={i} className="rounded-2xl overflow-hidden flex flex-row animate-pulse"
           style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
-          <div className="w-full sm:w-52 shrink-0" style={{ minHeight: "160px", background: "var(--uber-surface2)" }} />
+          <div className="w-28 sm:w-52 shrink-0" style={{ minHeight: "120px", background: "var(--uber-surface2)" }} />
           <div className="flex-1 p-4 space-y-3">
             <div className="h-4 rounded w-2/3" style={{ background: "var(--uber-surface2)" }} />
             <div className="h-3 rounded w-1/3" style={{ background: "var(--uber-surface2)" }} />
@@ -239,11 +239,11 @@ const HostelListCard = memo(function HostelListCard({ hostel }: { hostel: Hostel
 
   return (
     <Link href={`/hostels/${hostel.id}`}>
-      <div className="rounded-2xl overflow-hidden flex flex-col sm:flex-row transition-all cursor-pointer group hover:shadow-md"
+      <div className="rounded-2xl overflow-hidden flex flex-row transition-all cursor-pointer group hover:shadow-md"
         style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", boxShadow: "var(--shadow-sm)" }}>
 
-        {/* Image — full width on mobile, fixed sidebar on sm+ */}
-        <div className="relative w-full sm:w-56 md:w-72 shrink-0" style={{ minHeight: "180px", background: "var(--uber-surface2)" }}>
+        {/* Image — compact on mobile, wider on desktop */}
+        <div className="relative w-28 sm:w-56 md:w-72 shrink-0" style={{ minHeight: "120px", background: "var(--uber-surface2)" }}>
           <OptimizedImage
             src={hostel.images[0] || ""}
             alt={hostel.name}
@@ -264,7 +264,7 @@ const HostelListCard = memo(function HostelListCard({ hostel }: { hostel: Hostel
         </div>
 
         {/* Details */}
-        <div className="flex-1 p-4 sm:p-5 flex flex-col justify-between min-w-0">
+        <div className="flex-1 p-2.5 sm:p-5 flex flex-col justify-between min-w-0 overflow-hidden">
           <div>
             {/* Tags */}
             <div className="flex flex-wrap gap-1.5 mb-2">
