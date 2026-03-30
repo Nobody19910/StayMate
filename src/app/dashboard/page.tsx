@@ -82,7 +82,7 @@ export default function OwnerDashboardPage() {
       setProperties(combined);
       setBookings(enriched);
     } catch (e) {
-      console.error("Dashboard fetch error:", e);
+      // silently handle fetch error
     } finally {
       setLoading(false);
     }

@@ -104,7 +104,7 @@ export default function AdminDashboardPage() {
         user: allProfiles.find(p => p.id === k.user_id) || null
       }));
 
-      if (bookingsRes.error) console.error("Bookings fetch error:", bookingsRes.error);
+      // bookingsRes.error handled silently
 
       setHomes(homesRes.data || []);
       setHostels(hostelsRes.data || []);
@@ -121,8 +121,7 @@ export default function AdminDashboardPage() {
       // Fetch subscribed agents
       getActiveAgents().then(setSubscribedAgents).catch(() => {});
     }
-    fetchData().catch(err => {
-      console.error("Admin fetchData error:", err);
+    fetchData().catch(() => {
       setLoading(false);
     });
   }, [profile]);
@@ -210,8 +209,7 @@ export default function AdminDashboardPage() {
     if (!error) {
       setBookings(prev => prev.filter(b => b.id !== id));
     } else {
-      console.error("Failed to delete inquiry:", error);
-      alert("Error deleting inquiry. You may need to run the SQL migration to grant delete access.");
+      alert("Error deleting inquiry.");
     }
   }
 

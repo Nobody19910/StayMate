@@ -589,11 +589,9 @@ export default function PostPage() {
 
       setSubmitted(true);
     } catch (err: any) {
-      console.error("Submission error:", err);
       const msg = err?.message || err?.error_description || "Submission failed. Please try again.";
       const details = err?.details || err?.hint || "";
       const fullError = `${msg}${details ? ` — ${details}` : ""}`;
-      console.error("Full error details:", { message: msg, details, statusCode: err?.status, fullError });
       setSubmitError(fullError);
     } finally {
       setSubmitting(false);

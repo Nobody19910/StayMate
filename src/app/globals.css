@@ -166,7 +166,7 @@ body {
 .shimmer-gold {
   background: linear-gradient(90deg, #D4AF37 0%, #f0d97a 50%, #D4AF37 100%);
   background-size: 200% auto;
-  animation: shimmer 2.5s linear infinite;
+  animation: shimmer 2.5s linear 3;
 }
 
 /* ── Dark-mode aware utility classes ───────────────────────────────────────── */

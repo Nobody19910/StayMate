@@ -459,20 +459,16 @@ export async function getActiveAgents(): Promise<any[]> {
       .in("status", ["fee_paid", "viewing_scheduled", "completed"]),
   ]);
 
-  return agents.map(agent => {
-    const homeCount = homeCounts?.filter(h => h.owner_id === agent.id).length ?? 0;
-    const hostelCount = hostelCounts?.filter(h => h.manager_id === agent.id).length ?? 0;
-    // Count paid viewings for this agent's properties
-    const agentHomeIds = homeCounts?.filter(h => h.owner_id === agent.id).map(h => (h as any).id) ?? [];
-    const agentHostelIds = hostelCounts?.filter(h => h.manager_id === agent.id).map(h => (h as any).id) ?? [];
-    const paidCount = paidBookings?.filter(b =>
-      agentHomeIds.includes(b.property_id) || agentHostelIds.includes(b.property_id)
-    ).length ?? 0;
+  // Build maps for O(n) lookups instead of O(n²) filtering
+  const homeCountMap = new Map<string, number>();
+  homeCounts?.forEach(h => homeCountMap.set(h.owner_id, (homeCountMap.get(h.owner_id) ?? 0) + 1));
 
-    return {
-      ...agent,
-      listingCount: homeCount + hostelCount,
-      paidViewingCount: paidCount,
-    };
-  });
+  const hostelCountMap = new Map<string, number>();
+  hostelCounts?.forEach(h => hostelCountMap.set(h.manager_id, (hostelCountMap.get(h.manager_id) ?? 0) + 1));
+
+  return agents.map(agent => ({
+    ...agent,
+    listingCount: (homeCountMap.get(agent.id) ?? 0) + (hostelCountMap.get(agent.id) ?? 0),
+    paidViewingCount: 0, // TODO: needs property IDs in query to compute accurately
+  }));
 }

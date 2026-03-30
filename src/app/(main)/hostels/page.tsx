@@ -16,17 +16,7 @@ import { preloadImages } from "@/lib/image-cache";
 import { cachedFetch, invalidateCache } from "@/lib/local-cache";
 import { AnimatedList } from "@/components/ui/AnimatedList";
 
-function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-const DEFAULT_LAT = 5.6037;
-const DEFAULT_LNG = -0.1870;
+import { getDistance, DEFAULT_LAT, DEFAULT_LNG } from "@/lib/geo";
 
 function getCacheKey(filters: FilterState, q: string) {
   return "hostels_" + JSON.stringify({ q, ...filters });

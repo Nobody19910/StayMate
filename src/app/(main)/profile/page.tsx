@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import { usePaystackScript, openPaystackPopup } from "@/lib/paystack";
 import { activateAgentSubscription, sponsorProperty } from "@/lib/api";
+import { evaluatePassword, isPasswordValid } from "@/lib/password-utils";
 import { AGENT_SUBSCRIPTION_PESEWAS, SPONSOR_TIERS } from "@/lib/sponsor-tiers";
 import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
 import ThemeToggle from "@/components/ui/ThemeToggle";
@@ -68,6 +69,9 @@ export default function ProfilePage() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordMsg, setPasswordMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Sponsorship
@@ -205,9 +209,31 @@ export default function ProfilePage() {
   async function handleUpdateProfile(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
+
+    // Handle password change if fields are filled
+    if (newPassword) {
+      if (!isPasswordValid(newPassword)) {
+        setPasswordMsg({ type: "error", text: "Password is too weak. Meet all requirements." });
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setPasswordMsg({ type: "error", text: "Passwords don't match." });
+        return;
+      }
+      const { error: pwError } = await supabase.auth.updateUser({ password: newPassword });
+      if (pwError) {
+        setPasswordMsg({ type: "error", text: pwError.message });
+        return;
+      }
+      setPasswordMsg({ type: "success", text: "Password updated!" });
+    }
+
     await supabase.from("profiles").update({ full_name: editName, phone: editPhone }).eq("id", user.id);
     setIsEditingProfile(false);
-    window.location.reload();
+    setNewPassword("");
+    setConfirmPassword("");
+    await refreshProfile();
+    fetchAll();
   }
 
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -225,7 +251,7 @@ export default function ProfilePage() {
     const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
     await supabase.from("profiles").update({ avatar_url: urlData.publicUrl }).eq("id", user.id);
     setUploadingAvatar(false);
-    window.location.reload();
+    await refreshProfile();
   }
 
   async function deleteProperty(id: string, isHostel: boolean) {
@@ -352,8 +378,62 @@ export default function ProfilePage() {
               <label className="block text-xs font-semibold mb-1" style={{ color: "var(--uber-muted)" }}>Phone Number</label>
               <input type="tel" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} required className="w-full text-center font-bold rounded-xl px-3 py-2 focus:outline-none focus:ring-2" style={{ color: "var(--uber-text)", background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }} />
             </div>
+
+            {/* Change Password */}
+            <div className="pt-3 mt-3" style={{ borderTop: "0.5px solid var(--uber-border)" }}>
+              <p className="text-xs font-semibold mb-2" style={{ color: "var(--uber-muted)" }}>Change Password <span className="font-normal">(optional)</span></p>
+              <div className="space-y-2">
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(e) => { setNewPassword(e.target.value); setPasswordMsg(null); }}
+                  placeholder="New password"
+                  className="w-full text-center rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                  style={{ color: "var(--uber-text)", background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }}
+                />
+                {newPassword && (() => {
+                  const strength = evaluatePassword(newPassword);
+                  return (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 rounded-full overflow-hidden flex gap-0.5" style={{ background: "var(--uber-surface2)" }}>
+                          {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="flex-1 h-full rounded-full transition-all" style={{ background: strength.score >= i ? strength.color : "transparent" }} />
+                          ))}
+                        </div>
+                        <span className="text-[10px] font-bold" style={{ color: strength.color }}>{strength.label}</span>
+                      </div>
+                      {strength.errors.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {strength.errors.map(err => (
+                            <span key={err} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>{err}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => { setConfirmPassword(e.target.value); setPasswordMsg(null); }}
+                  placeholder="Confirm new password"
+                  className="w-full text-center rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                  style={{ color: "var(--uber-text)", background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }}
+                />
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <p className="text-[10px]" style={{ color: "#ef4444" }}>Passwords don&apos;t match</p>
+                )}
+              </div>
+              {passwordMsg && (
+                <p className="text-[10px] mt-1 font-semibold" style={{ color: passwordMsg.type === "success" ? "var(--uber-green)" : "#ef4444" }}>{passwordMsg.text}</p>
+              )}
+            </div>
+
             <div className="flex gap-2 pt-2">
-              <button type="button" onClick={() => setIsEditingProfile(false)} className="flex-1 py-2 text-xs font-bold rounded-xl" style={{ color: "var(--uber-muted)", background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }}>
+              <button type="button" onClick={() => { setIsEditingProfile(false); setNewPassword(""); setConfirmPassword(""); setPasswordMsg(null); }} className="flex-1 py-2 text-xs font-bold rounded-xl" style={{ color: "var(--uber-muted)", background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }}>
                 Cancel
               </button>
               <button type="submit" className="flex-1 py-2 text-xs font-bold text-white rounded-xl" style={{ background: "var(--uber-black)" }}>

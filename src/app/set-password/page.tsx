@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { evaluatePassword, isPasswordValid } from "@/lib/password-utils";
 
 export default function SetPasswordPage() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function SetPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
+    if (!isPasswordValid(password)) { setError("Password is too weak. Please meet all the requirements."); return; }
     if (password !== confirm) { setError("Passwords don't match."); return; }
     setLoading(true);
     const { error: updateError } = await supabase.auth.updateUser({ password });
@@ -91,6 +92,28 @@ export default function SetPasswordPage() {
               className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
               style={{ border: "0.5px solid var(--uber-border)", background: "var(--uber-white)", color: "var(--uber-text)" }}
             />
+            {password && (() => {
+              const strength = evaluatePassword(password);
+              return (
+                <div className="mt-2 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden flex gap-0.5" style={{ background: "var(--uber-surface2)" }}>
+                      {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="flex-1 h-full rounded-full transition-all" style={{ background: strength.score >= i ? strength.color : "transparent" }} />
+                      ))}
+                    </div>
+                    <span className="text-[10px] font-bold" style={{ color: strength.color }}>{strength.label}</span>
+                  </div>
+                  {strength.errors.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {strength.errors.map(err => (
+                        <span key={err} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>{err}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
           <div>
             <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--uber-text)" }}>Confirm Password</label>

@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import type { UserRole } from "@/lib/auth-context";
 import { IconMail } from "@/components/ui/Icons";
+import { evaluatePassword, isPasswordValid } from "@/lib/password-utils";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -27,6 +28,12 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (!isPasswordValid(password)) {
+      setError("Password is too weak. Please meet all requirements.");
+      setLoading(false);
+      return;
+    }
 
     const { data, error: signupError } = await supabase.auth.signUp({
       email,
@@ -322,6 +329,28 @@ export default function SignupPage() {
                     )}
                   </button>
                 </div>
+                {password && (() => {
+                  const strength = evaluatePassword(password);
+                  return (
+                    <div className="mt-2 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 rounded-full overflow-hidden flex gap-0.5" style={{ background: "var(--uber-surface2)" }}>
+                          {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="flex-1 h-full rounded-full transition-all" style={{ background: strength.score >= i ? strength.color : "transparent" }} />
+                          ))}
+                        </div>
+                        <span className="text-[10px] font-bold" style={{ color: strength.color }}>{strength.label}</span>
+                      </div>
+                      {strength.errors.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {strength.errors.map(err => (
+                            <span key={err} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>{err}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               <label className="flex items-start gap-2 cursor-pointer">
