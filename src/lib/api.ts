@@ -424,8 +424,7 @@ export async function activateAgentSubscription(
 ): Promise<void> {
   const until = new Date(Date.now() + 30 * 86400000).toISOString();
 
-  // 1. Promote profile to agent
-  const { error, data, count } = await supabase
+  const { error, data } = await supabase
     .from("profiles")
     .update({
       is_agent: true,
@@ -436,59 +435,8 @@ export async function activateAgentSubscription(
     .eq("id", userId)
     .select();
 
-  console.log("[activateAgentSubscription] userId:", userId, "until:", until);
-  console.log("[activateAgentSubscription] result:", { data, error, count });
-  if (error) {
-    console.error("[activateAgentSubscription] UPDATE failed:", error);
-    throw error;
-  }
-  if (!data || data.length === 0) {
-    console.error("[activateAgentSubscription] No rows updated — RLS or id mismatch");
-  }
-
-  // 2. Send automatic welcome message from admin in the user's chat
-  try {
-    // Get the admin's user ID
-    const { data: adminProfile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("role", "admin")
-      .limit(1)
-      .maybeSingle();
-
-    if (!adminProfile) return;
-
-    // Upsert conversation (create if doesn't exist)
-    let { data: conv } = await supabase
-      .from("conversations")
-      .select("id")
-      .eq("seeker_id", userId)
-      .maybeSingle();
-
-    if (!conv) {
-      const { data: created } = await supabase
-        .from("conversations")
-        .insert({ seeker_id: userId })
-        .select("id")
-        .single();
-      conv = created;
-    }
-
-    if (!conv) return;
-
-    const expiryDate = new Date(until).toLocaleDateString("en-GB", {
-      day: "numeric", month: "long", year: "numeric",
-    });
-
-    await supabase.from("messages").insert({
-      conversation_id: conv.id,
-      sender_id: adminProfile.id,
-      content: `🎉 Congratulations! Your StayMate Agent subscription is now active. You can post unlimited listings and your properties will be tagged as agent listings until ${expiryDate}. Welcome to the team!`,
-      is_read: false,
-    });
-  } catch {
-    // Non-critical — don't throw if message fails
-  }
+  if (error) throw new Error(`Subscription activation failed: ${error.message}`);
+  if (!data || data.length === 0) throw new Error("No profile row updated — please contact support.");
 }
 
 // ─── Active agents (admin) ──────────────────────────────────────────────────

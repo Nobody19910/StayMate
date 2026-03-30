@@ -147,11 +147,12 @@ export default function ProfilePage() {
   }, [user, profile?.role]);
 
   useEffect(() => {
+    refreshProfile();
     fetchAll();
   }, [fetchAll]);
 
   // Jiji-style: refetch on tab focus / navigate-back
-  useVisibilityRefresh(fetchAll, { enabled: !!user });
+  useVisibilityRefresh(() => { refreshProfile(); fetchAll(); }, { enabled: !!user });
 
   useEffect(() => {
     if (profile) {
@@ -702,6 +703,13 @@ export default function ProfilePage() {
                       />
                     </div>
                     <p className="text-xs mt-3" style={{ color: "var(--uber-muted)" }}>Your listings are tagged as agent properties. Post unlimited listings during your subscription.</p>
+                    <Link
+                      href="/apply"
+                      className="block w-full text-center mt-4 py-2.5 rounded-xl font-bold text-sm"
+                      style={{ background: "var(--uber-green)", color: "#fff" }}
+                    >
+                      Complete Verification →
+                    </Link>
                     <button
                       onClick={async () => {
                         if (!confirm("Cancel your agent subscription? You'll keep access until the current period ends, but won't be renewed.")) return;
@@ -737,7 +745,6 @@ export default function ProfilePage() {
                       ref: `agent-sub-${user?.id}-${Date.now()}`,
                       metadata: { type: "agent_subscription", user_id: user?.id },
                       onSuccess: async (reference) => {
-                        console.log("[AgentSub] Paystack onSuccess fired, ref:", reference, "userId:", user!.id);
                         try {
                           await activateAgentSubscription(user!.id, reference);
                           if (!(profile as any)?.display_name && profile?.fullName) {
@@ -745,9 +752,7 @@ export default function ProfilePage() {
                           }
                           await refreshProfile();
                           fetchAll();
-                          router.push("/apply");
                         } catch (err) {
-                          console.error("[AgentSub] activation error:", err);
                           alert("Payment received but activation failed. Contact support.");
                         }
                       },
