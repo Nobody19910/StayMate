@@ -423,14 +423,61 @@ export async function activateAgentSubscription(
   paymentRef: string
 ): Promise<void> {
   const until = new Date(Date.now() + 30 * 86400000).toISOString();
+
+  // 1. Promote profile to agent
   await supabase
     .from("profiles")
     .update({
       is_agent: true,
+      role: "agent",
       agent_subscription_until: until,
       agent_subscription_ref: paymentRef,
     })
     .eq("id", userId);
+
+  // 2. Send automatic welcome message from admin in the user's chat
+  try {
+    // Get the admin's user ID
+    const { data: adminProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("role", "admin")
+      .limit(1)
+      .single();
+
+    if (!adminProfile) return;
+
+    // Upsert conversation (create if doesn't exist)
+    let { data: conv } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("seeker_id", userId)
+      .maybeSingle();
+
+    if (!conv) {
+      const { data: created } = await supabase
+        .from("conversations")
+        .insert({ seeker_id: userId })
+        .select("id")
+        .single();
+      conv = created;
+    }
+
+    if (!conv) return;
+
+    const expiryDate = new Date(until).toLocaleDateString("en-GB", {
+      day: "numeric", month: "long", year: "numeric",
+    });
+
+    await supabase.from("messages").insert({
+      conversation_id: conv.id,
+      sender_id: adminProfile.id,
+      content: `🎉 Congratulations! Your StayMate Agent subscription is now active. You can post unlimited listings and your properties will be tagged as agent listings until ${expiryDate}. Welcome to the team!`,
+      is_read: false,
+    });
+  } catch {
+    // Non-critical — don't throw if message fails
+  }
 }
 
 // ─── Active agents (admin) ──────────────────────────────────────────────────

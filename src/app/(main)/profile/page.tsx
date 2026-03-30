@@ -727,7 +727,7 @@ export default function ProfilePage() {
                           if (!(profile as any)?.display_name && profile?.fullName) {
                             await supabase.from("profiles").update({ display_name: profile.fullName }).eq("id", user!.id);
                           }
-                          // Send to agent application form to complete verification
+                          fetchAll();
                           router.push("/apply");
                         } catch {
                           alert("Payment received but activation failed. Contact support.");
