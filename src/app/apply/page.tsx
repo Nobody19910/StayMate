@@ -185,7 +185,7 @@ function ApplicationStatus({ userId, initialStatus }: { userId: string; initialS
 
 export default function AgentApplyPage() {
   const router = useRouter();
-  const { profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [step, setStep] = useState<Step>(0);
 
   // Previous application
@@ -237,9 +237,10 @@ export default function AgentApplyPage() {
         setExistingIdUrl(data.id_photo_url || null);
         setExistingSelfieUrl(data.selfie_url || null);
       } else {
-        // Pre-fill from profile
+        // Pre-fill from profile + auth account
         setFullName(profile!.fullName || "");
-        setPhone((profile as any).phone || "");
+        setPhone(profile!.phone || "");
+        setEmail(user?.email || "");
       }
       setLoadingPrev(false);
     }
