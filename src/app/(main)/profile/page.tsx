@@ -364,8 +364,8 @@ export default function ProfilePage() {
           <>
             <h1 className="text-lg font-bold" style={{ color: "var(--uber-text)" }}>{profile?.fullName ?? "Your Account"}</h1>
             {profile && (
-              <span className="mt-1 text-[11px] font-bold uppercase text-white px-2 py-0.5 rounded" style={{ background: (profile as any).is_agent ? "#7c3aed" : "var(--uber-green)" }}>
-                {(profile as any).is_agent ? "StayMate Agent" : (ROLE_LABELS[profile.role] ?? profile.role)}
+              <span className="mt-1 text-[11px] font-bold uppercase text-white px-2 py-0.5 rounded" style={{ background: profile.isAgent ? "#7c3aed" : "var(--uber-green)" }}>
+                {profile.isAgent ? "StayMate Agent" : (ROLE_LABELS[profile.role] ?? profile.role)}
               </span>
             )}
             <p className="text-xs mt-1" style={{ color: "var(--uber-muted)" }}>{user.email}</p>
@@ -677,7 +677,7 @@ export default function ProfilePage() {
         {profile?.role !== "admin" && (
           <div className="mb-6 pt-2">
             <h2 className="text-lg font-bold mb-3 px-1" style={{ color: "var(--uber-text)" }}>Agent Subscription</h2>
-            {(profile as any)?.is_agent && new Date((profile as any)?.agent_subscription_until ?? 0) > new Date() ? (
+            {profile?.isAgent && new Date(profile?.agentSubscriptionUntil ?? 0) > new Date() ? (
               <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "var(--uber-green)" }}>
@@ -685,7 +685,7 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Active Agent</p>
-                    <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Expires {new Date((profile as any).agent_subscription_until).toLocaleDateString()}</p>
+                    <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Expires {new Date(profile.agentSubscriptionUntil!).toLocaleDateString()}</p>
                   </div>
                 </div>
                 <p className="text-xs mt-3" style={{ color: "var(--uber-muted)" }}>Your listings are tagged as agent properties. Post unlimited listings during your subscription.</p>

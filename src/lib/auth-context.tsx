@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 
-export type UserRole = "seeker" | "admin" | "owner" | "manager";
+export type UserRole = "seeker" | "admin" | "owner" | "manager" | "agent";
 
 export interface Profile {
   id: string;
@@ -14,6 +14,8 @@ export interface Profile {
   role: UserRole;
   kycStatus: "unverified" | "pending" | "verified" | "rejected";
   agentModeEnabled: boolean;
+  isAgent: boolean;
+  agentSubscriptionUntil: string | null;
 }
 
 interface AuthContextValue {
@@ -54,6 +56,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: data.role as UserRole,
         kycStatus: data.kyc_status,
         agentModeEnabled: data.agent_mode_enabled,
+        isAgent: data.is_agent ?? false,
+        agentSubscriptionUntil: data.agent_subscription_until ?? null,
       });
     } else if (userMeta) {
       // Relying on Postgres trigger `on_auth_user_created` to create the profile row on the backend.
@@ -66,6 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: (userMeta.role as UserRole) ?? "seeker",
         kycStatus: "unverified",
         agentModeEnabled: false,
+        isAgent: false,
+        agentSubscriptionUntil: null,
       });
     }
   }
