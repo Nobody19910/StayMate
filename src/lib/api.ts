@@ -454,7 +454,7 @@ export async function activateAgentSubscription(
       .select("id")
       .eq("role", "admin")
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (!adminProfile) return;
 

@@ -678,30 +678,45 @@ export default function ProfilePage() {
           <div className="mb-6 pt-2">
             <h2 className="text-lg font-bold mb-3 px-1" style={{ color: "var(--uber-text)" }}>Agent Subscription</h2>
             {profile?.isAgent && new Date(profile?.agentSubscriptionUntil ?? 0) > new Date() ? (
-              <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "var(--uber-green)" }}>
-                    <IconCheck />
+              (() => {
+                const expiryDate = new Date(profile.agentSubscriptionUntil!);
+                const daysLeft = Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / 86400000));
+                return (
+                  <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "var(--uber-green)" }}>
+                        <IconCheck />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Active Agent</p>
+                        <p className="text-xs" style={{ color: "var(--uber-muted)" }}>
+                          {daysLeft} day{daysLeft !== 1 ? "s" : ""} remaining — expires {expiryDate.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                        </p>
+                      </div>
+                    </div>
+                    {/* Progress bar */}
+                    <div className="mt-3 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--uber-surface2)" }}>
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (daysLeft / 30) * 100)}%`, background: daysLeft > 7 ? "var(--uber-green)" : "#ef4444" }}
+                      />
+                    </div>
+                    <p className="text-xs mt-3" style={{ color: "var(--uber-muted)" }}>Your listings are tagged as agent properties. Post unlimited listings during your subscription.</p>
+                    <button
+                      onClick={async () => {
+                        if (!confirm("Cancel your agent subscription? You'll keep access until the current period ends, but won't be renewed.")) return;
+                        await supabase.from("profiles").update({ is_agent: false, agent_subscription_until: null, role: "owner" }).eq("id", user!.id);
+                        await refreshProfile();
+                        fetchAll();
+                      }}
+                      className="mt-3 text-xs font-semibold underline"
+                      style={{ color: "var(--uber-muted)" }}
+                    >
+                      Cancel subscription
+                    </button>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Active Agent</p>
-                    <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Expires {new Date(profile.agentSubscriptionUntil!).toLocaleDateString()}</p>
-                  </div>
-                </div>
-                <p className="text-xs mt-3" style={{ color: "var(--uber-muted)" }}>Your listings are tagged as agent properties. Post unlimited listings during your subscription.</p>
-                <button
-                  onClick={async () => {
-                    if (!confirm("Cancel your agent subscription? You'll keep access until the current period ends, but won't be renewed.")) return;
-                    await supabase.from("profiles").update({ is_agent: false, agent_subscription_until: null, role: "owner" }).eq("id", user!.id);
-                    await refreshProfile();
-                    fetchAll();
-                  }}
-                  className="mt-3 text-xs font-semibold underline"
-                  style={{ color: "var(--uber-muted)" }}
-                >
-                  Cancel subscription
-                </button>
-              </div>
+                );
+              })()
             ) : (
               <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
                 <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Become a Concierge Agent</p>

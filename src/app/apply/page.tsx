@@ -107,6 +107,80 @@ function CameraCapture({ onCapture }: { onCapture: (file: File, preview: string)
   );
 }
 
+// ── Application status with realtime updates ────────────────────────────────
+function ApplicationStatus({ userId, initialStatus }: { userId: string; initialStatus: string }) {
+  const [status, setStatus] = useState(initialStatus);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Poll + realtime for status changes
+    const channel = supabase
+      .channel("agent-app-status")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "agent_applications", filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const newStatus = payload.new?.status;
+          if (newStatus) setStatus(newStatus);
+        }
+      )
+      .subscribe();
+
+    // Also poll every 5s as backup
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from("agent_applications")
+        .select("status")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data?.status) setStatus(data.status);
+    }, 5000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [userId]);
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-5 px-6" style={{ background: "var(--uber-surface)" }}>
+      {status === "approved" ? (
+        <>
+          <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl" style={{ background: "rgba(6,193,103,0.12)" }}>🎉</div>
+          <div className="text-center space-y-2 max-w-sm">
+            <h2 className="text-xl font-extrabold" style={{ color: "var(--uber-green)" }}>You're Approved!</h2>
+            <p className="text-sm" style={{ color: "var(--uber-muted)" }}>Congratulations! You're now a verified StayMate Concierge Agent. Start posting listings to grow your portfolio.</p>
+          </div>
+          <div className="flex gap-3">
+            <Link href="/post" className="px-6 py-2.5 rounded-xl font-bold text-sm" style={{ background: "var(--uber-green)", color: "#fff" }}>Post a Listing</Link>
+            <Link href="/profile" className="px-6 py-2.5 rounded-xl font-bold text-sm" style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>My Profile</Link>
+          </div>
+        </>
+      ) : status === "rejected" ? (
+        <>
+          <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl" style={{ background: "rgba(239,68,68,0.12)" }}>✗</div>
+          <div className="text-center space-y-2 max-w-sm">
+            <h2 className="text-xl font-extrabold" style={{ color: "#ef4444" }}>Application Rejected</h2>
+            <p className="text-sm" style={{ color: "var(--uber-muted)" }}>Unfortunately your application wasn't approved. Please check your ID photo and selfie, then resubmit.</p>
+          </div>
+          <button onClick={() => router.refresh()} className="px-6 py-2.5 rounded-xl font-bold text-sm" style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>Try Again</button>
+        </>
+      ) : (
+        <>
+          <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl animate-pulse" style={{ background: "rgba(6,193,103,0.12)" }}>⏳</div>
+          <div className="text-center space-y-2 max-w-sm">
+            <h2 className="text-xl font-extrabold" style={{ color: "var(--uber-text)" }}>Application Under Review</h2>
+            <p className="text-sm" style={{ color: "var(--uber-muted)" }}>We're reviewing your ID and selfie. This usually takes 1–2 business days. This page will update automatically when we're done.</p>
+          </div>
+          <Link href="/homes" className="px-6 py-2.5 rounded-xl font-bold text-sm" style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>Back to Listings</Link>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function AgentApplyPage() {
@@ -252,16 +326,11 @@ export default function AgentApplyPage() {
   }
 
   if (submitted) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-5 px-6" style={{ background: "var(--uber-surface)" }}>
-        <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl" style={{ background: "rgba(6,193,103,0.12)" }}>✓</div>
-        <div className="text-center space-y-2 max-w-sm">
-          <h2 className="text-xl font-extrabold" style={{ color: "var(--uber-text)" }}>{prevApp ? "Application Updated" : "Application Submitted"}</h2>
-          <p className="text-sm" style={{ color: "var(--uber-muted)" }}>We'll review your ID and selfie within 1–2 business days. You'll be notified once approved.</p>
-        </div>
-        <Link href="/homes" className="px-6 py-2.5 rounded-xl font-bold text-sm" style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>Back to Listings</Link>
-      </div>
-    );
+    return <ApplicationStatus userId={profile!.id} initialStatus="pending" />;
+  }
+
+  if (prevApp && (prevApp.status === "approved" || prevApp.status === "rejected")) {
+    return <ApplicationStatus userId={profile!.id} initialStatus={prevApp.status} />;
   }
 
   return (
