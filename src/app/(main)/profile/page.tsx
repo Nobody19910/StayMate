@@ -54,7 +54,7 @@ function BookingStatusBadge({ status }: { status: string }) {
 }
 
 export default function ProfilePage() {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut, refreshProfile } = useAuth();
   const router = useRouter();
   usePaystackScript();
 
@@ -692,8 +692,8 @@ export default function ProfilePage() {
                 <button
                   onClick={async () => {
                     if (!confirm("Cancel your agent subscription? You'll keep access until the current period ends, but won't be renewed.")) return;
-                    await supabase.from("profiles").update({ is_agent: false, agent_subscription_until: null }).eq("id", user!.id);
-                    await supabase.from("profiles").update({ role: "owner" }).eq("id", user!.id);
+                    await supabase.from("profiles").update({ is_agent: false, agent_subscription_until: null, role: "owner" }).eq("id", user!.id);
+                    await refreshProfile();
                     fetchAll();
                   }}
                   className="mt-3 text-xs font-semibold underline"
@@ -727,6 +727,7 @@ export default function ProfilePage() {
                           if (!(profile as any)?.display_name && profile?.fullName) {
                             await supabase.from("profiles").update({ display_name: profile.fullName }).eq("id", user!.id);
                           }
+                          await refreshProfile();
                           fetchAll();
                           router.push("/apply");
                         } catch {
