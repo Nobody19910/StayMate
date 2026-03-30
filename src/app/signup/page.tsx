@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 import type { UserRole } from "@/lib/auth-context";
 import { IconMail } from "@/components/ui/Icons";
 import { evaluatePassword, isPasswordValid } from "@/lib/password-utils";
+import PhoneInput from "@/components/ui/PhoneInput";
+import type { AfricanCountry } from "@/lib/african-countries";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -273,18 +275,10 @@ export default function SignupPage() {
                 >
                   Phone *
                 </label>
-                <input
-                  type="tel"
-                  required
+                <PhoneInput
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+233 20 123 4567"
-                  className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
-                  style={{
-                    border: "0.5px solid var(--uber-border)",
-                    color: "var(--uber-text)",
-                    background: "var(--uber-white)",
-                  }}
+                  onChange={(e164: string, _c: AfricanCountry) => setPhone(e164)}
+                  required
                 />
               </div>
 

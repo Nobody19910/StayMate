@@ -11,6 +11,7 @@ import { IconBuilding, IconHome, IconCouch, IconNeighborhood, IconCity, IconSnow
 import { FREE_LISTING_LIMIT, PER_LISTING_FEE_PESEWAS, PER_LISTING_FEE, AGENT_SUBSCRIPTION_PESEWAS, AGENT_SUBSCRIPTION_PRICE } from "@/lib/sponsor-tiers";
 import { usePaystackScript, openPaystackPopup } from "@/lib/paystack";
 import { activateAgentSubscription } from "@/lib/api";
+import PhoneInput from "@/components/ui/PhoneInput";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -1219,10 +1220,7 @@ export default function PostPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Your phone (shown after booking)</label>
-                    <input type="tel" placeholder="+233 20 000 0000" value={hostelInfo.managerPhone}
-                      onChange={(e) => setHostelInfo((s) => ({ ...s, managerPhone: e.target.value }))}
-                      className="w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                      style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
+                    <PhoneInput value={hostelInfo.managerPhone} onChange={(e164) => setHostelInfo((s) => ({ ...s, managerPhone: e164 }))} />
                   </div>
                 </div>
               )}
@@ -1405,11 +1403,7 @@ export default function PostPage() {
               {currentStep === "Contact" && kind === "home" && (
                 <div>
                   <label className="block text-sm font-bold mb-2" style={{ color: "var(--uber-text)" }}>Your phone number</label>
-                  <input type="tel" placeholder="+233 20 000 0000" value={homeInfo.ownerPhone}
-                    onChange={(e) => setHomeInfo((s) => ({ ...s, ownerPhone: e.target.value }))}
-                    className="w-full rounded-xl px-4 py-4 text-base focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                    style={{ background: "var(--uber-white)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
-                    autoFocus />
+                  <PhoneInput value={homeInfo.ownerPhone} onChange={(e164) => setHomeInfo((s) => ({ ...s, ownerPhone: e164 }))} />
                   <p className="text-xs mt-2" style={{ color: "var(--uber-muted)" }}>Only shared with seekers after their inquiry is accepted. Use a WhatsApp-enabled number for fastest response.</p>
                 </div>
               )}

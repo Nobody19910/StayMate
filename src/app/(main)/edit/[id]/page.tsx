@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import type { PropertyCondition, FurnishingLevel } from "@/lib/types";
+import PhoneInput from "@/components/ui/PhoneInput";
 import { IconSnowflake, IconBolt, IconDroplet, IconFaucet, IconLock, IconFrying, IconTie, IconSparkles, IconPool, IconWifi, IconCar, IconPlant, IconBroom, IconShower, IconThermometer, IconBook, IconShirt, IconUtensils, IconCamera, IconCouch, IconBuilding, IconHome, IconNeighborhood } from "@/components/ui/Icons";
 
 const HOME_AMENITIES: { value: string; label: string; icon: React.ReactNode }[] = [
@@ -280,7 +281,7 @@ export default function EditListingPage() {
           </Field>
 
           <Field label="Contact Phone">
-            <input type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="+233 XX XXX XXXX" className={inputCls} style={inputStyle} />
+            <PhoneInput value={contactPhone} onChange={(e164) => setContactPhone(e164)} />
           </Field>
         </div>
 

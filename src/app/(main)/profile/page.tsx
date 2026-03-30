@@ -14,6 +14,7 @@ import { AGENT_SUBSCRIPTION_PESEWAS, SPONSOR_TIERS } from "@/lib/sponsor-tiers";
 import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { IconPhone, IconHome, IconMailbox, IconCheck, IconCreditCard, IconCalendar, IconCheckCircle, IconChat, IconClose, IconStar } from "@/components/ui/Icons";
+import PhoneInput from "@/components/ui/PhoneInput";
 
 const ROLE_LABELS: Record<string, string> = {
   seeker:  "Property Seeker",
@@ -376,7 +377,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <label className="block text-xs font-semibold mb-1" style={{ color: "var(--uber-muted)" }}>Phone Number</label>
-              <input type="tel" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} required className="w-full text-center font-bold rounded-xl px-3 py-2 focus:outline-none focus:ring-2" style={{ color: "var(--uber-text)", background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }} />
+              <PhoneInput value={editPhone} onChange={(e164) => setEditPhone(e164)} />
             </div>
 
             {/* Change Password */}

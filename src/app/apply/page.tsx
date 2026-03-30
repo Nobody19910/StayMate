@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import PhoneInput from "@/components/ui/PhoneInput";
 
 const ID_TYPES = ["Ghana Card (NIA)", "Voter ID", "Passport", "Driver's License", "SSNIT Card"];
 
@@ -390,14 +391,7 @@ export default function AgentApplyPage() {
             </div>
             <div>
               <label className="text-xs font-bold uppercase tracking-widest block mb-1.5" style={{ color: "var(--uber-muted)" }}>Phone number</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                placeholder="+233 XX XXX XXXX"
-                className="w-full px-4 py-3 rounded-xl text-base font-medium outline-none"
-                style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", color: "var(--uber-text)" }}
-              />
+              <PhoneInput value={phone} onChange={(e164) => setPhone(e164)} required />
             </div>
             <div>
               <label className="text-xs font-bold uppercase tracking-widest block mb-1.5" style={{ color: "var(--uber-muted)" }}>Email address (optional)</label>
