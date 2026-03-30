@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSavedCount } from "@/lib/useSavedCount";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
@@ -143,85 +144,127 @@ export default function BottomNav() {
 
   const totalBadge = savedCount + seekerUnread + adminBadge;
 
-  // ── Collapsed FAB ──────────────────────────────────────────────────────────
-  if (collapsed && !menuOpen) {
-    return (
-      <button
-        onClick={() => setMenuOpen(true)}
-        className="fixed bottom-6 right-5 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95"
-        style={{ background: "var(--uber-black)", color: "var(--uber-white)" }}
-        aria-label="Open navigation"
-      >
-        {/* Hamburger */}
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-        </svg>
-        {totalBadge > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 rounded-full text-[8px] font-extrabold flex items-center justify-center"
-            style={{ background: "var(--uber-green)", color: "#fff" }}>
-            {totalBadge > 9 ? "9+" : totalBadge}
-          </span>
-        )}
-      </button>
-    );
-  }
-
-  // ── Expanded menu (from FAB) ───────────────────────────────────────────────
-  if (collapsed && menuOpen) {
+  // ── Collapsed FAB + menu (AnimatePresence handles both) ───────────────────
+  if (collapsed) {
     return (
       <>
-        {/* Backdrop */}
-        <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-        {/* Menu sheet */}
-        <div className="fixed bottom-6 right-5 z-50 rounded-2xl overflow-hidden shadow-xl"
-          style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", minWidth: 180 }}>
-          {allTabs.map(({ href, label, icon: Icon }) => {
-            const active = pathname.startsWith(href);
-            const isSaved = href === "/saved";
-            const isChat = href === "/chat";
-            const isPost = href === "/post";
-            const badge = isSaved ? savedCount : isChat && !isAdmin ? seekerUnread : isChat && isAdmin ? adminUnread : href === "/admin" ? adminBadge : 0;
-            return (
-              <Link key={href} href={href} onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--uber-surface)]"
-                style={{ borderBottom: "0.5px solid var(--uber-border)" }}>
-                <span className="relative">
-                  {isPost ? (
-                    <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "var(--uber-black)" }}>
-                      <Icon active={true} />
-                    </span>
-                  ) : <Icon active={active} />}
-                  {badge > 0 && (
-                    <span className="absolute -top-1 -right-1.5 w-4 h-4 rounded-full text-[8px] font-extrabold flex items-center justify-center"
-                      style={{ background: active ? "var(--uber-green)" : "#ef4444", color: "#fff" }}>
-                      {badge > 9 ? "9+" : badge}
-                    </span>
-                  )}
-                </span>
-                <span className="text-sm font-semibold" style={{ color: active ? "var(--uber-black)" : "var(--uber-muted)" }}>{label}</span>
-                {active && <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: "var(--uber-green)" }} />}
-              </Link>
-            );
-          })}
-          <button onClick={() => setMenuOpen(false)}
-            className="flex items-center justify-center w-full py-3 text-xs font-bold"
-            style={{ color: "var(--uber-muted)" }}>
-            Close ✕
-          </button>
-        </div>
+        <AnimatePresence>
+          {menuOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                key="backdrop"
+                className="fixed inset-0 z-40 bg-black/20"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                onClick={() => setMenuOpen(false)}
+              />
+              {/* Menu sheet */}
+              <motion.div
+                key="menu"
+                className="fixed bottom-24 right-5 z-50 rounded-2xl overflow-hidden shadow-xl"
+                style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", minWidth: 190 }}
+                initial={{ opacity: 0, scale: 0.85, y: 16, originX: 1, originY: 1 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.85, y: 16 }}
+                transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+              >
+                {allTabs.map(({ href, label, icon: Icon }, i) => {
+                  const active = pathname.startsWith(href);
+                  const isSaved = href === "/saved";
+                  const isChat = href === "/chat";
+                  const isPost = href === "/post";
+                  const badge = isSaved ? savedCount : isChat && !isAdmin ? seekerUnread : isChat && isAdmin ? adminUnread : href === "/admin" ? adminBadge : 0;
+                  return (
+                    <motion.div
+                      key={href}
+                      initial={{ opacity: 0, x: 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.04, duration: 0.15 }}
+                    >
+                      <Link href={href} onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-5 py-3.5 hover:bg-[var(--uber-surface)] transition-colors"
+                        style={{ borderBottom: "0.5px solid var(--uber-border)" }}>
+                        <span className="relative">
+                          {isPost ? (
+                            <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "var(--uber-black)" }}>
+                              <Icon active={true} />
+                            </span>
+                          ) : <Icon active={active} />}
+                          {badge > 0 && (
+                            <span className="absolute -top-1 -right-1.5 w-4 h-4 rounded-full text-[8px] font-extrabold flex items-center justify-center"
+                              style={{ background: active ? "var(--uber-green)" : "#ef4444", color: "#fff" }}>
+                              {badge > 9 ? "9+" : badge}
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-sm font-semibold" style={{ color: active ? "var(--uber-black)" : "var(--uber-muted)" }}>{label}</span>
+                        {active && <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: "var(--uber-green)" }} />}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+                <button onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-center w-full py-3 text-xs font-bold"
+                  style={{ color: "var(--uber-muted)" }}>
+                  Close ✕
+                </button>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* FAB */}
+        <motion.button
+          onClick={() => setMenuOpen(v => !v)}
+          className="fixed bottom-6 right-5 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
+          style={{ background: "var(--uber-black)", color: "var(--uber-white)" }}
+          aria-label="Open navigation"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        >
+          <motion.div
+            animate={{ rotate: menuOpen ? 90 : 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+          >
+            {menuOpen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            )}
+          </motion.div>
+          {totalBadge > 0 && !menuOpen && (
+            <span className="absolute top-1 right-1 w-4 h-4 rounded-full text-[8px] font-extrabold flex items-center justify-center"
+              style={{ background: "var(--uber-green)", color: "#fff" }}>
+              {totalBadge > 9 ? "9+" : totalBadge}
+            </span>
+          )}
+        </motion.button>
       </>
     );
   }
 
   // ── Full bottom bar (default / scrolled to top) ────────────────────────────
   return (
-    <nav
+    <motion.nav
       className="fixed bottom-0 left-0 right-0 z-50 safe-area-pb"
       style={{
         background: "var(--uber-white)",
         opacity: 0.98,
         borderTop: "0.5px solid var(--uber-border)",
       }}
+      initial={{ y: 80 }}
+      animate={{ y: 0 }}
+      transition={{ type: "spring", stiffness: 380, damping: 30 }}
     >
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
         {allTabs.map(({ href, label, icon: Icon }) => {
@@ -280,7 +323,7 @@ export default function BottomNav() {
           );
         })}
       </div>
-    </nav>
+    </motion.nav>
   );
 }
 

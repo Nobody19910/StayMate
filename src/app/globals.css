@@ -240,3 +240,68 @@ body {
   width: 100%;
   min-height: 100vh;
 }
+
+/* ── Micro-animations ──────────────────────────────────────────────────────── */
+
+/* Press feedback on all interactive elements */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1),
+              opacity 0.12s ease;
+}
+button:active, a:active, [role="button"]:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+/* Don't scale elements that opt out */
+.no-press-scale:active { transform: none; opacity: 1; }
+
+/* Smooth color transitions on interactive states */
+a, button {
+  transition: color 0.15s ease, background-color 0.15s ease,
+              border-color 0.15s ease, box-shadow 0.15s ease,
+              transform 0.12s cubic-bezier(0.25, 0.1, 0.25, 1),
+              opacity 0.12s ease;
+}
+
+/* Card hover lift */
+.card-hover {
+  transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+              box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+}
+.card-hover:active {
+  transform: scale(0.985);
+}
+
+/* Filter pill / tab active bounce */
+@keyframes pillPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+.pill-active {
+  animation: pillPop 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Fade-slide-up for menu panels (used via JS class toggle) */
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.menu-enter {
+  animation: slideUpFade 0.18s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* FAB pulse ring on first appear */
+@keyframes fabRing {
+  0%   { box-shadow: 0 0 0 0 rgba(6, 193, 103, 0.4); }
+  70%  { box-shadow: 0 0 0 10px rgba(6, 193, 103, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(6, 193, 103, 0); }
+}
+.fab-ring {
+  animation: fabRing 0.6s ease-out;
+}

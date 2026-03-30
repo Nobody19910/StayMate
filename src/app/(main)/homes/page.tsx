@@ -340,7 +340,7 @@ const HomeListCard = memo(function HomeListCard({ property }: { property: Proper
   return (
     <Link href={`/homes/${property.id}`}>
       <div
-        className="rounded-2xl overflow-hidden flex flex-row transition-all cursor-pointer group hover:shadow-md"
+        className="rounded-2xl overflow-hidden flex flex-row cursor-pointer group card-hover"
         style={{
           background: "var(--uber-white)",
           border: "0.5px solid var(--uber-border)",

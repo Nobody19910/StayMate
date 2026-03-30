@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSavedCount } from "@/lib/useSavedCount";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
@@ -130,9 +131,11 @@ export default function TopNav() {
                       </span>
                     ) : label}
                     {active && (
-                      <span
+                      <motion.span
+                        layoutId="nav-underline"
                         className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full"
                         style={{ background: "var(--uber-green)" }}
+                        transition={{ type: "spring", stiffness: 500, damping: 35 }}
                       />
                     )}
                     {isSaved && savedCount > 0 && (
@@ -212,32 +215,45 @@ export default function TopNav() {
         </div>
 
         {/* ── Mobile dropdown menu ── */}
-        {mobileMenuOpen && (
-          <div
-            className="lg:hidden border-t"
-            style={{ background: "var(--uber-white)", borderColor: "var(--uber-border)" }}
-          >
-            <div className="px-4 py-3 flex flex-col gap-1">
-              {tabs.map(({ href, label }) => {
-                const active = pathname.startsWith(href);
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="px-3 py-2.5 rounded-lg text-sm font-semibold"
-                    style={{
-                      background: active ? "color-mix(in srgb, var(--uber-green) 10%, transparent)" : "transparent",
-                      color: active ? "var(--uber-green)" : "var(--uber-text)",
-                    }}
-                  >
-                    {label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              key="mobile-menu"
+              className="lg:hidden border-t overflow-hidden"
+              style={{ background: "var(--uber-white)", borderColor: "var(--uber-border)" }}
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
+            >
+              <div className="px-4 py-3 flex flex-col gap-1">
+                {tabs.map(({ href, label }, i) => {
+                  const active = pathname.startsWith(href);
+                  return (
+                    <motion.div
+                      key={href}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.04, duration: 0.18, ease: "easeOut" }}
+                    >
+                      <Link
+                        href={href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block px-3 py-2.5 rounded-lg text-sm font-semibold"
+                        style={{
+                          background: active ? "color-mix(in srgb, var(--uber-green) 10%, transparent)" : "transparent",
+                          color: active ? "var(--uber-green)" : "var(--uber-text)",
+                        }}
+                      >
+                        {label}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
     </>
   );
