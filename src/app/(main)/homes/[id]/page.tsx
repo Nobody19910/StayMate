@@ -102,8 +102,28 @@ export default function HomeDetailPage({ params }: Props) {
 
   if (notFoundFlag) notFound();
   if (!property) return <DetailSkeleton />;
+
+  const isUnavailable = property.status === "rented" || property.status === "sold";
   if (bookingStep === "success") {
     return <BookingSuccessScreen property={property} viewingDate={viewingDate} onBack={() => { setBookingStep("idle"); setViewingDate(""); setBookingMessage(""); }} />;
+  }
+
+  async function handleWaitlist() {
+    if (!property || !user || isProcessing) return;
+    setIsProcessing(true);
+    const messageContent = `[INQUIRY_IMAGE:${property.images?.[0] ?? ""}]\n[Inquiry for: ${property.title}]\n[WAITLIST]\n\n${bookingMessage || "Interested — please notify me if this becomes available."}`;
+    await supabase.from("bookings").insert({
+      user_id: user.id, property_type: "home",
+      property_id: "00000000-0000-0000-0000-000000000001",
+      property_ref: property.id,
+      owner_id: property.owner_id ?? null,
+      seeker_name: (user as any).user_metadata?.full_name ?? user.email ?? "",
+      seeker_email: user.email ?? "",
+      status: "waitlist",
+      message: messageContent,
+    });
+    setIsProcessing(false);
+    setBookingStep("success");
   }
 
   async function handleBookConfirm() {
@@ -194,14 +214,24 @@ export default function HomeDetailPage({ params }: Props) {
           </div>
           <div className="flex items-center gap-3">
             <p className="text-sm font-extrabold" style={{ color: "var(--uber-text)" }}>{property.priceLabel}</p>
-            {user && profile?.role !== "admin" && property.status !== "rented" && property.status !== "sold" && (
-              <button
-                onClick={() => setBookingStep("request")}
-                className="px-4 py-2 rounded-xl text-sm font-bold"
-                style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}
-              >
-                Inquire Now
-              </button>
+            {user && profile?.role !== "admin" && (
+              isUnavailable ? (
+                <button
+                  onClick={() => setBookingStep("request")}
+                  className="px-4 py-2 rounded-xl text-sm font-bold"
+                  style={{ background: "rgba(245,158,11,0.12)", color: "#d97706", border: "0.5px solid rgba(245,158,11,0.4)" }}
+                >
+                  Join Waitlist
+                </button>
+              ) : (
+                <button
+                  onClick={() => setBookingStep("request")}
+                  className="px-4 py-2 rounded-xl text-sm font-bold"
+                  style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}
+                >
+                  Inquire Now
+                </button>
+              )
             )}
           </div>
         </div>
@@ -218,12 +248,19 @@ export default function HomeDetailPage({ params }: Props) {
         </nav>
       </div>
 
-      {/* ── Unavailable banner ─────────────────────────────────────────── */}
-      {(property.status === "rented" || property.status === "sold") && (
+      {/* ── Rented / Sold banner ───────────────────────────────────────── */}
+      {isUnavailable && (
         <div className="max-w-6xl mx-auto px-4 mb-3">
-          <div className="rounded-xl px-4 py-3 text-sm font-bold flex items-center gap-2" style={{ background: "#FEE2E2", color: "#DC2626" }}>
-            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
-            This property has been {property.status === "rented" ? "rented" : "sold"} and is no longer available.
+          <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: "rgba(245,158,11,0.1)", border: "0.5px solid rgba(245,158,11,0.3)" }}>
+            <span className="text-lg">{property.status === "rented" ? "🔑" : "🏷️"}</span>
+            <div className="flex-1">
+              <p className="text-sm font-bold" style={{ color: "#d97706" }}>
+                This property is currently {property.status === "rented" ? "rented out" : "sold"}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--uber-muted)" }}>
+                You can still join the waitlist — no fee required. We&apos;ll notify you if it becomes available again.
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -612,7 +649,43 @@ export default function HomeDetailPage({ params }: Props) {
                   )}
                 </div>
 
-                {property.status !== "rented" && property.status !== "sold" ? (
+                {/* Waitlist mode for rented/sold properties */}
+                {isUnavailable ? (
+                  bookingStep === "success" ? null : user && profile?.role !== "admin" ? (
+                    <div className="space-y-3">
+                      <div className="rounded-xl px-3 py-2.5 flex items-center gap-2" style={{ background: "rgba(245,158,11,0.08)", border: "0.5px solid rgba(245,158,11,0.25)" }}>
+                        <span className="text-base">📋</span>
+                        <div>
+                          <p className="text-xs font-bold" style={{ color: "#d97706" }}>Join the waitlist — free</p>
+                          <p className="text-[10px]" style={{ color: "var(--uber-muted)" }}>No fee. We'll contact you if it becomes available.</p>
+                        </div>
+                      </div>
+                      <textarea
+                        value={bookingMessage}
+                        onChange={e => setBookingMessage(e.target.value)}
+                        placeholder="Add a note (optional)…"
+                        rows={2}
+                        className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
+                        style={{ background: "var(--uber-surface)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
+                      />
+                      <button
+                        onClick={handleWaitlist}
+                        disabled={isProcessing}
+                        className="w-full font-bold text-sm py-3.5 rounded-2xl disabled:opacity-70 flex items-center justify-center gap-2"
+                        style={{ background: "rgba(245,158,11,0.15)", color: "#d97706", border: "0.5px solid rgba(245,158,11,0.4)" }}
+                      >
+                        {isProcessing ? <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" /> : "🔔 Notify me when available"}
+                      </button>
+                    </div>
+                  ) : !user ? (
+                    <Link href="/login">
+                      <button className="w-full font-bold text-sm py-3.5 rounded-2xl" style={{ background: "rgba(245,158,11,0.12)", color: "#d97706", border: "0.5px solid rgba(245,158,11,0.4)" }}>
+                        Log in to join waitlist
+                      </button>
+                    </Link>
+                  ) : null
+                ) : (
+                  /* Normal booking flow */
                   profile?.role === "admin" ? (
                     adminEditMode ? (
                       <AdminEditPanel
@@ -625,11 +698,9 @@ export default function HomeDetailPage({ params }: Props) {
                         error={editError}
                       />
                     ) : (
-                      <button
-                        onClick={() => { setAdminEditMode(true); setEditedProperty(null); }}
+                      <button onClick={() => { setAdminEditMode(true); setEditedProperty(null); }}
                         className="w-full font-bold text-sm py-3 rounded-2xl"
-                        style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}
-                      >
+                        style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>
                         Edit Property Details
                       </button>
                     )
@@ -638,32 +709,21 @@ export default function HomeDetailPage({ params }: Props) {
                       <div className="space-y-3">
                         <div>
                           <label className="block text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--uber-muted)" }}>Preferred Viewing Date</label>
-                          <input
-                            type="date"
-                            value={viewingDate}
-                            onChange={e => setViewingDate(e.target.value)}
+                          <input type="date" value={viewingDate} onChange={e => setViewingDate(e.target.value)}
                             className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-                            style={{ background: "var(--uber-surface)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
-                          />
+                            style={{ background: "var(--uber-surface)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--uber-muted)" }}>Message (optional)</label>
-                          <textarea
-                            value={bookingMessage}
-                            onChange={e => setBookingMessage(e.target.value)}
-                            placeholder="Hello, I am interested in this property..."
-                            rows={3}
+                          <textarea value={bookingMessage} onChange={e => setBookingMessage(e.target.value)}
+                            placeholder="Hello, I am interested in this property..." rows={3}
                             className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
-                            style={{ background: "var(--uber-surface)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }}
-                          />
+                            style={{ background: "var(--uber-surface)", color: "var(--uber-text)", border: "0.5px solid var(--uber-border)" }} />
                         </div>
                         {bookingError && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-xl">{bookingError}</p>}
-                        <button
-                          onClick={handleBookConfirm}
-                          disabled={isProcessing}
+                        <button onClick={handleBookConfirm} disabled={isProcessing}
                           className="w-full font-bold text-sm py-3.5 rounded-2xl disabled:opacity-70 flex items-center justify-center gap-2"
-                          style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}
-                        >
+                          style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>
                           {isProcessing ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Sending...</> : "Request to Book / Inquire"}
                         </button>
                         <button onClick={() => { setViewingDate(""); setBookingMessage(""); }} className="w-full text-xs py-1" style={{ color: "var(--uber-muted)" }}>Clear form</button>
@@ -677,10 +737,6 @@ export default function HomeDetailPage({ params }: Props) {
                       </button>
                     </Link>
                   )
-                ) : (
-                  <div className="rounded-xl px-4 py-3 text-sm font-bold text-center" style={{ background: "#FEE2E2", color: "#DC2626" }}>
-                    No longer available
-                  </div>
                 )}
 
                 {/* What's included */}
@@ -735,21 +791,34 @@ export default function HomeDetailPage({ params }: Props) {
       </div>
 
       {/* ── Mobile sticky CTA ──────────────────────────────────────────── */}
-      {property.status !== "rented" && property.status !== "sold" && (
+      {(
         <div className="lg:hidden fixed left-0 right-0 bottom-nav-offset z-40 px-4 py-3" style={{ background: "var(--uber-white)", borderTop: "0.5px solid var(--uber-border)" }}>
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-base font-extrabold" style={{ color: "var(--uber-text)" }}>{property.priceLabel}</p>
-              <p className="text-xs" style={{ color: "var(--uber-muted)" }}>{property.forSale ? "asking price" : "per month"}</p>
+              <p className="text-xs" style={{ color: isUnavailable ? "#d97706" : "var(--uber-muted)" }}>
+                {isUnavailable ? `Currently ${property.status}` : (property.forSale ? "asking price" : "per month")}
+              </p>
             </div>
             {user && profile?.role !== "admin" ? (
-              <button
-                onClick={() => { const el = document.querySelector(".lg\\:w-80"); el?.scrollIntoView({ behavior: "smooth" }); setBookingStep("request"); }}
-                className="px-5 py-3 rounded-2xl font-bold text-sm flex-shrink-0"
-                style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}
-              >
-                Request to Book
-              </button>
+              isUnavailable ? (
+                <button
+                  onClick={handleWaitlist}
+                  disabled={isProcessing || bookingStep === "success"}
+                  className="px-5 py-3 rounded-2xl font-bold text-sm flex-shrink-0 disabled:opacity-60"
+                  style={{ background: "rgba(245,158,11,0.12)", color: "#d97706", border: "0.5px solid rgba(245,158,11,0.4)" }}
+                >
+                  {bookingStep === "success" ? "✓ On Waitlist" : "🔔 Join Waitlist"}
+                </button>
+              ) : (
+                <button
+                  onClick={() => { const el = document.querySelector(".lg\\:w-80"); el?.scrollIntoView({ behavior: "smooth" }); setBookingStep("request"); }}
+                  className="px-5 py-3 rounded-2xl font-bold text-sm flex-shrink-0"
+                  style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}
+                >
+                  Request to Book
+                </button>
+              )
             ) : !user ? (
               <Link href="/login">
                 <button className="px-5 py-3 rounded-2xl font-bold text-sm" style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>

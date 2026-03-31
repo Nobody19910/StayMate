@@ -212,7 +212,7 @@ export async function getHomes(): Promise<Property[]> {
   const { data, error } = await supabase
     .from("homes")
     .select("*")
-    .not("status", "in", '("rented","sold")')
+    .not("status", "in", '("pending_admin","rejected")')
     .order("is_sponsored", { ascending: false })
     .order("priority_score", { ascending: false })
     .order("created_at", { ascending: false });
@@ -237,7 +237,7 @@ export async function getHostels(): Promise<Hostel[]> {
   const { data, error } = await supabase
     .from("hostels")
     .select("*, rooms(*)")
-    .not("status", "in", '("rented","sold","full")')
+    .not("status", "in", '("pending_admin","rejected")')
     .order("is_sponsored", { ascending: false })
     .order("priority_score", { ascending: false })
     .order("created_at", { ascending: false });
@@ -290,7 +290,7 @@ export async function searchHomes(filters: HomeSearchFilters = {}): Promise<Prop
   let q = supabase
     .from("homes")
     .select("*")
-    .not("status", "in", '("rented","sold")');
+    .not("status", "in", '("pending_admin","rejected")');
 
   // Listing type
   if (filters.forSale === true) q = q.eq("for_sale", true);

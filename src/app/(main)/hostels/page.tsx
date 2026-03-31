@@ -251,6 +251,17 @@ const HostelListCard = memo(function HostelListCard({ hostel }: { hostel: Hostel
               ✦ Sponsored
             </span>
           )}
+          {(hostel.status === "rented" || hostel.status === "sold" || hostel.status === "full") && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center"
+              style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(1px)" }}>
+              <span className="text-xl mb-1">{hostel.status === "full" ? "🏫" : hostel.status === "rented" ? "🔑" : "🏷️"}</span>
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-white px-2 py-0.5 rounded"
+                style={{ background: hostel.status === "full" ? "rgba(239,68,68,0.85)" : "rgba(245,158,11,0.85)" }}>
+                {hostel.status === "full" ? "Full" : hostel.status === "rented" ? "Rented" : "Sold"}
+              </span>
+              <span className="text-[9px] text-white/80 mt-1 font-medium">Waitlist open</span>
+            </div>
+          )}
         </div>
 
         {/* Details */}
