@@ -519,6 +519,10 @@ export default function PostPage() {
           status: profile?.role === "admin" ? "approved" : "pending_admin",
         });
         if (error) throw error;
+        // Admin: explicitly force-approve the listing after insert
+        if (profile?.role === "admin") {
+          await supabase.from("homes").update({ status: "approved" }).eq("id", homeId);
+        }
         setLastInsertedId(homeId);
         setLastInsertedKind("homes");
         // Promote seeker → owner so they appear in Active Agents
@@ -561,6 +565,10 @@ export default function PostPage() {
           status: profile?.role === "admin" ? "approved" : "pending_admin",
         });
         if (hostelError) throw hostelError;
+        // Admin: explicitly force-approve the listing after insert
+        if (profile?.role === "admin") {
+          await supabase.from("hostels").update({ status: "approved" }).eq("id", hostelId);
+        }
         setLastInsertedId(hostelId);
         setLastInsertedKind("hostels");
         // Promote seeker → owner (property owner covers both homes and hostels)

@@ -8,6 +8,7 @@ import { useSavedCount } from "@/lib/useSavedCount";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import NotificationCenter from "@/components/ui/NotificationCenter";
 
 function useSeekerUnread() {
   const { user } = useAuth();
@@ -155,6 +156,7 @@ export default function TopNav() {
 
             {/* ── Right actions ── */}
             <div className="flex items-center gap-2">
+              {user && <NotificationCenter />}
               <ThemeToggle />
 
               {/* Profile / Auth */}

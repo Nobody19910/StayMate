@@ -369,6 +369,7 @@ export default function HostelsPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ ...DEFAULT_FILTERS, priceMax: 25000 });
   const [sortBy, setSortBy] = useState<"nearest" | "price_asc" | "price_desc">("nearest");
+  const [groupBy, setGroupBy] = useState<"location" | "none">("location");
   const { loc: userLoc } = useUserLocation();
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -462,6 +463,22 @@ export default function HostelsPage() {
     return [...nearest, ...sponsored, ...rest];
   }, [hostels, searchQuery, radius, filters, userLoc, sortBy]);
 
+  const hostelsByCity = useMemo<[string, Hostel[]][]>(() => {
+    if (groupBy !== "location") return [];
+    const map = new Map<string, Hostel[]>();
+    for (const h of filteredHostels) {
+      const city = (h as any).city || "Other";
+      const bucket = map.get(city) ?? [];
+      bucket.push(h);
+      map.set(city, bucket);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => {
+      if (a === "Other") return 1;
+      if (b === "Other") return -1;
+      return a.localeCompare(b);
+    });
+  }, [filteredHostels, groupBy]);
+
   const activeFilterCount =
     filters.amenities.length +
     (filters.priceMin > 0 ? 1 : 0) +
@@ -524,13 +541,24 @@ export default function HostelsPage() {
                 )}
                 <p className="text-xs mt-0.5" style={{ color: "var(--uber-muted)" }}>Prices shown per semester in GH₵</p>
               </div>
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold focus:outline-none"
-                style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", color: "var(--uber-text)" }}>
-                <option value="nearest">Sort: Nearest first</option>
-                <option value="price_asc">Sort: Price (low → high)</option>
-                <option value="price_desc">Sort: Price (high → low)</option>
-              </select>
+              <div className="flex items-center gap-2 flex-wrap">
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold focus:outline-none"
+                  style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", color: "var(--uber-text)" }}>
+                  <option value="nearest">Sort: Nearest first</option>
+                  <option value="price_asc">Sort: Price (low → high)</option>
+                  <option value="price_desc">Sort: Price (high → low)</option>
+                </select>
+                <button
+                  onClick={() => setGroupBy(g => g === "location" ? "none" : "location")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0"
+                  style={groupBy === "location"
+                    ? { background: "var(--uber-green)", color: "#fff", border: "0.5px solid var(--uber-green)" }
+                    : { background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", color: "var(--uber-muted)" }}
+                >
+                  {groupBy === "location" ? "📍 By Location" : "☰ List"}
+                </button>
+              </div>
             </div>
 
             {/* Mobile pills */}
@@ -563,6 +591,41 @@ export default function HostelsPage() {
                   style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}>
                   Clear all filters
                 </button>
+              </div>
+            ) : groupBy === "location" ? (
+              <div className="pt-2 pb-10 space-y-10">
+                {hostelsByCity.map(([city, cityHostels]) => (
+                  <section key={city}>
+                    {/* Sticky city header */}
+                    <div
+                      className="sticky top-0 z-10 flex items-center gap-2 px-1 py-2 mb-4"
+                      style={{ background: "var(--uber-surface)" }}
+                    >
+                      <span
+                        className="inline-block w-2 h-2 rounded-full shrink-0"
+                        style={{ background: "var(--uber-green)" }}
+                      />
+                      <span
+                        className="text-xs font-bold uppercase tracking-widest"
+                        style={{ color: "var(--uber-text)" }}
+                      >
+                        {city}
+                      </span>
+                      <span
+                        className="text-xs font-semibold ml-1"
+                        style={{ color: "var(--uber-muted)" }}
+                      >
+                        · {cityHostels.length} hostel{cityHostels.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    {/* 2-col grid on desktop, single col on mobile */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {cityHostels.map((hostel) => (
+                        <HostelListCard key={hostel.id} hostel={hostel} />
+                      ))}
+                    </div>
+                  </section>
+                ))}
               </div>
             ) : (
               <AnimatedList className="space-y-10 pt-2 pb-10">

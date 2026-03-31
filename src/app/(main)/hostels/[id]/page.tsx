@@ -36,18 +36,40 @@ const ROOM_TYPE_LABELS: Record<string, string> = {
 export default function HostelRoomPickerPage() {
   const params = useParams();
   const id = params.id as string;
+  const { user } = useAuth();
   const [hostel, setHostel] = useState<Hostel | null>(null);
   const [loading, setLoading] = useState(true);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [stickyHeader, setStickyHeader] = useState(false);
+  const [completedBookingId, setCompletedBookingId] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [waitlistDone, setWaitlistDone] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    cachedFetch<Hostel | null>(`hostel_${id}`, () => getHostelById(id)).then(({ data }) => {
+    cachedFetch<Hostel | null>(`hostel_${id}`, () => getHostelById(id)).then(async ({ data }) => {
       setHostel(data); setLoading(false);
+      if (data) {
+        // Increment view count (fire-and-forget)
+        supabase.rpc("increment_view", { p_table: "hostels", p_id: id }).then(() => {});
+      }
     }).catch(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!user || !id) return;
+    supabase
+      .from("bookings")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("property_ref", id)
+      .eq("status", "completed")
+      .maybeSingle()
+      .then(({ data: bk }) => {
+        setCompletedBookingId(bk?.id ?? null);
+      });
+  }, [user, id]);
 
   useEffect(() => {
     const onScroll = () => setStickyHeader(window.scrollY > 260);
@@ -69,6 +91,25 @@ export default function HostelRoomPickerPage() {
   const availableRooms = hostel.rooms.filter((r) => r.available);
   const unavailableRooms = hostel.rooms.filter((r) => !r.available);
   const images = hostel.images || [];
+  const isFull = hostel.status === "full";
+
+  async function handleWaitlist() {
+    if (!hostel || !user || isProcessing) return;
+    setIsProcessing(true);
+    const messageContent = `[INQUIRY_IMAGE:${hostel.images?.[0] ?? ""}]\n[Inquiry for: ${hostel.name}]\n[WAITLIST]\n\nInterested — please notify me when a room opens.`;
+    await supabase.from("bookings").insert({
+      user_id: user.id,
+      property_type: "hostel",
+      property_id: "00000000-0000-0000-0000-000000000001",
+      property_ref: hostel.id,
+      seeker_name: (user as any).user_metadata?.full_name ?? user.email ?? "",
+      seeker_email: user.email ?? "",
+      status: "waitlist",
+      message: messageContent,
+    });
+    setIsProcessing(false);
+    setWaitlistDone(true);
+  }
 
   return (
     <div className="min-h-screen pb-8" style={{ background: "var(--uber-surface)" }}>
@@ -92,6 +133,19 @@ export default function HostelRoomPickerPage() {
           <span style={{ color: "var(--uber-text)" }} className="font-medium truncate max-w-[200px]">{hostel.name}</span>
         </nav>
       </div>
+
+      {/* Full banner */}
+      {isFull && (
+        <div className="max-w-6xl mx-auto px-4 mb-3">
+          <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: "rgba(245,158,11,0.1)", border: "0.5px solid rgba(245,158,11,0.3)" }}>
+            <span className="text-lg">🔔</span>
+            <div className="flex-1">
+              <p className="text-sm font-bold" style={{ color: "#d97706" }}>This hostel is currently full</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--uber-muted)" }}>Join the free waitlist and we&apos;ll notify you when a room opens.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Title */}
       <div className="max-w-6xl mx-auto px-4 mb-3">
@@ -205,6 +259,13 @@ export default function HostelRoomPickerPage() {
               </div>
             </div>
 
+            {/* Reviews */}
+            <ReviewsSection
+              propertyId={hostel.id}
+              propertyType="hostel"
+              completedBookingId={completedBookingId}
+            />
+
             {/* House rules */}
             <div className="rounded-2xl p-5" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
               <h2 className="text-base font-bold mb-4" style={{ color: "var(--uber-text)" }}>Hostel rules</h2>
@@ -254,7 +315,29 @@ export default function HostelRoomPickerPage() {
                   </p>
                 </div>
                 <div className="mt-4 pt-4" style={{ borderTop: "0.5px solid var(--uber-border)" }}>
-                  <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Select a room below to inquire or book. All bookings are coordinated by our concierge team.</p>
+                  {isFull ? (
+                    user ? (
+                      waitlistDone ? (
+                        <div className="rounded-xl px-3 py-2.5 text-center" style={{ background: "rgba(6,193,103,0.08)", border: "0.5px solid rgba(6,193,103,0.2)" }}>
+                          <p className="text-sm font-bold" style={{ color: "var(--uber-green)" }}>✓ You&apos;re on the waitlist!</p>
+                          <p className="text-xs mt-0.5" style={{ color: "var(--uber-muted)" }}>We&apos;ll notify you when a room opens.</p>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={handleWaitlist}
+                          disabled={isProcessing}
+                          className="w-full py-3 rounded-xl text-sm font-bold disabled:opacity-50"
+                          style={{ background: "rgba(245,158,11,0.12)", color: "#d97706", border: "0.5px solid rgba(245,158,11,0.4)" }}
+                        >
+                          {isProcessing ? "Joining…" : "🔔 Join Waitlist — Free"}
+                        </button>
+                      )
+                    ) : (
+                      <p className="text-xs text-center" style={{ color: "var(--uber-muted)" }}>Sign in to join the waitlist.</p>
+                    )
+                  ) : (
+                    <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Select a room below to inquire or book. All bookings are coordinated by our concierge team.</p>
+                  )}
                 </div>
               </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
@@ -79,6 +79,8 @@ export default function EditListingPage() {
   const id = params.id as string;
   const type = searchParams.get("type") as "home" | "hostel";
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -115,6 +117,13 @@ export default function EditListingPage() {
   const [nearbyUniversities, setNearbyUniversities] = useState("");
   const [hostelAmenities, setHostelAmenities] = useState<string[]>([]);
 
+  // Video
+  const [videoUrl, setVideoUrl] = useState<string>("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string>("");
+  const [videoUploading, setVideoUploading] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) { router.push("/login"); return; }
@@ -122,9 +131,20 @@ export default function EditListingPage() {
 
     async function load() {
       setLoading(true);
+
+      // Check if current user is an admin — admins bypass ownership checks
+      const { data: profileData } = await supabase.from("profiles").select("role").eq("id", user!.id).single();
+      const userIsAdmin = profileData?.role === "admin";
+      setIsAdmin(userIsAdmin);
+
       if (type === "home") {
         const { data } = await supabase.from("homes").select("*").eq("id", id).single();
         if (data) {
+          // Ownership check — admins skip this
+          if (!userIsAdmin && data.owner_id && data.owner_id !== user!.id) {
+            router.push("/dashboard");
+            return;
+          }
           setTitle(data.title ?? "");
           setDescription(data.description ?? "");
           setPrice(data.price ? data.price.toString() : "");
@@ -139,6 +159,7 @@ export default function EditListingPage() {
           setNegotiable(!!data.is_negotiable);
           setContactPhone(data.owner_phone ?? "");
           setCity(data.city ?? "");
+          if (data.video_url) setVideoUrl(data.video_url);
           const r = data.rules ?? {};
           setMoveIn(r.move_in || "Flexible — by arrangement");
           setPetsAllowed(r.pets || "ask");
@@ -153,11 +174,17 @@ export default function EditListingPage() {
       } else {
         const { data } = await supabase.from("hostels").select("*").eq("id", id).single();
         if (data) {
+          // Ownership check — admins skip this
+          if (!userIsAdmin && data.manager_id && data.manager_id !== user!.id) {
+            router.push("/dashboard");
+            return;
+          }
           setHostelName(data.name ?? "");
           setDescription(data.description ?? "");
           setCity(data.city ?? "");
           setNearbyUniversities((data.nearby_universities ?? []).join(", "));
           setHostelAmenities(data.amenities ?? []);
+          if (data.video_url) setVideoUrl(data.video_url);
           setContactPhone(data.manager_phone ?? "");
         }
       }
@@ -177,6 +204,26 @@ export default function EditListingPage() {
     setSaved(false);
 
     try {
+      // Upload video if a new file was selected
+      let finalVideoUrl: string | null = videoUrl || null;
+      if (videoFile) {
+        setVideoUploading(true);
+        const vForm = new FormData();
+        vForm.append("file", videoFile);
+        const { data: { session } } = await supabase.auth.getSession();
+        const authToken = session?.access_token ?? "";
+        const vRes = await fetch("/api/upload-image", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${authToken}` },
+          body: vForm,
+        });
+        if (vRes.ok) {
+          const { url: vUrl } = await vRes.json();
+          finalVideoUrl = vUrl;
+        }
+        setVideoUploading(false);
+      }
+
       if (type === "home") {
         const priceNum = parseFloat(price.replace(/[^\d.]/g, "")) || 0;
         const priceLabel = `GH₵${priceNum.toLocaleString()}${forSale ? "" : "/mo"}`;
@@ -200,6 +247,7 @@ export default function EditListingPage() {
           owner_phone: contactPhone || null,
           rules: { move_in: moveIn, pets: petsAllowed, smoking: smokingAllowed, subletting: sublettingAllowed },
           nearby: { shops: nearbyShops, restaurants: nearbyRestaurants, transport: nearbyTransport, hospital: nearbyHospital },
+          video_url: finalVideoUrl,
         }).eq("id", id);
 
         if (updateError) throw updateError;
@@ -212,6 +260,7 @@ export default function EditListingPage() {
           nearby_universities: unis,
           amenities: hostelAmenities,
           manager_phone: contactPhone || null,
+          video_url: finalVideoUrl,
         }).eq("id", id);
         if (updateError) throw updateError;
       }
@@ -496,13 +545,51 @@ export default function EditListingPage() {
           </>
         )}
 
+        {/* Video Tour */}
+        <div className="rounded-2xl p-5 space-y-3" style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)" }}>
+          <SectionHeader title="Video Tour" />
+          <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Optional — max 100 MB. Replace the existing video by selecting a new file.</p>
+          {(videoPreview || videoUrl) && (
+            <div className="relative rounded-xl overflow-hidden" style={{ border: "0.5px solid var(--uber-border)" }}>
+              <video src={videoPreview || videoUrl} controls className="w-full max-h-48 object-contain" style={{ background: "#000" }} />
+              <button
+                type="button"
+                onClick={() => { if (videoPreview) URL.revokeObjectURL(videoPreview); setVideoFile(null); setVideoPreview(""); setVideoUrl(""); }}
+                className="absolute top-2 right-2 w-6 h-6 bg-black/60 text-white rounded-full text-xs flex items-center justify-center font-bold"
+              >✕</button>
+            </div>
+          )}
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              if (file.size > 100 * 1024 * 1024) { alert("Video must be under 100 MB"); return; }
+              if (videoPreview) URL.revokeObjectURL(videoPreview);
+              setVideoFile(file);
+              setVideoPreview(URL.createObjectURL(file));
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => videoInputRef.current?.click()}
+            className="w-full py-3 rounded-xl text-sm font-bold"
+            style={{ background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)", color: "var(--uber-muted)" }}
+          >
+            {videoFile ? "Change Video" : videoUrl ? "Replace Video" : "Add Video Tour"}
+          </button>
+        </div>
+
         <button
           type="submit"
-          disabled={submitting || saved}
+          disabled={submitting || saved || videoUploading}
           className="w-full font-bold py-4 rounded-2xl text-sm active:scale-95 transition-all disabled:opacity-50"
           style={{ background: "var(--uber-btn-bg)", color: "var(--uber-btn-text)" }}
         >
-          {submitting ? "Saving…" : saved ? "Saved ✓" : "Save Changes"}
+          {videoUploading ? "Uploading video…" : submitting ? "Saving…" : saved ? "Saved ✓" : "Save Changes"}
         </button>
       </form>
     </div>

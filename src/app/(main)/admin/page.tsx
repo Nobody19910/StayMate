@@ -32,6 +32,7 @@ export default function AdminDashboardPage() {
   const [propGroupBy, setPropGroupBy] = useState<"location" | "agent">("location");
   const [propStatusFilter, setPropStatusFilter] = useState<"all" | "rented" | "sold">("all");
   const [subscribedAgents, setSubscribedAgents] = useState<any[]>([]);
+  const [agentSearch, setAgentSearch] = useState("");
 
 
 
@@ -1103,6 +1104,16 @@ export default function AdminDashboardPage() {
                       <IconTie />
                       <h2 className="font-bold text-sm" style={{ color: "#0f172a" }}>Active Agents Directory</h2>
                     </div>
+                    <div className="px-5 pt-4 pb-2">
+                      <input
+                        type="text"
+                        placeholder="Search by name or email…"
+                        value={agentSearch}
+                        onChange={e => setAgentSearch(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                        style={{ background: "#f7f8fa", border: "1px solid #e9edf2", color: "#0f172a" }}
+                      />
+                    </div>
                     <div className="p-5">
                       {activeAgentProfiles.length === 0 ? (
                         <div className="text-center py-12">
@@ -1112,7 +1123,15 @@ export default function AdminDashboardPage() {
                         </div>
                       ) : (
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {activeAgentProfiles.map(agent => {
+                          {activeAgentProfiles.filter(agent => {
+                            if (!agentSearch) return true;
+                            const q = agentSearch.toLowerCase();
+                            return (
+                              (agent.display_name || "").toLowerCase().includes(q) ||
+                              (agent.full_name || "").toLowerCase().includes(q) ||
+                              (agent.email || "").toLowerCase().includes(q)
+                            );
+                          }).map(agent => {
                             const agentHomeCount = homes.filter(h => h.owner_id === agent.id).length;
                             const agentHostelCount = hostels.filter(h => h.manager_id === agent.id).length;
                             return (

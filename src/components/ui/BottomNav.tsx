@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSavedCount } from "@/lib/useSavedCount";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
+import NotificationCenter from "@/components/ui/NotificationCenter";
 
 /* Use CSS variable var(--uber-green) instead of hardcoded hex */
 
@@ -264,6 +265,17 @@ export default function BottomNav() {
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 380, damping: 30 }}
     >
+      {/* Notification bell — floats top-right above the bar */}
+      {profile && (
+        <div className="absolute -top-11 right-3">
+          <div
+            className="rounded-full px-1.5 py-1"
+            style={{ background: "var(--uber-white)", border: "0.5px solid var(--uber-border)", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+          >
+            <NotificationCenter />
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
         {allTabs.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href);
