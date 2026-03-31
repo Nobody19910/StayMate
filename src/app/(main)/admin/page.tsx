@@ -21,7 +21,7 @@ export default function AdminDashboardPage() {
   const [kyc, setKyc] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [tab, setTab] = useState<"pipeline" | "dashboard" | "properties" | "queue" | "audit" | "leads" | "agents" | "featured" | "applications" | "users">("pipeline");
+  const [tab, setTab] = useState<"pipeline" | "dashboard" | "properties" | "queue" | "audit" | "leads" | "agents" | "featured" | "applications" | "users" | "liveprops" | "livehostels">("pipeline");
   const [applications, setApplications] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
@@ -317,6 +317,8 @@ export default function AdminDashboardPage() {
           </div>
           <nav className="flex flex-col px-2 gap-0.5">
             <TabButton active={tab === "featured"} onClick={() => setTab("featured")} icon={<IconStar />} label="Featured" count={homes.filter(h => h.is_sponsored).length + hostels.filter(h => h.is_sponsored).length} />
+            <TabButton active={tab === "liveprops"} onClick={() => setTab("liveprops")} icon={<IconBuilding />} label="Live Properties" count={liveHomes.length} />
+            <TabButton active={tab === "livehostels"} onClick={() => setTab("livehostels")} icon={<IconNeighborhood />} label="Live Hostels" count={liveHostels.length} />
             <TabButton active={tab === "leads"} onClick={() => setTab("leads")} icon={<IconTarget />} label="Seeker Leads" count={leads.filter(l => l.status === "pending").length} />
             <TabButton active={tab === "agents"} onClick={() => { setTab("agents"); setSelectedAgentId(null); }} icon={<IconTie />} label="Agents" count={activeAgents} />
             <TabButton active={tab === "users"} onClick={() => { setTab("users"); setSelectedUserId(null); setUserSearch(""); }} icon={<IconPhone />} label="Users" count={agents.length} />
@@ -335,6 +337,8 @@ export default function AdminDashboardPage() {
             { t: "agents", icon: <IconTie />, label: "Agents", count: activeAgents },
             { t: "queue", icon: <span>⏳</span>, label: "Queue", count: pendingHomes.length + pendingHostels.length },
             { t: "featured", icon: <IconStar />, label: "Featured" },
+            { t: "liveprops", icon: <IconBuilding />, label: "Props", count: liveHomes.length },
+            { t: "livehostels", icon: <IconNeighborhood />, label: "Hostels", count: liveHostels.length },
             { t: "applications", icon: <IconCheckCircle />, label: "Apply", count: pendingApplications.length },
             { t: "leads", icon: <IconTarget />, label: "Leads", count: leads.filter((l: any) => l.status === "pending").length },
             { t: "users", icon: <IconPhone />, label: "Users", count: agents.length },
@@ -841,6 +845,76 @@ export default function AdminDashboardPage() {
                       })}
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── LIVE PROPERTIES TAB ── */}
+            {tab === "liveprops" && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold" style={{ color: "#0f172a" }}>Live Properties ({liveHomes.length})</h2>
+                  <p className="text-xs" style={{ color: "#64748b" }}>All approved homes currently visible to seekers</p>
+                </div>
+                <div className="space-y-3">
+                  {liveHomes.length === 0 ? (
+                    <div className="text-center py-12 rounded-2xl" style={{ background: "#f7f8fa", border: "1px solid #e9edf2" }}>
+                      <p className="text-sm font-semibold" style={{ color: "#64748b" }}>No live properties yet</p>
+                    </div>
+                  ) : liveHomes.map((h: any) => (
+                    <div key={h.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "#fff", border: "1px solid #e9edf2" }}>
+                      <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0" style={{ background: "#f1f5f9" }}>
+                        {h.images?.[0] && <img src={h.images[0]} alt="" className="w-full h-full object-cover" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate" style={{ color: "#0f172a" }}>{h.title}</p>
+                        <p className="text-xs truncate" style={{ color: "#64748b" }}>{h.city}, {h.state}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: h.status === "rented" ? "#fef3c7" : h.status === "sold" ? "#ede9fe" : "#dcfce7", color: h.status === "rented" ? "#d97706" : h.status === "sold" ? "#7c3aed" : "#16a34a" }}>{h.status}</span>
+                          {h.is_sponsored && <span className="text-xs font-bold px-2 py-0.5 rounded-full shimmer-gold" style={{ color: "#1a1a1a" }}>✦ Sponsored</span>}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <a href={`/homes/${h.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: "#f1f5f9", color: "#0f172a" }}>View</a>
+                        <a href={`/edit/${h.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: "#06c167", color: "#fff" }}>Edit</a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── LIVE HOSTELS TAB ── */}
+            {tab === "livehostels" && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold" style={{ color: "#0f172a" }}>Live Hostels ({liveHostels.length})</h2>
+                  <p className="text-xs" style={{ color: "#64748b" }}>All approved hostels currently visible to seekers</p>
+                </div>
+                <div className="space-y-3">
+                  {liveHostels.length === 0 ? (
+                    <div className="text-center py-12 rounded-2xl" style={{ background: "#f7f8fa", border: "1px solid #e9edf2" }}>
+                      <p className="text-sm font-semibold" style={{ color: "#64748b" }}>No live hostels yet</p>
+                    </div>
+                  ) : liveHostels.map((h: any) => (
+                    <div key={h.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "#fff", border: "1px solid #e9edf2" }}>
+                      <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0" style={{ background: "#f1f5f9" }}>
+                        {h.images?.[0] && <img src={h.images[0]} alt="" className="w-full h-full object-cover" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate" style={{ color: "#0f172a" }}>{h.name}</p>
+                        <p className="text-xs truncate" style={{ color: "#64748b" }}>{h.city}, {h.state}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: h.status === "full" ? "#fef3c7" : "#dcfce7", color: h.status === "full" ? "#d97706" : "#16a34a" }}>{h.status || "approved"}</span>
+                          {h.is_sponsored && <span className="text-xs font-bold px-2 py-0.5 rounded-full shimmer-gold" style={{ color: "#1a1a1a" }}>✦ Sponsored</span>}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <a href={`/hostels/${h.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: "#f1f5f9", color: "#0f172a" }}>View</a>
+                        <a href={`/edit/${h.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: "#06c167", color: "#fff" }}>Edit</a>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

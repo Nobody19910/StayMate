@@ -137,6 +137,12 @@ const OptimizedImage = memo(function OptimizedImage({
           decoding="async"
           loading={priority ? "eager" : "lazy"}
           onLoad={handleFullLoad}
+          onError={(e) => {
+            // Fall back to original src if transform fails
+            if (src && (e.target as HTMLImageElement).src !== src) {
+              (e.target as HTMLImageElement).src = src;
+            }
+          }}
           className="absolute inset-0 w-full h-full object-cover"
           style={{
             opacity: fullLoaded ? 1 : 0,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import type { PropertyType, PropertyCondition, FurnishingLevel } from "@/lib/types";
 import type { TimePosted } from "@/lib/api";
@@ -102,6 +103,8 @@ export default function FilterModal({
   onChange,
 }: FilterModalProps) {
   const [local, setLocal] = useState<FilterState>(filters);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Sync when parent filters change
   useEffect(() => {
@@ -144,7 +147,9 @@ export default function FilterModal({
     (local.priceMin > 0 ? 1 : 0) +
     (local.priceMax < 50000 ? 1 : 0);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -291,7 +296,8 @@ export default function FilterModal({
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
 

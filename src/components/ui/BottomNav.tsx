@@ -135,8 +135,6 @@ export default function BottomNav() {
   const adminBadge = adminUnread + adminPending;
   const allTabs = isAdmin
     ? [
-        { href: "/homes",   label: "Homes",   icon: HomeIcon },
-        { href: "/hostels", label: "Hostels", icon: HostelIcon },
         { href: "/chat",    label: "Chat",    icon: ChatIcon },
         { href: "/admin",   label: "Admin",   icon: AdminIcon },
       ]
