@@ -203,6 +203,24 @@ export default function AdminDashboardPage() {
     }
   }
 
+  async function closeBookingDeal(booking: any, action: "rented" | "sold") {
+    const propertyRef = booking.property_ref;
+    const propertyType = booking.property_type;
+    // Mark booking completed
+    await supabase.from("bookings").update({
+      status: "completed",
+      closed_by: (await supabase.auth.getUser()).data.user?.id,
+      closed_at: new Date().toISOString(),
+      close_action: action,
+    }).eq("id", booking.id);
+    // Mark property as rented/sold
+    if (propertyRef && propertyType) {
+      const table = propertyType === "home" ? "homes" : "hostels";
+      await supabase.from(table).update({ status: action }).eq("id", propertyRef);
+    }
+    setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: "completed", close_action: action } : b));
+  }
+
   async function deleteBooking(id: string) {
     if (!confirm("Are you sure you want to delete this inquiry?")) return;
     const { error } = await supabase.from("bookings").delete().eq("id", id);
@@ -420,6 +438,7 @@ export default function AdminDashboardPage() {
                                 onAccept={() => resolveBooking(b.id, "accepted")}
                                 onReject={() => resolveBooking(b.id, "rejected")}
                                 onDelete={() => deleteBooking(b.id)}
+                                onClose={(action) => closeBookingDeal(b, action)}
                               />
                             ))
                           )}
@@ -1403,12 +1422,14 @@ function BookingKanbanCard({
   onAccept,
   onReject,
   onDelete,
+  onClose,
 }: {
   booking: any;
   accentColor: string;
   onAccept: () => void;
   onReject: () => void;
   onDelete: () => void;
+  onClose: (action: "rented" | "sold") => void;
 }) {
   const statusStyle = (s: string) => {
     switch (s) {
@@ -1495,30 +1516,41 @@ function BookingKanbanCard({
         </Link>
         {b.status === "pending" && (
           <>
-            <button
-              onClick={onAccept}
-              className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm font-bold"
-              style={{ background: "#06c167", color: "#fff" }}
-              title="Accept"
-            >
-              ✓
-            </button>
-            <button
-              onClick={onReject}
-              className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm font-bold"
-              style={{ background: "#f1f5f9", color: "#64748b" }}
-              title="Reject"
-            >
-              ✕
-            </button>
+            <button onClick={onAccept} className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm font-bold"
+              style={{ background: "#06c167", color: "#fff" }} title="Accept">✓</button>
+            <button onClick={onReject} className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm font-bold"
+              style={{ background: "#f1f5f9", color: "#64748b" }} title="Reject">✕</button>
           </>
         )}
-        <button
-          onClick={onDelete}
-          className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm ml-auto"
-          style={{ background: "rgba(239,68,68,0.06)", color: "#ef4444" }}
-          title="Delete"
-        >
+        {/* Close Deal — visible once fee is paid */}
+        {(b.status === "fee_paid" || b.status === "viewing_scheduled") && (
+          <div className="flex gap-1">
+            <button
+              onClick={() => { if (confirm(`Mark this deal as RENTED and complete the booking?`)) onClose("rented"); }}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold"
+              style={{ background: "rgba(6,193,103,0.12)", color: "#059669", border: "1px solid rgba(6,193,103,0.25)" }}
+              title="Close as Rented"
+            >
+              🔑 Rented
+            </button>
+            <button
+              onClick={() => { if (confirm(`Mark this deal as SOLD and complete the booking?`)) onClose("sold"); }}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold"
+              style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.2)" }}
+              title="Close as Sold"
+            >
+              🏷 Sold
+            </button>
+          </div>
+        )}
+        {b.status === "completed" && (
+          <span className="text-[10px] font-bold px-2 py-1 rounded-lg"
+            style={{ background: "rgba(5,150,105,0.1)", color: "#059669" }}>
+            ✓ Deal closed · {b.close_action || "done"}
+          </span>
+        )}
+        <button onClick={onDelete} className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-sm ml-auto"
+          style={{ background: "rgba(239,68,68,0.06)", color: "#ef4444" }} title="Delete">
           <IconTrash />
         </button>
       </div>

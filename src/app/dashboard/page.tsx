@@ -101,6 +101,19 @@ export default function OwnerDashboardPage() {
     await supabase.from("bookings").delete().eq("id", id);
     setBookings((prev) => prev.filter((b) => b.id !== id));
   }
+  async function closeBookingDeal(booking: any, action: "rented" | "sold") {
+    await supabase.from("bookings").update({
+      status: "completed",
+      closed_at: new Date().toISOString(),
+      close_action: action,
+    }).eq("id", booking.id);
+    if (booking.property_ref && booking.property_type) {
+      const table = booking.property_type === "home" ? "homes" : "hostels";
+      await supabase.from(table).update({ status: action }).eq("id", booking.property_ref);
+      setProperties((prev: any[]) => prev.map((p: any) => p.id === booking.property_ref ? { ...p, status: action } : p));
+    }
+    setBookings((prev) => prev.map((b) => b.id === booking.id ? { ...b, status: "completed", close_action: action } : b));
+  }
 
   const isAllowed = profile && ["owner", "manager", "agent", "admin"].includes(profile.role);
   if (authLoading || !isAllowed) {
@@ -217,6 +230,7 @@ export default function OwnerDashboardPage() {
                                     onAccept={() => updateBookingStatus(b.id, "accepted")}
                                     onReject={() => updateBookingStatus(b.id, "rejected")}
                                     onDelete={() => deleteBooking(b.id)}
+                                    onClose={(action) => closeBookingDeal(b, action)}
                                   />
                                 ))}
                                 {cols.length === 0 && <p className="text-[11px] text-center py-4" style={{ color: "#94a3b8" }}>Empty</p>}
@@ -308,8 +322,9 @@ export default function OwnerDashboardPage() {
 }
 
 // ── Owner Kanban Card — property info only, no booker details ────────────────
-function OwnerKanbanCard({ booking: b, accentColor, onAccept, onReject, onDelete }: {
+function OwnerKanbanCard({ booking: b, accentColor, onAccept, onReject, onDelete, onClose }: {
   booking: any; accentColor: string; onAccept: () => void; onReject: () => void; onDelete: () => void;
+  onClose: (action: "rented" | "sold") => void;
 }) {
   return (
     <div className="rounded-xl overflow-hidden" style={{ background: "#fff", border: "1px solid #e9edf2", borderLeft: `3px solid ${accentColor}`, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
@@ -328,12 +343,31 @@ function OwnerKanbanCard({ booking: b, accentColor, onAccept, onReject, onDelete
           <p className="text-[10px]" style={{ color: "#94a3b8" }}>{b.viewing_date ? new Date(b.viewing_date).toLocaleDateString() : "No date set"}</p>
         </div>
       </Link>
-      <div className="flex items-center gap-1 px-3 pb-2.5">
+      <div className="flex items-center gap-1 px-3 pb-2.5 flex-wrap">
         {b.status === "pending" && (
           <>
             <button onClick={onAccept} className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: "#06c167", color: "#fff" }}><IconCheck /></button>
             <button onClick={onReject} className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: "#f1f5f9", color: "#64748b" }}><IconClose /></button>
           </>
+        )}
+        {(b.status === "fee_paid" || b.status === "viewing_scheduled") && (
+          <div className="flex gap-1 flex-wrap">
+            <button onClick={() => { if (confirm("Mark as RENTED and close the deal?")) onClose("rented"); }}
+              className="flex items-center gap-0.5 px-2 py-1 rounded-md text-[10px] font-bold"
+              style={{ background: "rgba(6,193,103,0.1)", color: "#059669" }}>
+              🔑 Rented
+            </button>
+            <button onClick={() => { if (confirm("Mark as SOLD and close the deal?")) onClose("sold"); }}
+              className="flex items-center gap-0.5 px-2 py-1 rounded-md text-[10px] font-bold"
+              style={{ background: "rgba(124,58,237,0.1)", color: "#7c3aed" }}>
+              🏷 Sold
+            </button>
+          </div>
+        )}
+        {b.status === "completed" && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: "rgba(5,150,105,0.1)", color: "#059669" }}>
+            ✓ Deal closed
+          </span>
         )}
         <button onClick={onDelete} className="w-6 h-6 rounded-md flex items-center justify-center ml-auto" style={{ background: "rgba(239,68,68,0.06)", color: "#ef4444" }}><IconTrash /></button>
       </div>

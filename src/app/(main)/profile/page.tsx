@@ -15,6 +15,7 @@ import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { IconPhone, IconHome, IconMailbox, IconCheck, IconCreditCard, IconCalendar, IconCheckCircle, IconChat, IconClose, IconStar } from "@/components/ui/Icons";
 import PhoneInput from "@/components/ui/PhoneInput";
+import { BookingRatingPrompt } from "@/components/ui/ReviewsSection";
 
 const ROLE_LABELS: Record<string, string> = {
   seeker:  "Property Seeker",
@@ -984,13 +985,23 @@ export default function ProfilePage() {
                 )}
                 {(selectedTicket.status === "fee_paid" || selectedTicket.status === "paid" || selectedTicket.status === "completed") && (
                   <div className="space-y-3">
-                    <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: "color-mix(in srgb, var(--uber-green) 12%, var(--uber-surface))", border: "0.5px solid rgba(var(--uber-green-rgb),0.3)" }}>
-                      <IconCheckCircle />
-                      <div>
-                        <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Fee Paid</p>
-                        <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Your spot is secured. The admin will be in touch shortly.</p>
+                    {selectedTicket.status === "completed" ? (
+                      <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: "rgba(5,150,105,0.1)", border: "0.5px solid rgba(5,150,105,0.3)" }}>
+                        <span className="text-lg">🎉</span>
+                        <div>
+                          <p className="text-sm font-bold" style={{ color: "#059669" }}>Deal Closed!</p>
+                          <p className="text-xs" style={{ color: "var(--uber-muted)" }}>The viewing and deal has been completed. Thank you for using StayMate.</p>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: "color-mix(in srgb, var(--uber-green) 12%, var(--uber-surface))", border: "0.5px solid rgba(var(--uber-green-rgb),0.3)" }}>
+                        <IconCheckCircle />
+                        <div>
+                          <p className="text-sm font-bold" style={{ color: "var(--uber-text)" }}>Fee Paid</p>
+                          <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Your spot is secured. The admin will be in touch shortly.</p>
+                        </div>
+                      </div>
+                    )}
                     <Link
                       href={`/receipt/${selectedTicket.id}`}
                       className="flex items-center justify-between p-4 rounded-2xl active:scale-[0.98] transition-all"
@@ -1009,6 +1020,14 @@ export default function ProfilePage() {
                       </div>
                       <span className="font-bold" style={{ color: "var(--uber-muted)" }}>→</span>
                     </Link>
+                    {/* Rating prompt — only for completed deals */}
+                    {selectedTicket.status === "completed" && selectedTicket.property_ref && (
+                      <BookingRatingPrompt
+                        bookingId={selectedTicket.id}
+                        propertyId={selectedTicket.property_ref}
+                        propertyType={selectedTicket.property_type || "home"}
+                      />
+                    )}
                   </div>
                 )}
                 <Link href="/chat" className="flex items-center justify-between p-4 rounded-2xl hover:opacity-90 transition-opacity active:scale-[0.98]" style={{ background: "var(--uber-surface)", border: "0.5px solid var(--uber-border)" }}>
