@@ -9,6 +9,9 @@ import { cachedFetch } from "@/lib/local-cache";
 import type { Hostel, Room, RoomAmenity } from "@/lib/types";
 import DistanceBadge from "@/components/ui/DistanceBadge";
 import PropertyMap from "@/components/ui/PropertyMap";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context";
+import ReviewsSection from "@/components/ui/ReviewsSection";
 import { IconWifi, IconSnowflake, IconShower, IconFire, IconBasket, IconChair, IconDoor, IconMountain, IconUtensils, IconLock, IconCamera, IconBolt } from "@/components/ui/Icons";
 
 const AMENITY_LABELS: Record<RoomAmenity, { label: string; icon: React.ReactNode }> = {

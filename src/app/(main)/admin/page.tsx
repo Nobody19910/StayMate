@@ -21,13 +21,16 @@ export default function AdminDashboardPage() {
   const [kyc, setKyc] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [tab, setTab] = useState<"pipeline" | "dashboard" | "properties" | "queue" | "audit" | "leads" | "agents" | "featured" | "applications" | "users" | "liveprops" | "livehostels">("pipeline");
+  const [tab, setTab] = useState<"pipeline" | "dashboard" | "properties" | "queue" | "audit" | "leads" | "agents" | "featured" | "applications" | "users" | "liveprops" | "livehostels" | "booked">("pipeline");
   const [applications, setApplications] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [userSearch, setUserSearch] = useState("");
+  const [propSearch, setPropSearch] = useState("");
+  const [propGroupBy, setPropGroupBy] = useState<"location" | "agent">("location");
+  const [propStatusFilter, setPropStatusFilter] = useState<"all" | "rented" | "sold">("all");
   const [subscribedAgents, setSubscribedAgents] = useState<any[]>([]);
 
 
@@ -131,6 +134,8 @@ export default function AdminDashboardPage() {
 
   const liveHostels = useMemo(() => hostels.filter(h => h.status === "approved"), [hostels]);
   const pendingHostels = useMemo(() => hostels.filter(h => h.status === "pending_admin"), [hostels]);
+  const bookedHomes = useMemo(() => homes.filter(h => h.status === "rented" || h.status === "sold"), [homes]);
+  const bookedHostels = useMemo(() => hostels.filter(h => h.status === "full"), [hostels]);
 
   const pendingKyc = useMemo(() => kyc.filter(k => k.status === "pending"), [kyc]);
   const pendingApplications = useMemo(() => applications.filter(a => a.status === "pending"), [applications]);
@@ -174,6 +179,13 @@ export default function AdminDashboardPage() {
     await supabase.from(table).delete().eq("id", id);
     if (type === "home") setHomes(prev => prev.filter(h => h.id !== id));
     else setHostels(prev => prev.filter(h => h.id !== id));
+  }
+
+  async function markAsAvailable(id: string, type: "home" | "hostel") {
+    const table = type === "home" ? "homes" : "hostels";
+    await supabase.from(table).update({ status: "approved" }).eq("id", id);
+    if (type === "home") setHomes(prev => prev.map(h => h.id === id ? { ...h, status: "approved" } : h));
+    else setHostels(prev => prev.map(h => h.id === id ? { ...h, status: "approved" } : h));
   }
 
   async function resolveKyc(id: string, userId: string, approve: boolean) {
@@ -319,6 +331,7 @@ export default function AdminDashboardPage() {
             <TabButton active={tab === "featured"} onClick={() => setTab("featured")} icon={<IconStar />} label="Featured" count={homes.filter(h => h.is_sponsored).length + hostels.filter(h => h.is_sponsored).length} />
             <TabButton active={tab === "liveprops"} onClick={() => setTab("liveprops")} icon={<IconBuilding />} label="Live Properties" count={liveHomes.length} />
             <TabButton active={tab === "livehostels"} onClick={() => setTab("livehostels")} icon={<IconNeighborhood />} label="Live Hostels" count={liveHostels.length} />
+            <TabButton active={tab === "booked"} onClick={() => setTab("booked")} icon={<span>🔑</span>} label="Booked/Rented" count={bookedHomes.length + bookedHostels.length} />
             <TabButton active={tab === "leads"} onClick={() => setTab("leads")} icon={<IconTarget />} label="Seeker Leads" count={leads.filter(l => l.status === "pending").length} />
             <TabButton active={tab === "agents"} onClick={() => { setTab("agents"); setSelectedAgentId(null); }} icon={<IconTie />} label="Agents" count={activeAgents} />
             <TabButton active={tab === "users"} onClick={() => { setTab("users"); setSelectedUserId(null); setUserSearch(""); }} icon={<IconPhone />} label="Users" count={agents.length} />
@@ -339,6 +352,7 @@ export default function AdminDashboardPage() {
             { t: "featured", icon: <IconStar />, label: "Featured" },
             { t: "liveprops", icon: <IconBuilding />, label: "Props", count: liveHomes.length },
             { t: "livehostels", icon: <IconNeighborhood />, label: "Hostels", count: liveHostels.length },
+            { t: "booked", icon: <span>🔑</span>, label: "Booked", count: bookedHomes.length + bookedHostels.length },
             { t: "applications", icon: <IconCheckCircle />, label: "Apply", count: pendingApplications.length },
             { t: "leads", icon: <IconTarget />, label: "Leads", count: leads.filter((l: any) => l.status === "pending").length },
             { t: "users", icon: <IconPhone />, label: "Users", count: agents.length },
@@ -852,31 +866,118 @@ export default function AdminDashboardPage() {
             {/* ── LIVE PROPERTIES TAB ── */}
             {tab === "liveprops" && (
               <div>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
                   <h2 className="text-lg font-bold" style={{ color: "#0f172a" }}>Live Properties ({liveHomes.length})</h2>
-                  <p className="text-xs" style={{ color: "#64748b" }}>All approved homes currently visible to seekers</p>
+                  <p className="text-xs" style={{ color: "#64748b" }}>All approved homes visible to seekers</p>
                 </div>
-                <div className="space-y-3">
-                  {liveHomes.length === 0 ? (
-                    <div className="text-center py-12 rounded-2xl" style={{ background: "#f7f8fa", border: "1px solid #e9edf2" }}>
-                      <p className="text-sm font-semibold" style={{ color: "#64748b" }}>No live properties yet</p>
-                    </div>
-                  ) : liveHomes.map((h: any) => (
-                    <div key={h.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "#fff", border: "1px solid #e9edf2" }}>
-                      <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0" style={{ background: "#f1f5f9" }}>
-                        {h.images?.[0] && <img src={h.images[0]} alt="" className="w-full h-full object-cover" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm truncate" style={{ color: "#0f172a" }}>{h.title}</p>
-                        <p className="text-xs truncate" style={{ color: "#64748b" }}>{h.city}, {h.state}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: h.status === "rented" ? "#fef3c7" : h.status === "sold" ? "#ede9fe" : "#dcfce7", color: h.status === "rented" ? "#d97706" : h.status === "sold" ? "#7c3aed" : "#16a34a" }}>{h.status}</span>
-                          {h.is_sponsored && <span className="text-xs font-bold px-2 py-0.5 rounded-full shimmer-gold" style={{ color: "#1a1a1a" }}>✦ Sponsored</span>}
+                {/* Search + Group controls */}
+                <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                  <input
+                    type="text"
+                    placeholder="Search by title, city, agent…"
+                    value={propSearch}
+                    onChange={e => setPropSearch(e.target.value)}
+                    className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none"
+                    style={{ background: "#f7f8fa", border: "1px solid #e9edf2", color: "#0f172a" }}
+                  />
+                  <select
+                    value={propGroupBy}
+                    onChange={e => setPropGroupBy(e.target.value as "location" | "agent")}
+                    className="px-3 py-2.5 rounded-xl text-sm font-semibold focus:outline-none"
+                    style={{ background: "#f7f8fa", border: "1px solid #e9edf2", color: "#0f172a" }}
+                  >
+                    <option value="location">Group by Location</option>
+                    <option value="agent">Group by Agent</option>
+                  </select>
+                </div>
+                {/* Grouped list */}
+                {(() => {
+                  const filtered = liveHomes.filter(h => {
+                    const q = propSearch.toLowerCase();
+                    if (!q) return true;
+                    return (h.title || "").toLowerCase().includes(q) ||
+                      (h.city || "").toLowerCase().includes(q) ||
+                      (h.state || "").toLowerCase().includes(q) ||
+                      (h.address || "").toLowerCase().includes(q);
+                  });
+                  const grouped: Record<string, typeof filtered> = {};
+                  filtered.forEach(h => {
+                    const key = propGroupBy === "location" ? (h.city || "Unknown") : (h.owner_id || "Unknown");
+                    if (!grouped[key]) grouped[key] = [];
+                    grouped[key].push(h);
+                  });
+                  const entries = Object.entries(grouped);
+                  if (entries.length === 0) return <p className="text-sm py-8 text-center" style={{ color: "#94a3b8" }}>No properties match your search.</p>;
+                  return entries.map(([groupKey, items]) => {
+                    const groupLabel = propGroupBy === "location" ? groupKey : (agents.find(a => a.id === groupKey)?.display_name || agents.find(a => a.id === groupKey)?.full_name || "Unknown Agent");
+                    return (
+                      <div key={groupKey} className="mb-6">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: propGroupBy === "location" ? "rgba(6,193,103,0.1)" : "rgba(37,99,235,0.08)", color: propGroupBy === "location" ? "#06c167" : "#2563eb" }}>{propGroupBy === "location" ? "📍" : "👤"} {groupLabel}</span>
+                          <span className="text-xs" style={{ color: "#94a3b8" }}>{items.length} listing{items.length !== 1 ? "s" : ""}</span>
+                        </div>
+                        <div className="space-y-2">
+                          {items.map((h: any) => (
+                            <div key={h.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "#fff", border: "1px solid #e9edf2" }}>
+                              <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0" style={{ background: "#f1f5f9" }}>
+                                {h.images?.[0] && <img src={h.images[0]} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-sm truncate" style={{ color: "#0f172a" }}>{h.title}</p>
+                                <p className="text-xs" style={{ color: "#64748b" }}>{h.city}, {h.state} · {h.price_label}</p>
+                                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: h.status === "rented" ? "#fef3c7" : h.status === "sold" ? "#ede9fe" : "#dcfce7", color: h.status === "rented" ? "#d97706" : h.status === "sold" ? "#7c3aed" : "#16a34a" }}>{h.status}</span>
+                                  {h.is_sponsored && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#fef9c3", color: "#b45309" }}>✦ Sponsored</span>}
+                                  {h.is_verified && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#dcfce7", color: "#16a34a" }}>✓ Verified</span>}
+                                </div>
+                              </div>
+                              <div className="flex gap-1.5 shrink-0">
+                                <a href={`/homes/${h.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-2.5 py-1.5 rounded-lg font-semibold" style={{ background: "#f1f5f9", color: "#0f172a" }}>View</a>
+                                <a href={`/edit/${h.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-2.5 py-1.5 rounded-lg font-semibold" style={{ background: "#06c167", color: "#fff" }}>Edit</a>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                      <div className="flex gap-2 shrink-0">
-                        <a href={`/homes/${h.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: "#f1f5f9", color: "#0f172a" }}>View</a>
-                        <a href={`/edit/${h.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: "#06c167", color: "#fff" }}>Edit</a>
+                    );
+                  });
+                })()}
+              </div>
+            )}
+
+            {/* ── LIVE HOSTELS TAB ── */}
+            {tab === "livehostels" && (
+              <div>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                  <h2 className="text-lg font-bold" style={{ color: "#0f172a" }}>Live Hostels ({liveHostels.length})</h2>
+                  <p className="text-xs" style={{ color: "#64748b" }}>All approved hostels visible to seekers</p>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search by name, city…"
+                  value={propSearch}
+                  onChange={e => setPropSearch(e.target.value)}
+                  className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none mb-4"
+                  style={{ background: "#f7f8fa", border: "1px solid #e9edf2", color: "#0f172a" }}
+                />
+                <div className="space-y-2">
+                  {liveHostels.filter(h => {
+                    const q = propSearch.toLowerCase();
+                    if (!q) return true;
+                    return (h.name || "").toLowerCase().includes(q) || (h.city || "").toLowerCase().includes(q);
+                  }).map((h: any) => (
+                    <div key={h.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "#fff", border: "1px solid #e9edf2" }}>
+                      <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0" style={{ background: "#f1f5f9" }}>
+                        {h.images?.[0] && <img src={h.images[0]} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate" style={{ color: "#0f172a" }}>{h.name}</p>
+                        <p className="text-xs" style={{ color: "#64748b" }}>{h.city}, {h.state}</p>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 inline-block" style={{ background: h.status === "full" ? "#fef3c7" : "#dcfce7", color: h.status === "full" ? "#d97706" : "#16a34a" }}>{h.status || "approved"}</span>
+                      </div>
+                      <div className="flex gap-1.5 shrink-0">
+                        <a href={`/hostels/${h.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-2.5 py-1.5 rounded-lg font-semibold" style={{ background: "#f1f5f9", color: "#0f172a" }}>View</a>
+                        <a href={`/edit/${h.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-2.5 py-1.5 rounded-lg font-semibold" style={{ background: "#06c167", color: "#fff" }}>Edit</a>
                       </div>
                     </div>
                   ))}
@@ -884,34 +985,42 @@ export default function AdminDashboardPage() {
               </div>
             )}
 
-            {/* ── LIVE HOSTELS TAB ── */}
-            {tab === "livehostels" && (
+            {/* ── BOOKED / RENTED TAB ── */}
+            {tab === "booked" && (
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold" style={{ color: "#0f172a" }}>Live Hostels ({liveHostels.length})</h2>
-                  <p className="text-xs" style={{ color: "#64748b" }}>All approved hostels currently visible to seekers</p>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                  <h2 className="text-lg font-bold" style={{ color: "#0f172a" }}>Booked / Rented ({bookedHomes.length + bookedHostels.length})</h2>
+                  <p className="text-xs" style={{ color: "#64748b" }}>Properties off-market — mark available to re-list them</p>
                 </div>
-                <div className="space-y-3">
-                  {liveHostels.length === 0 ? (
+                <div className="space-y-2">
+                  {[...bookedHomes.map((h: any) => ({ ...h, _type: "home" })), ...bookedHostels.map((h: any) => ({ ...h, _type: "hostel" }))].length === 0 ? (
                     <div className="text-center py-12 rounded-2xl" style={{ background: "#f7f8fa", border: "1px solid #e9edf2" }}>
-                      <p className="text-sm font-semibold" style={{ color: "#64748b" }}>No live hostels yet</p>
+                      <p className="text-sm font-semibold" style={{ color: "#64748b" }}>No booked or rented properties yet</p>
                     </div>
-                  ) : liveHostels.map((h: any) => (
-                    <div key={h.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "#fff", border: "1px solid #e9edf2" }}>
-                      <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0" style={{ background: "#f1f5f9" }}>
-                        {h.images?.[0] && <img src={h.images[0]} alt="" className="w-full h-full object-cover" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm truncate" style={{ color: "#0f172a" }}>{h.name}</p>
-                        <p className="text-xs truncate" style={{ color: "#64748b" }}>{h.city}, {h.state}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: h.status === "full" ? "#fef3c7" : "#dcfce7", color: h.status === "full" ? "#d97706" : "#16a34a" }}>{h.status || "approved"}</span>
-                          {h.is_sponsored && <span className="text-xs font-bold px-2 py-0.5 rounded-full shimmer-gold" style={{ color: "#1a1a1a" }}>✦ Sponsored</span>}
+                  ) : [...bookedHomes.map((h: any) => ({ ...h, _type: "home" })), ...bookedHostels.map((h: any) => ({ ...h, _type: "hostel" }))].map((item: any) => (
+                    <div key={item.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "#fff", border: "1px solid #e9edf2" }}>
+                      <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 relative" style={{ background: "#f1f5f9" }}>
+                        {item.images?.[0] && <img src={item.images[0]} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                        <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.35)" }}>
+                          <span className="text-base">{item.status === "rented" ? "🔑" : item.status === "sold" ? "🏷️" : "🏠"}</span>
                         </div>
                       </div>
-                      <div className="flex gap-2 shrink-0">
-                        <a href={`/hostels/${h.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: "#f1f5f9", color: "#0f172a" }}>View</a>
-                        <a href={`/edit/${h.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: "#06c167", color: "#fff" }}>Edit</a>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate" style={{ color: "#0f172a" }}>{item.title || item.name}</p>
+                        <p className="text-xs" style={{ color: "#64748b" }}>{item.city}, {item.state} · {item._type === "home" ? "Home" : "Hostel"}</p>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 inline-block" style={{ background: item.status === "rented" ? "#fef3c7" : item.status === "sold" ? "#ede9fe" : "#fee2e2", color: item.status === "rented" ? "#d97706" : item.status === "sold" ? "#7c3aed" : "#dc2626" }}>
+                          {item.status}
+                        </span>
+                      </div>
+                      <div className="flex gap-1.5 shrink-0">
+                        <a href={item._type === "home" ? `/homes/${item.id}` : `/hostels/${item.id}`} target="_blank" rel="noopener noreferrer" className="text-xs px-2.5 py-1.5 rounded-lg font-semibold" style={{ background: "#f1f5f9", color: "#0f172a" }}>View</a>
+                        <button
+                          onClick={() => markAsAvailable(item.id, item._type as "home" | "hostel")}
+                          className="text-xs px-2.5 py-1.5 rounded-lg font-semibold"
+                          style={{ background: "#06c167", color: "#fff" }}
+                        >
+                          ✓ Mark Available
+                        </button>
                       </div>
                     </div>
                   ))}
