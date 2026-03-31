@@ -62,8 +62,6 @@ const seekerTabs = [
 ];
 
 const adminTabs = [
-  { href: "/homes",   label: "Homes" },
-  { href: "/hostels", label: "Hostels" },
   { href: "/chat",    label: "Messages" },
   { href: "/admin",   label: "Admin Panel" },
 ];
