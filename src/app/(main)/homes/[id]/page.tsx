@@ -532,7 +532,7 @@ export default function HomeDetailPage({ params }: Props) {
               <h2 className="text-base font-bold mb-4" style={{ color: "var(--uber-text)" }}>Property rules</h2>
               <div className="space-y-3">
                 {(() => {
-                  const r = (property as any).rules ?? {};
+                  const r = property.rules ?? {};
                   const petsMap: Record<string, string> = { yes: "Allowed", no: "Not allowed", ask: "Contact owner to confirm" };
                   return [
                     { icon: "🕐", label: "Move-in",    value: r.move_in || "Flexible — by arrangement" },
@@ -556,7 +556,7 @@ export default function HomeDetailPage({ params }: Props) {
 
             {/* What's nearby */}
             {(() => {
-              const nb = (property as any).nearby ?? {};
+              const nb = property.nearby ?? {};
               const nearbyItems = [
                 { icon: "🏪", label: "Shops & Supermarkets", value: nb.shops },
                 { icon: "🍽️", label: "Restaurants & Eateries", value: nb.restaurants },

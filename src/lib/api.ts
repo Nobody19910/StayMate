@@ -39,6 +39,9 @@ interface HomeRow {
   status?: string;
   is_verified?: boolean;
   sponsor_tier?: string;
+  // Rules & nearby
+  rules?: { move_in?: string; pets?: string; smoking?: string; subletting?: string } | null;
+  nearby?: { shops?: string; restaurants?: string; transport?: string; hospital?: string } | null;
   // Joined from profiles
   profiles?: { display_name?: string; is_agent?: boolean } | null;
 }
@@ -130,6 +133,8 @@ function rowToProperty(row: HomeRow): Property {
     sponsorTier: (row.sponsor_tier as SponsorTier) || null,
     agentName: row.profiles?.display_name || null,
     isAgent: row.profiles?.is_agent || false,
+    rules: row.rules ?? null,
+    nearby: row.nearby ?? null,
   };
 }
 

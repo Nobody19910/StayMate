@@ -65,6 +65,9 @@ export interface Property {
   sponsorTier?: SponsorTier | null;
   agentName?: string | null;
   isAgent?: boolean;
+  // Rules & nearby
+  rules?: { move_in?: string; pets?: string; smoking?: string; subletting?: string } | null;
+  nearby?: { shops?: string; restaurants?: string; transport?: string; hospital?: string } | null;
 }
 
 // ─── Hostels ──────────────────────────────────────────────────────────────────
