@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import ReviewsSection from "@/components/ui/ReviewsSection";
 import { IconWifi, IconSnowflake, IconShower, IconFire, IconBasket, IconChair, IconDoor, IconMountain, IconUtensils, IconLock, IconCamera, IconBolt } from "@/components/ui/Icons";
+import { trackView } from "@/components/ui/RecentlyViewed";
 
 const AMENITY_LABELS: Record<RoomAmenity, { label: string; icon: React.ReactNode }> = {
   wifi: { label: "WiFi", icon: <IconWifi /> },
@@ -51,6 +52,7 @@ export default function HostelRoomPickerPage() {
     cachedFetch<Hostel | null>(`hostel_${id}`, () => getHostelById(id)).then(async ({ data }) => {
       setHostel(data); setLoading(false);
       if (data) {
+        trackView({ id: data.id, title: data.name, image: data.images?.[0] || "", city: data.city, priceLabel: data.priceRangeLabel, type: "hostel" });
         // Increment view count (fire-and-forget)
         supabase.rpc("increment_view", { p_table: "hostels", p_id: id }).then(() => {});
       }

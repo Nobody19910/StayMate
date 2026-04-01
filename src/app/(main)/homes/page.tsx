@@ -17,6 +17,7 @@ import { useVisibilityRefresh } from "@/lib/use-visibility-refresh";
 import { preloadImages } from "@/lib/image-cache";
 import { cachedFetch, invalidateCache } from "@/lib/local-cache";
 import { AnimatedList } from "@/components/ui/AnimatedList";
+import RecentlyViewed from "@/components/ui/RecentlyViewed";
 
 import { getDistance, DEFAULT_LAT, DEFAULT_LNG } from "@/lib/geo";
 type ListingFilter = "all" | "rent" | "sale";
@@ -764,6 +765,8 @@ export default function HomesPage() {
                 }}
               />
             </div>
+
+            <RecentlyViewed />
 
             {/* List */}
             {loading ? (

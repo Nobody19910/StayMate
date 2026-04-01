@@ -15,6 +15,7 @@ import DistanceBadge from "@/components/ui/DistanceBadge";
 import SponsorModal from "@/components/ui/SponsorModal";
 import { IconCheck, IconStar, IconBed, IconShower, IconRuler } from "@/components/ui/Icons";
 import ReviewsSection from "@/components/ui/ReviewsSection";
+import { trackView } from "@/components/ui/RecentlyViewed";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -72,6 +73,7 @@ export default function HomeDetailPage({ params }: Props) {
         if (!p) { setNotFoundFlag(true); return; }
         setProperty(p);
         setSaved(isSaved(p.id));
+        trackView({ id: p.id, title: p.title, image: p.images?.[0] || "", city: p.city, priceLabel: p.priceLabel, type: "home" });
         // Increment view count (fire-and-forget)
         supabase.rpc("increment_view", { p_table: "homes", p_id: id }).then(() => {});
       });

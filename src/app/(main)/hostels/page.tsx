@@ -15,6 +15,7 @@ import OptimizedImage from "@/components/ui/OptimizedImage";
 import { preloadImages } from "@/lib/image-cache";
 import { cachedFetch, invalidateCache } from "@/lib/local-cache";
 import { AnimatedList } from "@/components/ui/AnimatedList";
+import RecentlyViewed from "@/components/ui/RecentlyViewed";
 
 import { getDistance, DEFAULT_LAT, DEFAULT_LNG } from "@/lib/geo";
 
@@ -574,6 +575,8 @@ export default function HostelsPage() {
                 Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
               </button>
             </div>
+
+            <RecentlyViewed />
 
             {/* List */}
             {loading ? (
