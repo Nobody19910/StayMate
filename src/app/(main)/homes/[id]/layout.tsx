@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import type { Metadata } from "next";
 
+const BASE = "https://staymate-eight.vercel.app";
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const { data } = await supabase
@@ -15,7 +17,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const description =
     data.description?.slice(0, 155) ||
     `${data.title} in ${data.city}, ${data.state}. Find your perfect home on StayMate.`;
-  const image = data.images?.[0] || "https://staymate-eight.vercel.app/og-default.jpg";
+
+  const ogParams = new URLSearchParams({
+    title: data.title,
+    price: data.price_label ?? "",
+    city: data.city ?? "",
+    type: "home",
+    ...(data.images?.[0] ? { image: data.images[0] } : {}),
+  });
+  const image = `${BASE}/api/og?${ogParams.toString()}`;
 
   return {
     title,
