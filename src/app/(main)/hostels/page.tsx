@@ -619,7 +619,7 @@ export default function HostelsPage() {
                       </span>
                     </div>
                     {/* 2-col grid on desktop, single col on mobile */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-4">
                       {cityHostels.map((hostel) => (
                         <HostelListCard key={hostel.id} hostel={hostel} />
                       ))}
