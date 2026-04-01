@@ -15,6 +15,7 @@ import DistanceBadge from "@/components/ui/DistanceBadge";
 import SponsorModal from "@/components/ui/SponsorModal";
 import { IconCheck, IconStar, IconBed, IconShower, IconRuler } from "@/components/ui/Icons";
 import ReviewsSection from "@/components/ui/ReviewsSection";
+import SimilarProperties from "@/components/ui/SimilarProperties";
 import { trackView } from "@/components/ui/RecentlyViewed";
 
 interface Props {
@@ -624,6 +625,9 @@ export default function HomeDetailPage({ params }: Props) {
                 ))}
               </div>
             </div>
+
+            {/* Similar Properties */}
+            <SimilarProperties currentId={property.id} city={property.city} propertyType="home" />
 
           </div>
 

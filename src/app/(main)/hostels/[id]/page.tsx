@@ -12,6 +12,7 @@ import PropertyMap from "@/components/ui/PropertyMap";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import ReviewsSection from "@/components/ui/ReviewsSection";
+import SimilarProperties from "@/components/ui/SimilarProperties";
 import { IconWifi, IconSnowflake, IconShower, IconFire, IconBasket, IconChair, IconDoor, IconMountain, IconUtensils, IconLock, IconCamera, IconBolt } from "@/components/ui/Icons";
 import { trackView } from "@/components/ui/RecentlyViewed";
 
@@ -299,6 +300,9 @@ export default function HostelRoomPickerPage() {
               </div>
               <PropertyMap city={hostel.city} title={hostel.address} />
             </div>
+
+            {/* Similar hostels */}
+            <SimilarProperties currentId={hostel.id} city={hostel.city} propertyType="hostel" />
 
           </div>
 
