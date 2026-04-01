@@ -9,6 +9,7 @@ import { toggleSponsored, toggleVerified, getActiveAgents } from "@/lib/api";
 import AdminLocationButton from "@/components/ui/AdminLocationButton";
 import { IconChart, IconBuilding, IconTie, IconIdCard, IconStar, IconTarget, IconChat, IconNeighborhood, IconWarning, IconPhone, IconPin, IconCheck, IconClose, IconBroom, IconTrash, IconCheckCircle, IconMailbox, IconShrug, IconMail } from "@/components/ui/Icons";
 import OptimizedImage from "@/components/ui/OptimizedImage";
+import { triggerEmail } from "@/lib/trigger-email";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function AdminDashboardPage() {
   const [kyc, setKyc] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [tab, setTab] = useState<"pipeline" | "dashboard" | "properties" | "queue" | "audit" | "leads" | "agents" | "featured" | "applications" | "users" | "liveprops" | "livehostels" | "booked">("pipeline");
+  const [tab, setTab] = useState<"pipeline" | "dashboard" | "properties" | "queue" | "audit" | "leads" | "agents" | "featured" | "applications" | "users" | "liveprops" | "livehostels" | "booked" | "reports" | "refunds">("pipeline");
   const [applications, setApplications] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
@@ -33,6 +34,8 @@ export default function AdminDashboardPage() {
   const [propStatusFilter, setPropStatusFilter] = useState<"all" | "rented" | "sold">("all");
   const [subscribedAgents, setSubscribedAgents] = useState<any[]>([]);
   const [agentSearch, setAgentSearch] = useState("");
+  const [reports, setReports] = useState<any[]>([]);
+  const [refunds, setRefunds] = useState<any[]>([]);
 
 
 
@@ -124,6 +127,18 @@ export default function AdminDashboardPage() {
 
       // Fetch subscribed agents
       getActiveAgents().then(setSubscribedAgents).catch(() => {});
+
+      // Fetch listing reports
+      try {
+        const { data: rpts } = await supabase.from("listing_reports").select("*").order("created_at", { ascending: false });
+        setReports(rpts ?? []);
+      } catch { /* table may not exist yet */ }
+
+      // Fetch refund requests
+      try {
+        const { data: rfnds } = await supabase.from("refund_requests").select("*, bookings(message, status), profiles(full_name, email)").order("created_at", { ascending: false });
+        setRefunds(rfnds ?? []);
+      } catch { /* table may not exist yet */ }
     }
     fetchData().catch(() => {
       setLoading(false);
@@ -187,6 +202,9 @@ export default function AdminDashboardPage() {
     await supabase.from(table).update({ status: "approved" }).eq("id", id);
     if (type === "home") setHomes(prev => prev.map(h => h.id === id ? { ...h, status: "approved" } : h));
     else setHostels(prev => prev.map(h => h.id === id ? { ...h, status: "approved" } : h));
+    // Notify waitlist seekers that the property is available again
+    const { data: waitlisters } = await supabase.from("bookings").select("user_id, property_ref").eq("property_ref", id).eq("status", "waitlist");
+    waitlisters?.forEach(w => triggerEmail({ type: "waitlist_available", userId: w.user_id, propertyTitle: "the property", propertyUrl: `https://staymate-eight.vercel.app/homes/${id}` }));
   }
 
   async function resolveKyc(id: string, userId: string, approve: boolean) {
@@ -213,6 +231,10 @@ export default function AdminDashboardPage() {
     const { error } = await supabase.from("bookings").update({ status }).eq("id", id);
     if (!error) {
       setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
+      if (status === "accepted") {
+        const booking = bookings.find(b => b.id === id);
+        if (booking) triggerEmail({ type: "inquiry_accepted", userId: booking.user_id, propertyTitle: booking.property_title || "your property" });
+      }
     }
   }
 
@@ -232,6 +254,7 @@ export default function AdminDashboardPage() {
       await supabase.from(table).update({ status: action }).eq("id", propertyRef);
     }
     setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: "completed", close_action: action } : b));
+    triggerEmail({ type: "deal_closed", userId: booking.user_id, propertyTitle: booking.property_title || "your property", action });
   }
 
   async function deleteBooking(id: string) {
@@ -336,6 +359,8 @@ export default function AdminDashboardPage() {
             <TabButton active={tab === "leads"} onClick={() => setTab("leads")} icon={<IconTarget />} label="Seeker Leads" count={leads.filter(l => l.status === "pending").length} />
             <TabButton active={tab === "agents"} onClick={() => { setTab("agents"); setSelectedAgentId(null); }} icon={<IconTie />} label="Agents" count={activeAgents} />
             <TabButton active={tab === "users"} onClick={() => { setTab("users"); setSelectedUserId(null); setUserSearch(""); }} icon={<IconPhone />} label="Users" count={agents.length} />
+            <TabButton active={tab === "reports"} onClick={() => setTab("reports")} icon={<span>🚩</span>} label="Reports" count={reports.filter(r => r.status === "pending").length} countRed={reports.filter(r => r.status === "pending").length > 0} />
+            <TabButton active={tab === "refunds"} onClick={() => setTab("refunds")} icon={<span>💰</span>} label="Refunds" count={refunds.filter(r => r.status === "pending").length} countRed={refunds.filter(r => r.status === "pending").length > 0} />
           </nav>
 
           <div className="mt-auto px-4 py-4" style={{ borderTop: "1px solid #e9edf2" }}>
@@ -357,6 +382,8 @@ export default function AdminDashboardPage() {
             { t: "applications", icon: <IconCheckCircle />, label: "Apply", count: pendingApplications.length },
             { t: "leads", icon: <IconTarget />, label: "Leads", count: leads.filter((l: any) => l.status === "pending").length },
             { t: "users", icon: <IconPhone />, label: "Users", count: agents.length },
+            { t: "reports", icon: <span>🚩</span>, label: "Reports", count: reports.filter(r => r.status === "pending").length },
+            { t: "refunds", icon: <span>💰</span>, label: "Refunds", count: refunds.filter(r => r.status === "pending").length },
           ].map(({ t, icon, label, count }) => (
             <button key={t} onClick={() => { setTab(t as typeof tab); if (t === "agents") setSelectedAgentId(null); if (t === "users") { setSelectedUserId(null); setUserSearch(""); } }}
               className="flex flex-col items-center gap-0.5 px-4 py-2.5 shrink-0 text-[10px] font-bold transition-colors"
@@ -1494,6 +1521,150 @@ export default function AdminDashboardPage() {
                 </div>
               );
             })()}
+
+            {/* ── REPORTS TAB ── */}
+            {tab === "reports" && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <h2 className="text-lg font-bold" style={{ color: "#0f172a" }}>Listing Reports</h2>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: "#fee2e2", color: "#dc2626" }}>{reports.filter(r => r.status === "pending").length} pending</span>
+                </div>
+                {reports.length === 0 ? (
+                  <div className="rounded-xl p-8 text-center" style={{ background: "#fff", border: "1px solid #e9edf2" }}>
+                    <p className="text-sm" style={{ color: "#94a3b8" }}>No reports yet.</p>
+                  </div>
+                ) : (
+                  <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e9edf2", background: "#fff" }}>
+                    {reports.map((r, i) => (
+                      <div key={r.id} className="px-5 py-4" style={{ borderBottom: i < reports.length - 1 ? "1px solid #e9edf2" : "none" }}>
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+                                style={{ background: r.status === "pending" ? "#fef9c3" : r.status === "reviewed" ? "#dcfce7" : "#f1f5f9", color: r.status === "pending" ? "#92400e" : r.status === "reviewed" ? "#166534" : "#64748b" }}>
+                                {r.status}
+                              </span>
+                              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full" style={{ background: "#e0f2fe", color: "#0369a1" }}>
+                                {r.property_type}
+                              </span>
+                              <span className="text-xs font-semibold" style={{ color: "#0f172a" }}>{r.reason.replace(/_/g, " ")}</span>
+                            </div>
+                            {r.details && <p className="text-xs" style={{ color: "#64748b" }}>{r.details}</p>}
+                            <p className="text-[10px]" style={{ color: "#94a3b8" }}>
+                              Reported {new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <a
+                              href={`/${r.property_type === "home" ? "homes" : "hostels"}/${r.property_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                              style={{ background: "#f1f5f9", color: "#0f172a" }}
+                            >
+                              View
+                            </a>
+                            {r.status === "pending" && (
+                              <>
+                                <button
+                                  onClick={async () => {
+                                    await supabase.from("listing_reports").update({ status: "reviewed" }).eq("id", r.id);
+                                    setReports(prev => prev.map(x => x.id === r.id ? { ...x, status: "reviewed" } : x));
+                                  }}
+                                  className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                                  style={{ background: "#dcfce7", color: "#166534" }}
+                                >
+                                  Mark Reviewed
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    await supabase.from("listing_reports").update({ status: "dismissed" }).eq("id", r.id);
+                                    setReports(prev => prev.map(x => x.id === r.id ? { ...x, status: "dismissed" } : x));
+                                  }}
+                                  className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                                  style={{ background: "#fee2e2", color: "#dc2626" }}
+                                >
+                                  Dismiss
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── REFUNDS TAB ── */}
+            {tab === "refunds" && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <h2 className="text-lg font-bold" style={{ color: "#0f172a" }}>Refund Requests</h2>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: "#fef9c3", color: "#92400e" }}>{refunds.filter(r => r.status === "pending").length} pending</span>
+                </div>
+                {refunds.length === 0 ? (
+                  <div className="rounded-xl p-8 text-center" style={{ background: "#fff", border: "1px solid #e9edf2" }}>
+                    <p className="text-sm" style={{ color: "#94a3b8" }}>No refund requests yet.</p>
+                  </div>
+                ) : (
+                  <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e9edf2", background: "#fff" }}>
+                    {refunds.map((r, i) => {
+                      const userName = r.profiles?.full_name || r.profiles?.email || "Unknown user";
+                      const bookingStatus = r.bookings?.status ?? "—";
+                      return (
+                        <div key={r.id} className="px-5 py-4" style={{ borderBottom: i < refunds.length - 1 ? "1px solid #e9edf2" : "none" }}>
+                          <div className="flex items-start justify-between gap-3 flex-wrap">
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+                                  style={{ background: r.status === "pending" ? "#fef9c3" : r.status === "approved" ? "#dcfce7" : "#fee2e2", color: r.status === "pending" ? "#92400e" : r.status === "approved" ? "#166534" : "#dc2626" }}>
+                                  {r.status}
+                                </span>
+                                <span className="text-sm font-bold" style={{ color: "#0f172a" }}>{userName}</span>
+                              </div>
+                              <p className="text-xs font-semibold" style={{ color: "#475569" }}>Reason: {r.reason}</p>
+                              {r.details && <p className="text-xs" style={{ color: "#64748b" }}>{r.details}</p>}
+                              <p className="text-[10px]" style={{ color: "#94a3b8" }}>
+                                Booking status: {bookingStatus} · {new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                              </p>
+                              {r.admin_note && <p className="text-xs italic" style={{ color: "#94a3b8" }}>Note: {r.admin_note}</p>}
+                            </div>
+                            {r.status === "pending" && (
+                              <div className="flex items-center gap-2 shrink-0">
+                                <button
+                                  onClick={async () => {
+                                    const note = window.prompt("Admin note (optional):");
+                                    await supabase.from("refund_requests").update({ status: "approved", admin_note: note || null }).eq("id", r.id);
+                                    setRefunds(prev => prev.map(x => x.id === r.id ? { ...x, status: "approved", admin_note: note || null } : x));
+                                  }}
+                                  className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                                  style={{ background: "#dcfce7", color: "#166534" }}
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    const note = window.prompt("Reason for rejection (optional):");
+                                    await supabase.from("refund_requests").update({ status: "rejected", admin_note: note || null }).eq("id", r.id);
+                                    setRefunds(prev => prev.map(x => x.id === r.id ? { ...x, status: "rejected", admin_note: note || null } : x));
+                                  }}
+                                  className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                                  style={{ background: "#fee2e2", color: "#dc2626" }}
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
           </div>
         </main>

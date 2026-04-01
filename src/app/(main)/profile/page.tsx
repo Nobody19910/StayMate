@@ -16,6 +16,7 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import { IconPhone, IconHome, IconMailbox, IconCheck, IconCreditCard, IconCalendar, IconCheckCircle, IconChat, IconClose, IconStar } from "@/components/ui/Icons";
 import PhoneInput from "@/components/ui/PhoneInput";
 import { BookingRatingPrompt } from "@/components/ui/ReviewsSection";
+import RefundRequest from "@/components/ui/RefundRequest";
 
 const ROLE_LABELS: Record<string, string> = {
   seeker:  "Property Seeker",
@@ -1001,6 +1002,9 @@ export default function ProfilePage() {
                           <p className="text-xs" style={{ color: "var(--uber-muted)" }}>Your spot is secured. The admin will be in touch shortly.</p>
                         </div>
                       </div>
+                    )}
+                    {(selectedTicket.status === "fee_paid" || selectedTicket.status === "viewing_scheduled") && (
+                      <RefundRequest bookingId={selectedTicket.id} paymentReference={selectedTicket.payment_reference} />
                     )}
                     <Link
                       href={`/receipt/${selectedTicket.id}`}

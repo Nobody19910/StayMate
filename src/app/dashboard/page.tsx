@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import { IconBuilding, IconChart, IconCheck, IconClose, IconTrash, IconPin } from "@/components/ui/Icons";
+import { triggerEmail } from "@/lib/trigger-email";
 
 type DashTab = "pipeline" | "properties" | "queue";
 
@@ -113,6 +114,7 @@ export default function OwnerDashboardPage() {
       setProperties((prev: any[]) => prev.map((p: any) => p.id === booking.property_ref ? { ...p, status: action } : p));
     }
     setBookings((prev) => prev.map((b) => b.id === booking.id ? { ...b, status: "completed", close_action: action } : b));
+    triggerEmail({ type: "deal_closed", userId: booking.user_id, propertyTitle: booking.property_title || "your property", action });
   }
 
   const isAllowed = profile && ["owner", "manager", "agent", "admin"].includes(profile.role);

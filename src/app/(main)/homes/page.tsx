@@ -18,6 +18,7 @@ import { preloadImages } from "@/lib/image-cache";
 import { cachedFetch, invalidateCache } from "@/lib/local-cache";
 import { AnimatedList } from "@/components/ui/AnimatedList";
 import RecentlyViewed from "@/components/ui/RecentlyViewed";
+import OnboardingFlow from "@/components/ui/OnboardingFlow";
 
 import { getDistance, DEFAULT_LAT, DEFAULT_LNG } from "@/lib/geo";
 type ListingFilter = "all" | "rent" | "sale";
@@ -652,6 +653,7 @@ export default function HomesPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--background)" }} {...pullHandlers}>
+      <OnboardingFlow />
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
 
       {/* Hero search */}

@@ -15,6 +15,7 @@ import ReviewsSection from "@/components/ui/ReviewsSection";
 import SimilarProperties from "@/components/ui/SimilarProperties";
 import { IconWifi, IconSnowflake, IconShower, IconFire, IconBasket, IconChair, IconDoor, IconMountain, IconUtensils, IconLock, IconCamera, IconBolt } from "@/components/ui/Icons";
 import { trackView } from "@/components/ui/RecentlyViewed";
+import ReportListing from "@/components/ui/ReportListing";
 
 const AMENITY_LABELS: Record<RoomAmenity, { label: string; icon: React.ReactNode }> = {
   wifi: { label: "WiFi", icon: <IconWifi /> },
@@ -303,6 +304,11 @@ export default function HostelRoomPickerPage() {
 
             {/* Similar hostels */}
             <SimilarProperties currentId={hostel.id} city={hostel.city} propertyType="hostel" />
+
+            {/* Report listing */}
+            <div className="flex justify-center pt-2 pb-4">
+              <ReportListing propertyId={hostel.id} propertyType="hostel" />
+            </div>
 
           </div>
 

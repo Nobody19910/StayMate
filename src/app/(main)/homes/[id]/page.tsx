@@ -17,6 +17,8 @@ import { IconCheck, IconStar, IconBed, IconShower, IconRuler } from "@/component
 import ReviewsSection from "@/components/ui/ReviewsSection";
 import SimilarProperties from "@/components/ui/SimilarProperties";
 import { trackView } from "@/components/ui/RecentlyViewed";
+import { triggerEmail } from "@/lib/trigger-email";
+import ReportListing from "@/components/ui/ReportListing";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -147,6 +149,8 @@ export default function HomeDetailPage({ params }: Props) {
       message: messageContent,
     });
     if (bErr) { setIsProcessing(false); setBookingError(bErr.message); return; }
+
+    triggerEmail({ type: "inquiry_received", userId: user.id, propertyTitle: property.title });
 
     try {
       let { data: conv } = await supabase.from("conversations").select("id").eq("seeker_id", user.id).maybeSingle();
@@ -628,6 +632,11 @@ export default function HomeDetailPage({ params }: Props) {
 
             {/* Similar Properties */}
             <SimilarProperties currentId={property.id} city={property.city} propertyType="home" />
+
+            {/* Report listing */}
+            <div className="flex justify-center pt-2 pb-4">
+              <ReportListing propertyId={property.id} propertyType="home" />
+            </div>
 
           </div>
 

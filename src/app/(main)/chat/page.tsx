@@ -64,6 +64,28 @@ export default function SeekerChatPage() {
   return <ChatView user={user} />;
 }
 
+function renderMessageContent(content: string) {
+  const fileMatch = content.match(/^\[FILE:(.*?)\|(.*?)\]$/);
+  if (fileMatch) {
+    const [, url, name] = fileMatch;
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+    if (isImage) {
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt={name} className="max-w-full rounded-xl" style={{ maxHeight: "200px", objectFit: "cover" }} />
+      );
+    }
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer"
+        className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold underline"
+        style={{ background: "rgba(6,193,103,0.1)", color: "var(--uber-green)" }}>
+        📎 {name}
+      </a>
+    );
+  }
+  return <span style={{ whiteSpace: "pre-wrap" }}>{content}</span>;
+}
+
 function ChatView({ user }: { user: any }) {
   const router = useRouter();
   const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -73,8 +95,11 @@ function ChatView({ user }: { user: any }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [booking, setBooking] = useState<any>(null);
   const [payingFee, setPayingFee] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   usePaystackScript();
 
@@ -205,6 +230,34 @@ function ChatView({ user }: { user: any }) {
         body: JSON.stringify({ role: "admin", title: "New Message — StayMate", body, url: `/chat?seeker_id=${user.id}` }),
       });
     } catch (_) { }
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !conversation) return;
+    if (file.size > 10 * 1024 * 1024) { alert("Max file size is 10MB"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${conversation.id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("chat-attachments").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from("chat-attachments").getPublicUrl(path);
+      const content = `[FILE:${publicUrl}|${file.name}]`;
+      await supabase.from("messages").insert({
+        conversation_id: conversation.id,
+        sender_id: user!.id,
+        content,
+        is_read: false,
+      });
+      fetchMessages(false);
+    } catch (err) {
+      console.error("Upload failed", err);
+      alert("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   }
 
   async function sendMessage(e: React.FormEvent) {
@@ -419,7 +472,7 @@ function ChatView({ user }: { user: any }) {
                     <img src={inquiryImage} alt="Property" className="w-full h-36 object-cover" />
                   )}
                   <div className="px-4 py-2.5 text-[15px] leading-relaxed">
-                    {displayContent}
+                    {renderMessageContent(displayContent)}
                   </div>
                 </div>
               )}
@@ -457,14 +510,28 @@ function ChatView({ user }: { user: any }) {
       {/* ── Input ── */}
       <div className="backdrop-blur-md p-3 pb-6 fixed left-0 right-0 lg:relative lg:bottom-auto bottom-nav-offset"
         style={{ borderTop: "0.5px solid var(--uber-border)", background: "var(--uber-white)" }}>
+        {uploading && (
+          <div className="flex items-center gap-2 justify-center mb-2">
+            <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{ borderColor: "var(--uber-green)", borderTopColor: "transparent" }} />
+            <span className="text-xs font-medium" style={{ color: "var(--uber-muted)" }}>Uploading…</span>
+          </div>
+        )}
+        <input type="file" accept="image/*,.pdf" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
         <form onSubmit={sendMessage}
-          className="flex items-center rounded-full p-1 pl-4 max-w-3xl mx-auto"
+          className="flex items-center rounded-full p-1 max-w-3xl mx-auto"
           style={{ border: "0.5px solid var(--uber-border)", background: "var(--uber-surface)" }}>
+          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+            className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center ml-1 active:scale-95 transition-transform disabled:opacity-40"
+            style={{ color: "var(--uber-muted)" }}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+          </button>
           <input type="text" value={newMessage} onChange={e => setNewMessage(e.target.value)}
             placeholder="Message Concierge..." autoComplete="off"
-            className="flex-1 bg-transparent border-none outline-none text-sm" style={{ color: "var(--uber-text)" }} />
+            className="flex-1 bg-transparent border-none outline-none text-sm px-2" style={{ color: "var(--uber-text)" }} />
           <button type="submit" disabled={!newMessage.trim() || sending}
-            className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-white ml-2 active:scale-95 transition-transform disabled:opacity-50"
+            className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-white ml-1 active:scale-95 transition-transform disabled:opacity-50"
             style={{ background: "var(--uber-black)" }}>
             {sending
               ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
